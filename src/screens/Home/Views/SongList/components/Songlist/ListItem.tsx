@@ -1,6 +1,7 @@
 import { memo } from 'react'
 import { View, Platform, TouchableOpacity } from 'react-native'
 import { createStyle } from '@/utils/tools'
+import { BorderRadius } from '@/theme'
 import { type ListInfoItem } from '@/store/songlist/state'
 import Text from '@/components/common/Text'
 import { scaleSizeW } from '@/utils/pixelRatio'
@@ -27,7 +28,7 @@ export default memo(({ item, index, width, showSource, onPress }: {
           <View style={{ ...styles.listItem, width: itemWidth }}>
             <View style={{ ...styles.listItemImg, backgroundColor: theme['c-content-background'] }}>
               <TouchableOpacity activeOpacity={0.5} onPress={handlePress}>
-                <Image url={item.img} nativeID={`${NAV_SHEAR_NATIVE_IDS.songlistDetail_pic}_from_${item.id}`} style={{ width: itemWidth, height: itemWidth, borderRadius: 4 }} />
+                <Image url={item.img} nativeID={`${NAV_SHEAR_NATIVE_IDS.songlistDetail_pic}_from_${item.id}`} style={{ width: itemWidth, height: itemWidth, borderRadius: BorderRadius.medium }} />
                 { showSource ? <Text style={styles.sourceLabel} size={9} color="#fff" >{item.source}</Text> : null }
               </TouchableOpacity>
             </View>
@@ -48,7 +49,7 @@ const styles = createStyle({
   },
   listItemImg: {
     // backgroundColor: '#eee',
-    borderRadius: 4,
+    borderRadius: BorderRadius.medium,
     marginBottom: 5,
     overflow: 'hidden',
     ...Platform.select({

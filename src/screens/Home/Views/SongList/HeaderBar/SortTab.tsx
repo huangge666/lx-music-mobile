@@ -76,6 +76,6 @@ const styles = createStyle({
     textAlign: 'center',
     paddingHorizontal: 2,
     paddingVertical: 3,
-    borderBottomWidth: BorderWidths.normal3,
+    borderBottomWidth: BorderWidths.normal,
   },
 })

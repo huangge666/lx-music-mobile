@@ -8,6 +8,7 @@ import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import Text from './Text'
 import { scaleSizeH, scaleSizeW } from '@/utils/pixelRatio'
+import { BorderRadius } from '@/theme'
 
 const menuItemHeight = scaleSizeH(40)
 const menuItemWidth = scaleSizeW(100)
@@ -30,7 +31,7 @@ const styles = createStyle({
     position: 'absolute',
     // borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'lightgray',
-    borderRadius: 2,
+    borderRadius: BorderRadius.small,
     backgroundColor: 'white',
     elevation: 3,
   },

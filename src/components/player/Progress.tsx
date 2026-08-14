@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { View, PanResponder } from 'react-native'
 import { useDrag } from '@/utils/hooks'
 import { createStyle } from '@/utils/tools'
@@ -6,13 +6,16 @@ import { useTheme } from '@/store/theme/hook'
 // import { scaleSizeW } from '@/utils/pixelRatio'
 // import { AppColors } from '@/theme'
 
+// 常驻圆点尺寸 — 跟随轨道高度自适应，保持视觉一致
+const DOT_BASE = 8
+
 
 const DefaultBar = memo(() => {
-  // const theme = useTheme()
-
+  const theme = useTheme()
+  // 未播放轨道 — Apple separator 色
   return <View style={{
     ...styles.progressBar,
-    // backgroundColor: theme['c-primary-light-200-alpha-900'],
+    backgroundColor: theme['c-border-background'],
     position: 'absolute',
     width: '100%',
     left: 0,
@@ -23,7 +26,8 @@ const DefaultBar = memo(() => {
 const BufferedBar = memo(({ progress }: { progress: number }) => {
   // console.log(bufferedProgress)
   const theme = useTheme()
-  return <View style={{ ...styles.progressBar, backgroundColor: theme['c-primary-light-600-alpha-900'], position: 'absolute', width: `${progress * 100}%`, left: 0, top: 0 }}></View>
+  // 缓冲条 — 主色低透明度
+  return <View style={{ ...styles.progressBar, backgroundColor: theme['c-primary-alpha-400'], position: 'absolute', width: `${progress * 100}%`, left: 0, top: 0 }}></View>
 })
 
 const PreassBar = memo(({ onDragState, setDragProgress, onSetProgress }: {
@@ -67,11 +71,13 @@ const PreassBar = memo(({ onDragState, setDragProgress, onSetProgress }: {
 })
 
 
-export const ProgressPlain = ({ progress, duration, buffered, paddingTop }: {
+export const ProgressPlain = ({ progress, duration, buffered, paddingTop, trackHeight }: {
   progress: number
   duration: number
   buffered: number
   paddingTop?: number
+  /** 自定义轨道可视高度（pt）；未传则保持 flex:1 行为（兼容旧调用） */
+  trackHeight?: number
 }) => {
   // const { progress } = usePlayTimeBuffer()
   const theme = useTheme()
@@ -83,23 +89,32 @@ export const ProgressPlain = ({ progress, duration, buffered, paddingTop }: {
     durationRef.current = duration
   }, [duration])
 
+  // 轨道可视高度：自定义 > flex:1（保持原有调用兼容）
+  const trackStyle = trackHeight !== undefined
+    ? { height: trackHeight }
+    : { flex: 1 }
+
   return (
     <View style={{ ...styles.progress, paddingTop }}>
-      <View style={{ flex: 1 }}>
+      <View style={trackStyle}>
         <DefaultBar />
         <BufferedBar progress={buffered} />
-        <View style={{ ...styles.progressBar, backgroundColor: theme['c-primary-alpha-900'], width: progressStr, position: 'absolute', left: 0, top: 0 }} />
+        <View style={{ ...styles.progressBar, backgroundColor: theme['c-primary-alpha-700'], width: progressStr, position: 'absolute', left: 0, top: 0 }} />
       </View>
       <View style={styles.pressBar} />
     </View>
   )
 }
 
-const Progress = ({ progress, duration, buffered, paddingTop }: {
+const Progress = ({ progress, duration, buffered, paddingTop, trackHeight, showDot }: {
   progress: number
   duration: number
   buffered: number
   paddingTop?: number
+  /** 自定义轨道可视高度（pt）；未传则保持 flex:1 行为（兼容旧调用） */
+  trackHeight?: number
+  /** 常驻显示主色圆点（拖动点） */
+  showDot?: boolean
 }) => {
   // const { progress } = usePlayTimeBuffer()
   const theme = useTheme()
@@ -116,25 +131,58 @@ const Progress = ({ progress, duration, buffered, paddingTop }: {
     global.app_event.setProgress(progress * durationRef.current)
   }, [])
 
+  // 轨道可视高度：自定义 > flex:1（保持原有调用兼容）
+  const trackStyle = trackHeight !== undefined
+    ? { height: trackHeight }
+    : { flex: 1 }
+
+  // 常驻圆点样式 — 实心主色
+  const dotStyle = useMemo(() => ({
+    width: DOT_BASE,
+    height: DOT_BASE,
+    borderRadius: DOT_BASE / 2,
+    backgroundColor: theme['c-primary'],
+  }), [theme])
+
   return (
     <View style={{ ...styles.progress, paddingTop }}>
-      <View style={{ flex: 1 }}>
+      <View style={trackStyle}>
         <DefaultBar />
         <BufferedBar progress={buffered} />
         {
           draging
             ? (
                 <>
-                  <View style={{ ...styles.progressBar, backgroundColor: theme['c-primary-light-200-alpha-900'], width: progressStr, position: 'absolute', left: 0, top: 0 }} />
-                  <View style={{ ...styles.progressBar, backgroundColor: theme['c-primary-light-100-alpha-800'], width: `${dragProgress * 100}%`, position: 'absolute', left: 0, top: 0 }} />
+                  {/* 拖拽中：实际进度条（主色稍透明） */}
+                  <View style={{ ...styles.progressBar, backgroundColor: theme['c-primary-alpha-300'], width: progressStr, position: 'absolute', left: 0, top: 0 }} />
+                  {/* 拖拽中：拖拽预览条（主色） */}
+                  <View style={{ ...styles.progressBar, backgroundColor: theme['c-primary'], width: `${dragProgress * 100}%`, position: 'absolute', left: 0, top: 0 }} />
                 </>
               ) : (
-                <View style={{ ...styles.progressBar, backgroundColor: theme['c-primary-alpha-900'], width: progressStr, position: 'absolute', left: 0, top: 0 }} />
+                /* 正常状态：已播放进度条（主色） */
+                <View style={{ ...styles.progressBar, backgroundColor: theme['c-primary'], width: progressStr, position: 'absolute', left: 0, top: 0 }} />
               )
+        }
+        {/* 常驻拖动圆点（主色） — 网易云式视觉 */}
+        {
+          showDot && (
+            <View
+              pointerEvents="none"
+              style={{
+                position: 'absolute',
+                left: `${progress * 100}%`,
+                marginLeft: -DOT_BASE / 2,
+                top: 0,
+                bottom: 0,
+                justifyContent: 'center',
+              }}
+            >
+              <View style={dotStyle} />
+            </View>
+          )
         }
       </View>
       <PreassBar onDragState={setDraging} setDragProgress={setDragProgress} onSetProgress={onSetProgress} />
-      {/* <View style={{ ...styles.progressBar, height: '100%', width: progressStr }}><Pressable style={styles.progressDot}></Pressable></View> */}
     </View>
   )
 }

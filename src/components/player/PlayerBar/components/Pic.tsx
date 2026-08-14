@@ -9,25 +9,23 @@ import Image from '@/components/common/Image'
 import { useCallback } from 'react'
 import { setLoadErrorPicUrl, setMusicInfo } from '@/core/player/playInfo'
 
-const PIC_HEIGHT = scaleSizeH(48)
+// 封面 — 正方形，仅带一点点圆角
+const PIC_SIZE = scaleSizeH(42)
+const PIC_RADIUS = 6
 
 const styles = StyleSheet.create({
   image: {
-    width: PIC_HEIGHT,
-    height: PIC_HEIGHT,
-    borderRadius: 8, // Apple Music uses rounded square for art
+    width: PIC_SIZE,
+    height: PIC_SIZE,
+    borderRadius: PIC_RADIUS,
   },
 })
 
 export default ({ isHome }: { isHome: boolean }) => {
   const musicInfo = usePlayerMusicInfo()
   const handlePress = () => {
-    // console.log('')
-    // console.log(playMusicInfo)
     if (!musicInfo.id) return
     navigations.pushPlayDetailScreen(commonState.componentIds.home!)
-
-    // toast(global.i18n.t('play_detail_todo_tip'), 'long')
   }
 
   const handleLongPress = () => {
@@ -45,15 +43,8 @@ export default ({ isHome }: { isHome: boolean }) => {
   }, [])
 
   return (
-    <TouchableOpacity onLongPress={handleLongPress} onPress={handlePress} activeOpacity={0.7} >
+    <TouchableOpacity onLongPress={handleLongPress} onPress={handlePress} activeOpacity={0.7}>
       <Image url={musicInfo.pic} nativeID={NAV_SHEAR_NATIVE_IDS.playDetail_pic} style={styles.image} onError={handleError} />
     </TouchableOpacity>
   )
 }
-
-
-// const styles = StyleSheet.create({
-//   playInfoImg: {
-
-//   },
-// })

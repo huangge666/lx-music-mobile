@@ -36,7 +36,7 @@ const EditListItem = ({ itemWidth }: {
   return (
     <View style={{ ...listStyles.listItem, width: itemWidth }}>
       <TouchableOpacity
-        style={{ ...listStyles.button, borderColor: theme['c-primary-light-200-alpha-700'], borderStyle: 'dashed' }}
+        style={{ ...listStyles.button, borderColor: theme['c-primary-alpha-300'], borderStyle: 'dashed' }}
         onPress={() => { setEdit(true) }}
       >
         <Text style={{ opacity: isEdit ? 0 : 1 }} numberOfLines={1} size={14} color={theme['c-button-font']}>{t('list_create')}</Text>

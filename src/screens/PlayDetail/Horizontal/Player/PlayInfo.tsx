@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import { StyleSheet, View } from 'react-native'
+import { View } from 'react-native'
 
 import Progress from '@/components/player/Progress'
 import Status from './Status'
@@ -9,18 +9,33 @@ import { createStyle } from '@/utils/tools'
 import Text from '@/components/common/Text'
 import { useBufferProgress } from '@/plugins/player'
 import Badge from '@/components/common/Badge'
+import { MacSpacing, MacFontSize } from '../../macOS'
 
-// const FONT_SIZE = 13
 
+/**
+ * macOS 风格横屏进度卡
+ *
+ * 紧凑布局：进度条 + 状态 / 时间合并为单行
+ *   ┌────────────────────────────────────────┐
+ *  │  ▰▰▰▰▰▰▰▰▰▱▱▱▱▱▱▱  ▶ 状态  HQ  01:23/04:56 │
+ *  └────────────────────────────────────────┘
+ */
 const PlayTimeCurrent = ({ timeStr }: { timeStr: string }) => {
   const theme = useTheme()
-  // console.log(timeStr)
-  return <Text color={theme['c-500']}>{timeStr}</Text>
+  return (
+    <Text color={theme['c-font-label']} size={MacFontSize.caption} style={styles.timeText}>
+      {timeStr}
+    </Text>
+  )
 }
 
 const PlayTimeMax = memo(({ timeStr }: { timeStr: string }) => {
   const theme = useTheme()
-  return <Text color={theme['c-500']}>{timeStr}</Text>
+  return (
+    <Text color={theme['c-font-label']} size={MacFontSize.caption} style={styles.timeText}>
+      {timeStr}
+    </Text>
+  )
 })
 
 export default () => {
@@ -28,84 +43,73 @@ export default () => {
   const playerMusicInfo = usePlayerMusicInfo()
   const { maxPlayTimeStr, nowPlayTimeStr, progress, maxPlayTime } = useProgress()
   const buffered = useBufferProgress()
-  // console.log('render playInfo')
 
   return (
     <View style={styles.container}>
-      <View style={styles.status} >
-        <Status />
+      {/* 进度条 — 置于底部，绝对定位铺满 */}
+      <View style={[StyleSheetAbsolute.progress, { justifyContent: 'center' }]}>
+        <Progress progress={progress} duration={maxPlayTime} buffered={buffered} />
       </View>
-      <View style={{ flexGrow: 0, flexShrink: 0, flexDirection: 'row' }} >
-        {playerMusicInfo.quality ? <Badge type="tertiary">{playerMusicInfo.quality}</Badge> : null}
-        <PlayTimeCurrent timeStr={nowPlayTimeStr} />
-        <Text color={theme['c-500']}> / </Text>
-        <PlayTimeMax timeStr={maxPlayTimeStr} />
+
+      {/* 状态 / 时间 / 品质 — 浮于进度条之上 */}
+      <View style={styles.infoRow}>
+        <View style={styles.status}>
+          <Status />
+        </View>
+        <View style={styles.timeRow}>
+          {playerMusicInfo.quality
+            ? (
+                <Badge type="tertiary">{playerMusicInfo.quality}</Badge>
+              )
+            : null}
+          <PlayTimeCurrent timeStr={nowPlayTimeStr} />
+          <Text color={theme['c-500']} size={MacFontSize.caption}> / </Text>
+          <PlayTimeMax timeStr={maxPlayTimeStr} />
+        </View>
       </View>
-      <View style={[StyleSheet.absoluteFill, styles.progress]}><Progress progress={progress} duration={maxPlayTime} buffered={buffered} /></View>
     </View>
   )
+}
+
+const StyleSheetAbsolute = {
+  progress: {
+    position: 'absolute' as const,
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+  },
 }
 
 
 const styles = createStyle({
   container: {
-    // marginLeft: 15,
-    marginVertical: 5,
-    height: 26,
-    // flex: 1,
-    paddingVertical: 2,
-    paddingHorizontal: 5,
+    width: '100%',
+    height: 36,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: MacSpacing.xs,
+  },
+  infoRow: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  progress: {
-    flexGrow: 1,
-    flexShrink: 0,
-    flexDirection: 'column',
-    justifyContent: 'center',
-  },
-  info: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    // alignItems: 'center',
-    // backgroundColor: '#ccc',
-  },
   status: {
     flexGrow: 1,
     flexShrink: 1,
-    paddingRight: 5,
+    paddingRight: MacSpacing.sm,
+  },
+  timeRow: {
+    flexGrow: 0,
+    flexShrink: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  timeText: {
+    fontVariant: ['tabular-nums'],
+    letterSpacing: 0.2,
   },
 })
-// const styles = createStyle({
-//   container: {
-//     flex: 1,
-//     // height: 16,
-//     // flexGrow: 0,
-//     // flexShrink: 0,
-//     // flexDirection: 'column',
-//     // justifyContent: 'center',
-//     // alignItems: 'center',
-//     // marginBottom: -1,
-//     // backgroundColor: '#ccc',
-//     // overflow: 'hidden',
-//     // height:
-//     // position: 'absolute',
-//     // width: '100%',
-//     // top: 0,
-//     paddingVertical: 2,
-//     paddingHorizontal: 5,
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     justifyContent: 'space-between',
-//   },
-//   progress: {
-//     paddingVertical: 2,
-//     zIndex: 100,
-//   },
-//   status: {
-//     flexGrow: 1,
-//     flexShrink: 1,
-//     paddingRight: 5,
-//   },
-// })

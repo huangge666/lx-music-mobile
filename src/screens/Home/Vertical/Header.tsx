@@ -1,7 +1,4 @@
 import { View, TouchableOpacity } from 'react-native'
-// import Button from '@/components/common/Button'
-// import { navigations } from '@/navigation'
-// import { BorderWidths } from '@/theme'
 import { useTheme } from '@/store/theme/hook'
 import { useNavActiveId, useStatusbarHeight } from '@/store/common/hook'
 import { useI18n } from '@/lang'
@@ -15,17 +12,15 @@ import { HEADER_HEIGHT } from '@/config/constant'
 import { type InitState as CommonState } from '@/store/common/state'
 import SearchTypeSelector from '@/screens/Home/Views/Search/SearchTypeSelector'
 
+// Apple Music 各页面对应的大标题文案
 const headerComponents: Partial<Record<CommonState['navActiveId'], React.ReactNode>> = {
   nav_search: <SearchTypeSelector />,
 }
 
-
-// const LeftTitle = () => {
-//   const id = useNavActiveId()
-//   const t = useI18n()
-
-//   return <Text style={styles.leftTitle} size={18}>{t(id)}</Text>
-// }
+/**
+ * 左侧式 Header — Apple Music 风格
+ * 菜单按钮 + 大标题，毛玻璃半透明背景
+ */
 const LeftHeader = () => {
   const theme = useTheme()
   const id = useNavActiveId()
@@ -41,31 +36,27 @@ const LeftHeader = () => {
       ...styles.container,
       height: scaleSizeH(HEADER_HEIGHT) + statusBarHeight,
       paddingTop: statusBarHeight,
+      backgroundColor: 'transparent',
+      borderBottomColor: theme['c-border-background'],
+      borderBottomWidth: 0.5,
     }}>
       <View style={styles.left}>
-        <TouchableOpacity style={styles.btn} onPress={openMenu}>
-          <Icon color={theme['c-font']} name="menu" size={18} />
+        <TouchableOpacity style={styles.menuBtn} onPress={openMenu} activeOpacity={0.6}>
+          <Icon color={theme['c-primary']} name="menu" size={20} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.titleBtn} onPress={openMenu}>
-          <Text style={styles.leftTitle} size={18}>{t(id)}</Text>
+        <TouchableOpacity style={styles.titleBtn} onPress={openMenu} activeOpacity={0.6}>
+          {/* Apple Music 风格大标题 — 粗体 22pt */}
+          <Text style={styles.title} size={22} color={theme['c-font']}>{t(id)}</Text>
         </TouchableOpacity>
       </View>
       {headerComponents[id] ?? null}
-
-      {/* <TouchableOpacity style={styles.btn} onPress={openSetting}>
-        <Icon style={{ ...styles.btnText, color: theme['c-font'] }} name="setting" size={styles.btnText.fontSize} />
-      </TouchableOpacity> */}
     </View>
   )
 }
 
-
-// const RightTitle = () => {
-//   const id = useNavActiveId()
-//   const t = useI18n()
-
-//   return <Text style={styles.rightTitle} size={18}>{t(id)}</Text>
-// }
+/**
+ * 右侧式 Header — 抽屉在右边时的镜像布局
+ */
 const RightHeader = () => {
   const theme = useTheme()
   const t = useI18n()
@@ -80,19 +71,19 @@ const RightHeader = () => {
       ...styles.container,
       height: scaleSizeH(HEADER_HEIGHT) + statusBarHeight,
       paddingTop: statusBarHeight,
+      backgroundColor: 'transparent',
+      borderBottomColor: theme['c-border-background'],
+      borderBottomWidth: 0.5,
     }}>
-      <View style={styles.left}>
-        <TouchableOpacity style={styles.titleBtn} onPress={openMenu}>
-          <Text style={styles.rightTitle} size={18}>{t(id)}</Text>
+      <View style={styles.rightLeft}>
+        <TouchableOpacity style={styles.titleBtn} onPress={openMenu} activeOpacity={0.6}>
+          <Text style={styles.titleRight} size={22} color={theme['c-font']}>{t(id)}</Text>
         </TouchableOpacity>
       </View>
       {headerComponents[id] ?? null}
-      <TouchableOpacity style={styles.btn} onPress={openMenu}>
-        <Icon color={theme['c-font']} name="menu" size={18} />
+      <TouchableOpacity style={styles.menuBtn} onPress={openMenu} activeOpacity={0.6}>
+        <Icon color={theme['c-primary']} name="menu" size={20} />
       </TouchableOpacity>
-      {/* <TouchableOpacity style={styles.btn} onPress={openSetting}>
-        <Icon style={{ ...styles.btnText, color: theme['c-font'] }} name="setting" size={styles.btnText.fontSize} />
-      </TouchableOpacity> */}
     </View>
   )
 }
@@ -108,51 +99,55 @@ const Header = () => {
           ? <LeftHeader />
           : <RightHeader />
       }
-
     </>
   )
 }
 
+export default Header
+
 
 const styles = createStyle({
   container: {
-    // width: '100%',
-    paddingRight: 5,
+    paddingRight: 8,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    // backgroundColor: 'rgba(0,0,0,0.1)',
     zIndex: 10,
   },
   left: {
     flex: 1,
     flexDirection: 'row',
-    paddingLeft: 5,
+    paddingLeft: 4,
     alignItems: 'center',
     height: '100%',
   },
-  btn: {
-    // flex: 1,
+  rightLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    paddingRight: 8,
+    alignItems: 'center',
+    height: '100%',
+  },
+  menuBtn: {
     width: HEADER_HEIGHT,
-    // backgroundColor: 'rgba(0,0,0,0.1)',
     alignItems: 'center',
     justifyContent: 'center',
     height: '100%',
   },
   titleBtn: {
     flex: 1,
-    // backgroundColor: 'rgba(0,0,0,0.1)',
     height: '100%',
     justifyContent: 'center',
   },
-  leftTitle: {
-    paddingLeft: 14,
-    paddingRight: 16,
+  // Apple Music 风格标题 — 粗体、左对齐
+  title: {
+    paddingLeft: 10,
+    paddingRight: 12,
+    fontWeight: '700',
   },
-  rightTitle: {
+  titleRight: {
     paddingLeft: 16,
-    paddingRight: 16,
+    paddingRight: 8,
+    fontWeight: '700',
   },
 })
-
-export default Header

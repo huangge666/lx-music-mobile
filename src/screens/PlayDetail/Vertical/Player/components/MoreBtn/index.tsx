@@ -1,30 +1,39 @@
-import { createStyle } from '@/utils/tools'
+import { memo } from 'react'
 import { View } from 'react-native'
+import { createStyle } from '@/utils/tools'
 import PlayModeBtn from './PlayModeBtn'
-import MusicAddBtn from './MusicAddBtn'
-import DesktopLyricBtn from './DesktopLyricBtn'
+import DownloadBtn from './DownloadBtn'
 import CommentBtn from './CommentBtn'
+import { MacSpacing } from '../../../../macOS'
 
-export default () => {
+
+/**
+ * 底部功能栏 — 无背景
+ * 1. 播放顺序（列表循环 / 顺序 / 随机 / 单曲循环 / 单曲）
+ * 2. 下载
+ * 3. 评论
+ */
+const ActionBar = () => {
   return (
     <View style={styles.container}>
-      <DesktopLyricBtn />
-      <MusicAddBtn />
       <PlayModeBtn />
+      <DownloadBtn />
       <CommentBtn />
     </View>
   )
 }
 
-
 const styles = createStyle({
   container: {
-    // flexShrink: 0,
-    // flexGrow: 0,
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    // backgroundColor: 'rgba(0,0,0,0.1)',
+    paddingHorizontal: MacSpacing.xl,
+    // 与切歌栏贴紧
+    paddingVertical: MacSpacing.xs,
+    backgroundColor: 'transparent',
   },
 })
+
+export default memo(ActionBar)

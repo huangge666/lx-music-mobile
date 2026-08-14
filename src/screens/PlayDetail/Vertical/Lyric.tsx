@@ -4,13 +4,16 @@ import { View, FlatList, type FlatListProps, type LayoutChangeEvent, type Native
 import { type Line, useLrcPlay, useLrcSet } from '@/plugins/lyric'
 import { createStyle } from '@/utils/tools'
 // import { useComponentIds } from '@/store/common/hook'
-import { useTheme } from '@/store/theme/hook'
 import { useSettingValue } from '@/store/setting/hook'
 import { AnimatedColorText } from '@/components/common/Text'
 import { setSpText } from '@/utils/pixelRatio'
 import playerState from '@/store/player/state'
 import { scrollTo } from '@/utils/scroll'
 import PlayLine, { type PlayLineType } from '../components/PlayLine'
+import {
+  MacSpacing,
+  Immersive,
+} from '../macOS'
 // import { screenkeepAwake } from '@/utils/nativeModules/utils'
 // import { log } from '@/utils/log'
 // import { toast } from '@/utils/tools'
@@ -63,7 +66,6 @@ interface LineProps {
   onLayout: (lineNum: number, height: number, width: number) => void
 }
 const LrcLine = memo(({ line, lineNum, activeLine, onLayout }: LineProps) => {
-  const theme = useTheme()
   const lrcFontSize = useSettingValue('playDetail.vertical.style.lrcFontSize')
   const textAlign = useSettingValue('playDetail.style.align')
   const size = lrcFontSize / 10
@@ -72,15 +74,18 @@ const LrcLine = memo(({ line, lineNum, activeLine, onLayout }: LineProps) => {
   const colors = useMemo(() => {
     const active = activeLine == lineNum
     return active ? [
-      theme['c-primary'],
-      theme['c-primary-alpha-200'],
+      // 激活态：纯白加粗
+      Immersive.text,
+      // 翻译行：次级白
+      Immersive.textSecondary,
       1,
     ] as const : [
-      theme['c-350'],
-      theme['c-300'],
-      0.6,
+      // 未激活：半透明白
+      Immersive.textTertiary,
+      'rgba(255,255,255,0.32)',
+      0.72,
     ] as const
-  }, [activeLine, lineNum, theme])
+  }, [activeLine, lineNum])
 
   const handleLayout = ({ nativeEvent }: LayoutChangeEvent) => {
     onLayout(lineNum, nativeEvent.layout.height, nativeEvent.layout.width)
@@ -93,6 +98,8 @@ const LrcLine = memo(({ line, lineNum, activeLine, onLayout }: LineProps) => {
     <View style={styles.line} onLayout={handleLayout}>
       <AnimatedColorText style={{
         ...styles.lineText,
+        // 激活行加粗 — 强化层级
+        fontWeight: activeLine == lineNum ? '700' : '400',
         textAlign,
         lineHeight,
       }} textBreakStrategy="simple" color={colors[0]} opacity={colors[2]} size={size}>{line.text}</AnimatedColorText>
@@ -114,7 +121,7 @@ const LrcLine = memo(({ line, lineNum, activeLine, onLayout }: LineProps) => {
 })
 const wait = async() => new Promise(resolve => setTimeout(resolve, 100))
 
-export default () => {
+export default ({ onPress }: { onPress?: () => void }) => {
   const lyricLines = useLrcSet()
   const { line } = useLrcPlay()
   const flatListRef = useRef<FlatList>(null)
@@ -309,12 +316,21 @@ export default () => {
   ), [handleSpaceLayout])
 
   return (
-    <>
+    <View style={styles.lyricCard}>
+      {/* 点击空白处可回到封面（不拦截列表滚动） */}
+      {onPress
+        ? (
+            <View style={styles.tapBack} pointerEvents="box-none">
+              <View style={styles.tapBackHit} onTouchEnd={onPress} />
+            </View>
+          )
+        : null}
       <FlatList
         data={lyricLines}
         renderItem={renderItem}
         keyExtractor={getkey}
         style={styles.container}
+        contentContainerStyle={styles.contentContainer}
         ref={flatListRef}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={spaceComponent}
@@ -327,38 +343,58 @@ export default () => {
         onScroll={handleScroll}
       />
       { isShowLyricProgressSetting ? <PlayLine ref={playLineRef} onPlayLine={handlePlayLine} /> : null }
-    </>
+    </View>
   )
 }
 
 const styles = createStyle({
+  // 沉浸式歌词层 — 透明底，直接叠在氛围背景上
+  lyricCard: {
+    flex: 1,
+    marginHorizontal: MacSpacing.lg,
+    marginTop: MacSpacing.sm,
+    marginBottom: MacSpacing.sm,
+    paddingTop: MacSpacing.md,
+    paddingBottom: MacSpacing.md,
+    overflow: 'hidden',
+  },
+  tapBack: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    height: 28,
+    zIndex: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tapBackHit: {
+    width: 48,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255,255,255,0.45)',
+  },
   container: {
     flex: 1,
-    paddingLeft: 20,
-    paddingRight: 20,
-    // backgroundColor: 'rgba(0,0,0,0.1)',
+    paddingLeft: 0,
+    paddingRight: 0,
+  },
+  contentContainer: {
+    paddingHorizontal: MacSpacing.md,
   },
   space: {
     paddingTop: '100%',
   },
   line: {
-    paddingTop: 10,
-    paddingBottom: 10,
-    // opacity: 0,
+    paddingTop: MacSpacing.md,
+    paddingBottom: MacSpacing.md,
   },
   lineText: {
     textAlign: 'center',
-    // fontSize: 16,
-    // lineHeight: 20,
-    // paddingTop: 5,
-    // paddingBottom: 5,
-    // opacity: 0,
+    letterSpacing: 0.2,
   },
   lineTranslationText: {
     textAlign: 'center',
-    // fontSize: 13,
-    // lineHeight: 17,
-    paddingTop: 5,
-    // paddingBottom: 5,
+    paddingTop: MacSpacing.xs,
   },
 })

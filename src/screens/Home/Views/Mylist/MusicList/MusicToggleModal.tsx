@@ -427,7 +427,7 @@ const styles = createStyle({
     paddingHorizontal: 6,
     // width: 80,
     // backgroundColor: 'rgba(0,0,0,0.1)',
-    borderBottomWidth: BorderWidths.normal3,
+    borderBottomWidth: BorderWidths.normal,
   },
   tabButtonText: {
     // height: 38,

@@ -6,7 +6,7 @@ import { readMusicDownloadDirectory, removeMusicDownloadTarget } from '@/utils/f
 import { useTheme } from '@/store/theme/hook'
 import { Icon } from '@/components/common/Icon'
 import { useNavActiveId } from '@/store/common/hook'
-import { BorderWidths } from '@/theme'
+import { BorderWidths, BorderRadius } from '@/theme'
 import { sizeFormate } from '@/utils'
 import { getDownloadTasks, removeDownloadTask } from '@/core/music/downloader'
 import { handleFileMusicAction } from '@/core/init/deeplink/fileAction'
@@ -14,7 +14,7 @@ import { handleFileMusicAction } from '@/core/init/deeplink/fileAction'
 const ProgressBar = memo(({ progress }) => {
   const theme = useTheme()
   return (
-    <View style={[styles.progressTrack, { backgroundColor: theme['c-primary-light-800-alpha-500'] }]}>
+    <View style={[styles.progressTrack, { backgroundColor: theme['c-border-background'] }]}>
       <View style={[styles.progressBar, { width: `${Math.max(0, Math.min(progress, 1)) * 100}%`, backgroundColor: theme['c-primary'] }]} />
     </View>
   )
@@ -50,7 +50,7 @@ const DownloadRow = memo(({ item, onPlay, onRemoveRecord, onRemoveFile }) => {
       styles.row,
       {
         borderColor: theme['c-border-background'],
-        backgroundColor: isCompleted ? theme['c-primary-light-800-alpha-500'] : 'rgba(0,0,0,0.03)',
+        backgroundColor: isCompleted ? theme['c-primary-alpha-800'] : 'rgba(0,0,0,0.03)',
       },
     ]}>
       <Icon name="music" size={16} color={isCompleted ? theme['c-primary-font-active'] : theme['c-primary-font']} />
@@ -281,13 +281,13 @@ const styles = createStyle({
   },
   progressTrack: {
     height: 4,
-    borderRadius: 4,
+    borderRadius: BorderRadius.medium,
     overflow: 'hidden',
     marginTop: 8,
   },
   progressBar: {
     height: '100%',
-    borderRadius: 4,
+    borderRadius: BorderRadius.medium,
   },
   tip: {
     textAlign: 'center',

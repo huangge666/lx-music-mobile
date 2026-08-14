@@ -11,6 +11,7 @@ import { setSpText } from '@/utils/pixelRatio'
 import playerState from '@/store/player/state'
 import { scrollTo } from '@/utils/scroll'
 import PlayLine, { type PlayLineType } from '../components/PlayLine'
+import { MacRadius, MacSpacing, getMacGlassBackground, getMacGlassBorder } from '../macOS'
 // import { screenkeepAwake } from '@/utils/nativeModules/utils'
 // import { log } from '@/utils/log'
 // import { toast } from '@/utils/tools'
@@ -75,6 +76,7 @@ const LrcLine = memo(({ line, lineNum, activeLine, onLayout }: LineProps) => {
 const wait = async() => new Promise(resolve => setTimeout(resolve, 100))
 
 export default () => {
+  const theme = useTheme()
   const lyricLines = useLrcSet()
   const { line } = useLrcPlay()
   const flatListRef = useRef<FlatList>(null)
@@ -88,6 +90,7 @@ export default () => {
   const listLayoutInfoRef = useRef<{ spaceHeight: number, lineHeights: number[] }>({ spaceHeight: 0, lineHeights: [] })
   const scrollCancelRef = useRef<(() => void) | null>(null)
   const isShowLyricProgressSetting = useSettingValue('playDetail.isShowLyricProgressSetting')
+  const isDark = !!theme.isDark
   // useLock()
   // const [imgUrl, setImgUrl] = useState(null)
   // const theme = useGetter('common', 'theme')
@@ -268,13 +271,19 @@ export default () => {
     <View style={styles.space} onLayout={handleSpaceLayout}></View>
   ), [handleSpaceLayout])
 
+  const cardStyle = useMemo(() => ({
+    backgroundColor: getMacGlassBackground(isDark),
+    borderColor: getMacGlassBorder(isDark),
+  }), [isDark])
+
   return (
-    <>
+    <View style={[styles.lyricCard, cardStyle]}>
       <FlatList
         data={lyricLines}
         renderItem={renderItem}
         keyExtractor={getkey}
         style={styles.container}
+        contentContainerStyle={styles.contentContainer}
         ref={flatListRef}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={spaceComponent}
@@ -287,38 +296,44 @@ export default () => {
         onScroll={handleScroll}
       />
       { isShowLyricProgressSetting ? <PlayLine ref={playLineRef} onPlayLine={handlePlayLine} /> : null }
-    </>
+    </View>
   )
 }
 
 const styles = createStyle({
+  // macOS 风格 — 歌词区毛玻璃卡片（横屏左侧较大区域）
+  lyricCard: {
+    flex: 1,
+    margin: MacSpacing.md,
+    paddingTop: MacSpacing.md,
+    paddingBottom: MacSpacing.md,
+    paddingHorizontal: MacSpacing.lg,
+    borderRadius: MacRadius.md,
+    borderWidth: 0.5,
+    overflow: 'hidden',
+    // 背景与边框由 JSX 中根据主题动态注入
+  },
   container: {
     flex: 1,
-    paddingLeft: 20,
-    paddingRight: 20,
-    // backgroundColor: 'rgba(0,0,0,0.1)',
+    paddingLeft: 0,
+    paddingRight: 0,
+  },
+  contentContainer: {
+    paddingHorizontal: MacSpacing.md,
   },
   space: {
     paddingTop: '100%',
   },
   line: {
-    paddingTop: 10,
-    paddingBottom: 10,
-    // opacity: 0,
+    paddingTop: MacSpacing.md,
+    paddingBottom: MacSpacing.md,
   },
   lineText: {
     textAlign: 'center',
-    // fontSize: 16,
-    // lineHeight: 20,
-    // paddingTop: 5,
-    // paddingBottom: 5,
-    // opacity: 0,
+    letterSpacing: 0.2,
   },
   lineTranslationText: {
     textAlign: 'center',
-    // fontSize: 13,
-    // lineHeight: 17,
-    paddingTop: 5,
-    // paddingBottom: 5,
+    paddingTop: MacSpacing.xs,
   },
 })

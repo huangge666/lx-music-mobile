@@ -138,10 +138,12 @@ export function pushPlayDetailScreen(componentId: string, skipAnimation = false)
           },
           navigationBar: {
             // visible: false,
-            backgroundColor: theme['c-content-background'],
+            // 与沉浸式详情一致，避免底栏透出主题实色
+            backgroundColor: 'transparent',
           },
           layout: {
-            componentBackgroundColor: theme['c-content-background'],
+            // 透明底，由页面内 AlbumBackground 铺氛围色
+            componentBackgroundColor: 'transparent',
           },
           animations: {
             push: skipAnimation ? {} : {

@@ -1,41 +1,28 @@
-import { memo, useCallback, useState } from 'react'
-import { View, StyleSheet } from 'react-native'
+import { useCallback, useState } from 'react'
+import { View } from 'react-native'
 
 import Progress, { ProgressPlain } from '@/components/player/Progress'
-import Status from './Status'
 import { usePlayerMusicInfo, useProgress } from '@/store/player/hook'
-import { useTheme } from '@/store/theme/hook'
 import { createStyle } from '@/utils/tools'
-import Text from '@/components/common/Text'
-import Badge from '@/components/common/Badge'
 import { COMPONENT_IDS } from '@/config/constant'
 import { usePageVisible } from '@/store/common/hook'
-import { scaleSizeH, scaleSizeW, scaleSizeWR } from '@/utils/pixelRatio'
+import { scaleSizeH, scaleSizeW } from '@/utils/pixelRatio'
 import { useBufferProgress } from '@/plugins/player'
 import { useSettingValue } from '@/store/setting/hook'
 
-const FONT_SIZE = 13
-const PADDING_TOP_RAW = 1.8
-const PADDING_TOP = Math.round(scaleSizeWR(PADDING_TOP_RAW))
-const MARGIN_TOP = Math.round(scaleSizeH(2))
-const PADDING_TOP_PROGRESS = PADDING_TOP + MARGIN_TOP
+const TRACK_HEIGHT = scaleSizeH(2)
+// 触控热区上下留白 — 保证小播放栏内进度条仍可舒适拖动
+const HIT_PADDING = scaleSizeH(6)
 
-const PlayTimeCurrent = ({ timeStr }: { timeStr: string }) => {
-  const theme = useTheme()
-  // console.log(timeStr)
-  return <Text size={FONT_SIZE} color={theme['c-500']}>{timeStr}</Text>
-}
-
-const PlayTimeMax = memo(({ timeStr }: { timeStr: string }) => {
-  const theme = useTheme()
-  return <Text size={FONT_SIZE} color={theme['c-500']}>{timeStr}</Text>
-})
-
+/**
+ * 小播放栏播放信息区
+ *
+ * 只负责进度条；时间文字已迁到 Title 区（与歌手名同一行右侧）。
+ */
 export default ({ isHome }: { isHome: boolean }) => {
-  const theme = useTheme()
   const [autoUpdate, setAutoUpdate] = useState(true)
   const playerMusicInfo = usePlayerMusicInfo()
-  const { maxPlayTimeStr, nowPlayTimeStr, progress, maxPlayTime } = useProgress(autoUpdate)
+  const { progress, maxPlayTime } = useProgress(autoUpdate)
   const buffered = useBufferProgress()
   const allowProgressBarSeek = useSettingValue('common.allowProgressBarSeek')
 
@@ -43,23 +30,16 @@ export default ({ isHome }: { isHome: boolean }) => {
     if (isHome) setAutoUpdate(visible)
   }, [isHome]))
 
+  // 没有歌曲时不渲染进度条
+  if (!playerMusicInfo.id) return null
+
   return (
-    <View style={stylesRaw.container}>
-      {/* <MusicName /> */}
-      <View style={styles.status}>
-        <Status autoUpdate={autoUpdate} />
-      </View>
-      <View style={{ flexGrow: 0, flexShrink: 0, flexDirection: 'row', alignItems: 'flex-start' }} >
-        {playerMusicInfo.quality ? <Badge type="tertiary">{playerMusicInfo.quality}</Badge> : null}
-        <PlayTimeCurrent timeStr={nowPlayTimeStr} />
-        <Text size={FONT_SIZE} color={theme['c-500']}> / </Text>
-        <PlayTimeMax timeStr={maxPlayTimeStr} />
-      </View>
-      <View style={[StyleSheet.absoluteFill, stylesRaw.progress]}>
+    <View style={styles.container}>
+      <View style={styles.progressRow}>
         {
           allowProgressBarSeek
-            ? <Progress progress={progress} duration={maxPlayTime} buffered={buffered} paddingTop={PADDING_TOP_PROGRESS} />
-            : <ProgressPlain progress={progress} duration={maxPlayTime} buffered={buffered} paddingTop={PADDING_TOP_PROGRESS} />
+            ? <Progress progress={progress} duration={maxPlayTime} buffered={buffered} trackHeight={TRACK_HEIGHT} showDot />
+            : <ProgressPlain progress={progress} duration={maxPlayTime} buffered={buffered} trackHeight={TRACK_HEIGHT} />
         }
       </View>
     </View>
@@ -68,50 +48,15 @@ export default ({ isHome }: { isHome: boolean }) => {
 
 
 const styles = createStyle({
-  // container: {
-  //   // height: 16,
-  //   maxHeight: 32,
-  //   flexGrow: 1,
-  //   flexShrink: 0,
-  //   // flexDirection: 'column',
-  //   // justifyContent: 'center',
-  //   // alignItems: 'center',
-  //   // marginBottom: -1,
-  //   // backgroundColor: '#ccc',
-  //   // overflow: 'hidden',
-  //   // height:
-  //   // position: 'absolute',
-  //   // width: '100%',
-  //   // top: 0,
-  //   paddingTop: PADDING_TOP_RAW,
-  //   paddingHorizontal: 3,
-  //   flexDirection: 'row',
-  //   alignItems: 'center',
-  //   justifyContent: 'space-between',
-  // },
-  status: {
-    flexGrow: 1,
-    flexShrink: 1,
-    paddingRight: 5,
-    // backgroundColor: '#ccc',
-  },
-})
-
-const stylesRaw = StyleSheet.create({
   container: {
-    // height: 16,
-    maxHeight: scaleSizeH(32),
-    flexGrow: 1,
-    flexShrink: 0,
-    paddingTop: PADDING_TOP,
-    paddingHorizontal: scaleSizeW(3),
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    width: '100%',
+    paddingRight: scaleSizeW(5),
+    paddingTop: scaleSizeH(2),
   },
-  progress: {
-    // paddingVertical: 2,
-    marginBottom: MARGIN_TOP,
-    zIndex: 100,
+  progressRow: {
+    // 可视轨道 2pt；上下 padding 各 6pt 撑出触控热区，跟手
+    height: TRACK_HEIGHT + HIT_PADDING * 2,
+    paddingVertical: HIT_PADDING,
+    justifyContent: 'center',
   },
 })

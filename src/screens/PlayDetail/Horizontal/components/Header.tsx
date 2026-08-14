@@ -14,18 +14,22 @@ import CommentBtn from './CommentBtn'
 import Btn from './Btn'
 import SettingPopup, { type SettingPopupType } from '../../components/SettingPopup'
 import DesktopLyricBtn from './DesktopLyricBtn'
+import { MacRadius, MacSpacing, MacFontSize, getMacGlassBackground, getMacGlassBorder } from '../../macOS'
 
 export const HEADER_HEIGHT = scaleSizeH(_HEADER_HEIGHT)
 
 const Title = () => {
   const theme = useTheme()
   const musicInfo = usePlayerMusicInfo()
-
+  const isDark = !!theme.isDark
 
   return (
-    <View style={styles.titleContent}>
-      <Text numberOfLines={1} style={styles.title} size={14}>{musicInfo.name}</Text>
-      <Text numberOfLines={1} style={styles.title} size={12} color={theme['c-font-label']}>{musicInfo.singer}</Text>
+    <View style={[styles.titleCard, {
+      backgroundColor: getMacGlassBackground(isDark),
+      borderColor: getMacGlassBorder(isDark),
+    }]}>
+      <Text numberOfLines={1} style={styles.title} size={MacFontSize.body} color={theme['c-font']}>{musicInfo.name}</Text>
+      <Text numberOfLines={1} style={styles.subtitle} size={MacFontSize.caption} color={theme['c-font-label']}>{musicInfo.singer}</Text>
     </View>
   )
 }
@@ -44,7 +48,7 @@ export default memo(() => {
     <View style={{ height: HEADER_HEIGHT }} nativeID={NAV_SHEAR_NATIVE_IDS.playDetail_header}>
       <View style={styles.container}>
         <TouchableOpacity onPress={back} style={{ ...styles.button, width: HEADER_HEIGHT }}>
-          <Icon name="chevron-left" size={18} />
+          <Icon name="chevron-left" size={20} />
         </TouchableOpacity>
         <Title />
         <DesktopLyricBtn />
@@ -60,10 +64,10 @@ export default memo(() => {
 const styles = StyleSheet.create({
   container: {
     flex: 0,
-    // backgroundColor: '#ccc',
     flexDirection: 'row',
-    // justifyContent: 'center',
+    alignItems: 'center',
     height: '100%',
+    paddingHorizontal: MacSpacing.xs,
   },
   button: {
     justifyContent: 'center',
@@ -71,14 +75,24 @@ const styles = StyleSheet.create({
     height: '100%',
     flex: 0,
   },
-  titleContent: {
+  // macOS 风格的居中胶囊标题卡
+  titleCard: {
     flex: 1,
-    // alignItems: 'center',
+    height: '78%',
+    marginHorizontal: MacSpacing.xs,
+    paddingHorizontal: MacSpacing.md,
+    borderRadius: MacRadius.lg,
+    borderWidth: 0.5,
+    alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
-    // flex: 1,
-    // textAlign: 'center',
+    fontWeight: '600',
+    letterSpacing: 0.1,
+  },
+  subtitle: {
+    marginTop: 2,
+    letterSpacing: 0.1,
   },
   icon: {
     paddingLeft: 4,

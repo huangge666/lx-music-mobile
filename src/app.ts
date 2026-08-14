@@ -3,13 +3,23 @@ import { init as initLog } from '@/utils/log'
 import { bootLog, getBootLog } from '@/utils/bootLog'
 import '@/config/globalData'
 import { getFontSize } from '@/utils/data'
+import { Navigation } from 'react-native-navigation'
 import { exitApp } from './utils/nativeModules/utils'
 import { windowSizeTools } from './utils/windowSizeTools'
 import { listenLaunchEvent } from './navigation/regLaunchedEvent'
+import * as screenNames from './navigation/screenNames'
 import { tipDialog } from './utils/tools'
 
 console.log('starting app...')
 listenLaunchEvent()
+
+// Metro reload remounts the current RNN screen before async boot finishes.
+// Register stubs now so native does not throw "has not been registered".
+// Real screens replace these after window size / font size are ready.
+const StubScreen = () => null
+for (const name of Object.values(screenNames)) {
+  Navigation.registerComponent(name, () => StubScreen)
+}
 
 void Promise.all([getFontSize(), windowSizeTools.init()]).then(async([fontSize]) => {
   global.lx.fontSize = fontSize

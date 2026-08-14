@@ -12,9 +12,27 @@ export type SliderProps = Pick<_SliderProps,
 | 'onSlidingComplete'
 | 'onValueChange'
 | 'step'
->
+> & {
+  /** 已滑动轨道色 */
+  minimumTrackTintColor?: string
+  /** 未滑动轨道色 */
+  maximumTrackTintColor?: string
+  /** 滑块色 */
+  thumbTintColor?: string
+}
 
-export default memo(({ value, minimumValue, maximumValue, onSlidingStart, onSlidingComplete, onValueChange, step }: SliderProps) => {
+export default memo(({
+  value,
+  minimumValue,
+  maximumValue,
+  onSlidingStart,
+  onSlidingComplete,
+  onValueChange,
+  step,
+  minimumTrackTintColor,
+  maximumTrackTintColor,
+  thumbTintColor,
+}: SliderProps) => {
   const theme = useTheme()
 
   const handleValueChange = (value: number) => {
@@ -28,9 +46,9 @@ export default memo(({ value, minimumValue, maximumValue, onSlidingStart, onSlid
       style={styles.slider}
       minimumValue={minimumValue}
       maximumValue={maximumValue}
-      minimumTrackTintColor={theme['c-primary-alpha-500']}
-      maximumTrackTintColor={theme['c-primary-alpha-500']}
-      thumbTintColor={theme['c-primary']}
+      minimumTrackTintColor={minimumTrackTintColor ?? theme['c-primary-alpha-500']}
+      maximumTrackTintColor={maximumTrackTintColor ?? theme['c-primary-alpha-500']}
+      thumbTintColor={thumbTintColor ?? theme['c-primary']}
       onSlidingStart={onSlidingStart}
       onSlidingComplete={onSlidingComplete}
       onValueChange={handleValueChange}

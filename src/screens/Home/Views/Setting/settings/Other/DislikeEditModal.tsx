@@ -3,6 +3,7 @@ import Text from '@/components/common/Text'
 import { type LayoutChangeEvent, View } from 'react-native'
 import Input, { type InputType } from '@/components/common/Input'
 import { createStyle } from '@/utils/tools'
+import { BorderRadius } from '@/theme'
 import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
 import Dialog, { type DialogType } from '@/components/common/Dialog'
@@ -169,7 +170,7 @@ const styles = createStyle({
     flex: 1,
     padding: 10,
     alignItems: 'center',
-    borderRadius: 4,
+    borderRadius: BorderRadius.medium,
     marginRight: 15,
   },
 })

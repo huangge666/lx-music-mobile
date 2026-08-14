@@ -5,6 +5,7 @@ import { confirmDialog, createStyle } from '@/utils/tools'
 import { useI18n } from '@/lang'
 import { createUserList } from '@/core/list'
 import listState from '@/store/list/state'
+import { BorderRadius } from '@/theme'
 
 export default ({ isEdit, onHide }: {
   isEdit: boolean
@@ -62,7 +63,7 @@ const styles = createStyle({
   input: {
     flex: 1,
     fontSize: 14,
-    borderRadius: 4,
+    borderRadius: BorderRadius.small,
     textAlign: 'center',
     height: '100%',
   },

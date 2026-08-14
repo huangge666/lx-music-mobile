@@ -9,6 +9,7 @@ import SubTitle from '../../components/SubTitle'
 import { BG_IMAGES, getAllThemes, type LocalTheme } from '@/theme/themes'
 import Text from '@/components/common/Text'
 import { createStyle } from '@/utils/tools'
+import { BorderRadius } from '@/theme'
 import { scaleSizeH } from '@/utils/pixelRatio'
 import { Icon } from '@/components/common/Icon'
 import ImageBackground from '@/components/common/ImageBackground'
@@ -37,7 +38,7 @@ const ThemeItem = ({ id, name, color, image, setTheme, showAll }: {
           {
             image
               ? <ImageBackground style={{ ...styles.imageContent, width: scaleSizeH(IMAGE_HEIGHT), backgroundColor: color }}
-                  imageStyle={{ borderRadius: 4 }}
+                  imageStyle={{ borderRadius: BorderRadius.small }}
                   source={image} />
               : <View style={{ ...styles.imageContent, width: scaleSizeH(IMAGE_HEIGHT), backgroundColor: color }}></View>
             }
@@ -138,7 +139,7 @@ const styles = createStyle({
   },
   colorContent: {
     height: COLOR_ITEM_HEIGHT,
-    borderRadius: 4,
+    borderRadius: BorderRadius.small,
     borderWidth: 1.6,
     alignItems: 'center',
     justifyContent: 'center',
@@ -146,7 +147,7 @@ const styles = createStyle({
   },
   imageContent: {
     height: IMAGE_HEIGHT,
-    borderRadius: 4,
+    borderRadius: BorderRadius.small,
     // elevation: 1,
   },
   name: {

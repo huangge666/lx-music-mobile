@@ -4,6 +4,7 @@ import Button, { type BtnProps } from '@/components/common/Button'
 import Text from '@/components/common/Text'
 import { useTheme } from '@/store/theme/hook'
 import { createStyle } from '@/utils/tools'
+import { BorderRadius } from '@/theme'
 
 type ButtonProps = BtnProps
 
@@ -23,7 +24,7 @@ const styles = createStyle({
     paddingRight: 10,
     paddingTop: 5,
     paddingBottom: 5,
-    borderRadius: 4,
+    borderRadius: BorderRadius.medium,
     marginRight: 10,
   },
 })

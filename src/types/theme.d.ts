@@ -279,6 +279,8 @@ declare global {
       'c-list-header-border-bottom': string
       'c-content-background': string
       'c-border-background': string
+      'c-card-background': string
+      'c-glass-background': string
       'bg-image'?: ImageSourcePropType
     }
 

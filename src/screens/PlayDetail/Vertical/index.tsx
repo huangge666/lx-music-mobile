@@ -1,64 +1,57 @@
-import { memo, useState, useRef, useMemo, useEffect } from 'react'
+import { memo, useEffect, useState, useCallback } from 'react'
 import { View, AppState } from 'react-native'
 
 import Header from './components/Header'
-// import Aside from './components/Aside'
-// import Main from './components/Main'
+import AlbumBackground from './components/AlbumBackground'
 import Player from './Player'
-import PagerView, { type PagerViewOnPageSelectedEvent } from 'react-native-pager-view'
 import Pic from './Pic'
+import SongTitle from './SongTitle'
 import Lyric from './Lyric'
 import { screenkeepAwake, screenUnkeepAwake } from '@/utils/nativeModules/utils'
 import commonState, { type InitState as CommonState } from '@/store/common/state'
 import { createStyle } from '@/utils/tools'
-// import { useTheme } from '@/store/theme/hook'
 
-const LyricPage = ({ activeIndex }: { activeIndex: number }) => {
-  const initedRef = useRef(false)
-  const lyric = useMemo(() => <Lyric />, [])
-  switch (activeIndex) {
-    // case 3:
-    case 1:
-      if (!initedRef.current) initedRef.current = true
-      return lyric
-    default:
-      return initedRef.current ? lyric : null
-  }
-  // return activeIndex == 0 || activeIndex == 1 ? setting : null
-}
 
-// global.iskeep = false
+/**
+ * 高端沉浸式播放详情页（竖屏 / Apple Music 风格）
+ *
+ *  ┌──────────────────────────────────┐
+ *  │  ∨                                │  仅返回
+ *  │         [ 大圆角封面 ]            │  点击 → 歌词页
+ *  │  歌名                    ♡  ⋮    │
+ *  │  进度 / 切歌 / 功能栏             │
+ *  └──────────────────────────────────┘
+ */
 export default memo(({ componentId }: { componentId: string }) => {
-  // const theme = useTheme()
-  const [pageIndex, setPageIndex] = useState(0)
-  const showLyricRef = useRef(false)
+  // false=封面，true=歌词；点击封面进入歌词，歌词顶条点回封面
+  const [showLyric, setShowLyric] = useState(false)
 
-  const onPageSelected = ({ nativeEvent }: PagerViewOnPageSelectedEvent) => {
-    setPageIndex(nativeEvent.position)
-    showLyricRef.current = nativeEvent.position == 1
-    if (showLyricRef.current) {
-      screenkeepAwake()
-    } else {
-      screenUnkeepAwake()
-    }
-  }
+  const openLyric = useCallback(() => {
+    setShowLyric(true)
+  }, [])
+  const closeLyric = useCallback(() => {
+    setShowLyric(false)
+  }, [])
 
+  // 屏幕常亮
   useEffect(() => {
-    let appstateListener = AppState.addEventListener('change', (state) => {
+    const handleComponentIdsChange = (ids: CommonState['componentIds']) => {
+      if (ids.comment) screenUnkeepAwake()
+      else if (AppState.currentState == 'active') screenkeepAwake()
+    }
+
+    screenkeepAwake()
+
+    const appstateListener = AppState.addEventListener('change', (state) => {
       switch (state) {
         case 'active':
-          if (showLyricRef.current && !commonState.componentIds.comment) screenkeepAwake()
+          if (!commonState.componentIds.comment) screenkeepAwake()
           break
         case 'background':
           screenUnkeepAwake()
           break
       }
     })
-
-    const handleComponentIdsChange = (ids: CommonState['componentIds']) => {
-      if (ids.comment) screenUnkeepAwake()
-      else if (AppState.currentState == 'active') screenkeepAwake()
-    }
 
     global.state_event.on('componentIdsUpdated', handleComponentIdsChange)
 
@@ -71,51 +64,58 @@ export default memo(({ componentId }: { componentId: string }) => {
   }, [])
 
   return (
-    <>
+    <View style={styles.root}>
+      <AlbumBackground />
       <Header />
       <View style={styles.container}>
-        <PagerView
-          onPageSelected={onPageSelected}
-          // onPageScrollStateChanged={onPageScrollStateChanged}
-          style={styles.pagerView}
-        >
-          <View collapsable={false}>
-            <Pic componentId={componentId} />
-          </View>
-          <View collapsable={false}>
-            <LyricPage activeIndex={pageIndex} />
-          </View>
-        </PagerView>
-        {/* <View style={styles.pageIndicator} nativeID={NAV_SHEAR_NATIVE_IDS.playDetail_pageIndicator}>
-          <View style={{ ...styles.pageIndicatorItem, backgroundColor: pageIndex == 0 ? theme['c-primary-light-100-alpha-700'] : theme['c-primary-alpha-900'] }}></View>
-          <View style={{ ...styles.pageIndicatorItem, backgroundColor: pageIndex == 1 ? theme['c-primary-light-100-alpha-700'] : theme['c-primary-alpha-900'] }}></View>
-        </View> */}
-        <Player />
+        {/* 上半：封面 或 歌词（点击封面进入歌词） */}
+        <View style={styles.topSection}>
+          {showLyric
+            ? (
+                <View style={styles.lyricWrapper}>
+                  <Lyric onPress={closeLyric} />
+                </View>
+              )
+            : <Pic componentId={componentId} onPress={openLyric} />}
+        </View>
+
+        {/* 下半：标题 + 控制（始终可见） */}
+        <View style={styles.bottomSection}>
+          <SongTitle />
+          <Player />
+        </View>
       </View>
-    </>
+    </View>
   )
 })
 
 const styles = createStyle({
+  root: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
   container: {
     flex: 1,
     flexDirection: 'column',
   },
-  pagerView: {
+  topSection: {
     flex: 1,
+    flexGrow: 1,
+    flexShrink: 1,
+    minHeight: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  // pageIndicator: {
-  //   flex: 0,
-  //   flexDirection: 'row',
-  //   justifyContent: 'center',
-  //   paddingTop: 10,
-  //   // backgroundColor: 'rgba(0,0,0,0.1)',
-  // },
-  // pageIndicatorItem: {
-  //   height: 3,
-  //   width: '5%',
-  //   marginLeft: 2,
-  //   marginRight: 2,
-  //   borderRadius: 2,
-  // },
+  lyricWrapper: {
+    flex: 1,
+    width: '100%',
+    minHeight: 0,
+  },
+  bottomSection: {
+    flexGrow: 0,
+    flexShrink: 0,
+    flexDirection: 'column',
+    // 下半操作区整体透明，不盖任何底板
+    backgroundColor: 'transparent',
+  },
 })

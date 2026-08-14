@@ -8,6 +8,7 @@ import { connectServer, disconnectServer } from '@/plugins/sync'
 import InputItem from '../../components/InputItem'
 import { getWIFIIPV4Address } from '@/utils/nativeModules/utils'
 import { createStyle, toast } from '@/utils/tools'
+import { BorderRadius } from '@/theme'
 import { useI18n } from '@/lang'
 import { updateSetting } from '@/core/common'
 import { addSyncHostHistory, getSyncHost, setSyncHost } from '@/utils/data'
@@ -208,7 +209,7 @@ const styles = createStyle({
     flexGrow: 1,
     flexShrink: 1,
     minWidth: 260,
-    borderRadius: 4,
+    borderRadius: BorderRadius.small,
     // paddingTop: 2,
     // paddingBottom: 2,
     // fontSize: 14,

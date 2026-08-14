@@ -7,13 +7,19 @@ import Title from './components/Title'
 import PlayInfo from './components/PlayInfo'
 import ControlBtn from './components/ControlBtn'
 import { createStyle } from '@/utils/tools'
-// import { useSettingValue } from '@/store/setting/hook'
 import { useTheme } from '@/store/theme/hook'
 import { useSettingValue } from '@/store/setting/hook'
 
 
+/**
+ * 小播放栏（浮动迷你播放器）
+ *
+ * 设计原则：
+ * — 大圆角药丸形（22pt），柔和、圆润、现代
+ * — 紧凑布局：正圆封面 + 标题区 + 进度条/时间 + 控制按钮（圆播放按钮 + 次要色下一首）
+ * — 柔和阴影 + 半透明玻璃底，轻拟物浮起感
+ */
 export default memo(({ isHome = false }: { isHome?: boolean }) => {
-  // const { onLayout, ...layout } = useLayout()
   const { keyboardShown } = useKeyboard()
   const theme = useTheme()
   const autoHidePlayBar = useSettingValue('common.autoHidePlayBar')
@@ -21,16 +27,14 @@ export default memo(({ isHome = false }: { isHome?: boolean }) => {
   const playerComponent = useMemo(() => (
     <View style={{
       ...styles.container,
-      backgroundColor: theme['c-content-background'],
+      backgroundColor: theme['c-glass-background'],
       borderColor: theme['c-border-background'],
-      shadowColor: theme['c-primary-dark-1000-alpha-300'],
     }}>
-      <Pic isHome={isHome} />
+      <View style={styles.left}>
+        <Pic isHome={isHome} />
+      </View>
       <View style={styles.center}>
         <Title isHome={isHome} />
-        {/* <View style={{ ...styles.row, justifyContent: 'space-between' }}>
-          <PlayTime />
-        </View> */}
         <PlayInfo isHome={isHome} />
       </View>
       <View style={styles.right}>
@@ -39,34 +43,26 @@ export default memo(({ isHome = false }: { isHome?: boolean }) => {
     </View>
   ), [theme, isHome])
 
-  // console.log('render pb')
-
   return autoHidePlayBar && keyboardShown ? null : playerComponent
 })
 
 
 const styles = createStyle({
   container: {
-    width: 'auto',
-    marginHorizontal: 16, // Apple Music has more margin
+    // 加大左右边距，让卡片在视觉上更聚拢、收窄，避免贴满屏幕两侧
+    marginHorizontal: 28,
     marginTop: 4,
-    marginBottom: 16, // Lifted off the bottom
-    paddingVertical: 8,
-    paddingLeft: 8,
-    borderRadius: 24, // More rounded like iOS
+    marginBottom: 6,
+    paddingVertical: 6,
+    paddingLeft: 6,
+    paddingRight: 4,
+    // 大圆角卡片 — 比药丸形更收敛，圆度适中
+    borderRadius: 16,
     borderWidth: 0.5,
     flexDirection: 'row',
     alignItems: 'center',
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-    shadowOpacity: 0.2, // Stronger shadow for floating effect
-    shadowRadius: 16,
-    elevation: 8,
   },
   left: {
-    // borderRadius: 3,
     flexGrow: 0,
     flexShrink: 0,
   },
@@ -74,23 +70,14 @@ const styles = createStyle({
     flexDirection: 'column',
     flexGrow: 1,
     flexShrink: 1,
-    paddingLeft: 8,
-    height: '100%',
-    // justifyContent: 'space-evenly',
-    // height: 48,
-    // backgroundColor: 'rgba(0, 0, 0, .1)',
+    paddingLeft: 10,
+    paddingRight: 6,
+    justifyContent: 'center',
   },
   right: {
     flexDirection: 'row',
     alignItems: 'center',
     flexGrow: 0,
     flexShrink: 0,
-    paddingLeft: 6,
-    paddingRight: 8,
   },
-  // row: {
-  //   flexDirection: 'row',
-  //   flexGrow: 0,
-  //   flexShrink: 0,
-  // },
 })

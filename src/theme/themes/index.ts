@@ -68,30 +68,67 @@ export const buildActiveThemeColors = (theme: LX.Theme): LX.ActiveTheme => {
     theme.config.extInfo[k] = theme.config.themeColors[v.replace(varColorRxp, '$1') as ColorsKey]
   }
 
+  // Apple Music 风格语义色映射
+  // 亮色模式：c-content-background = 系统白 #FFFFFF，c-border-background = #E5E5EA
+  // 暗色模式：c-content-background = 纯黑 #000，c-border-background = #38383A
+  const isDark = theme.isDark
   return {
     id: theme.id,
     name: theme.name,
-    isDark: theme.isDark,
+    isDark,
     ...theme.config.themeColors,
     ...theme.config.extInfo,
-    'c-font': theme.config.themeColors['c-850'],
-    'c-font-label': theme.config.themeColors['c-450'],
+    // 主文字色 — 亮色 #1C1C1E / 暗色 #EBEBF0
+    'c-font': isDark ? theme.config.themeColors['c-850'] : theme.config.themeColors['c-900'],
+    // 次要文字色 — 亮色 #8E8E93 / 暗色 #98989F
+    'c-font-label': isDark ? theme.config.themeColors['c-450'] : theme.config.themeColors['c-400'],
+    // 强调色文字
     'c-primary-font': theme.config.themeColors['c-primary'],
     'c-primary-font-hover': theme.config.themeColors['c-primary-alpha-300'],
     'c-primary-font-active': theme.config.themeColors['c-primary-dark-100-alpha-200'],
-    'c-primary-background': theme.config.themeColors['c-primary-light-400-alpha-700'],
-    'c-primary-background-hover': theme.config.themeColors['c-primary-light-300-alpha-800'],
-    'c-primary-background-active': theme.config.themeColors['c-primary-light-100-alpha-800'],
-    'c-primary-input-background': theme.config.themeColors['c-primary-light-400-alpha-700'],
+    // 强调色背景层 — 用于选中态、悬浮态
+    'c-primary-background': isDark
+      ? theme.config.themeColors['c-primary-alpha-800']
+      : theme.config.themeColors['c-primary-alpha-900'],
+    'c-primary-background-hover': isDark
+      ? theme.config.themeColors['c-primary-alpha-700']
+      : theme.config.themeColors['c-primary-alpha-800'],
+    'c-primary-background-active': isDark
+      ? theme.config.themeColors['c-primary-alpha-600']
+      : theme.config.themeColors['c-primary-alpha-700'],
+    // 输入框背景 — Apple Music 浅灰填充
+    'c-primary-input-background': isDark
+      ? 'rgba(118, 118, 128, 0.24)'
+      : 'rgba(118, 118, 128, 0.12)',
+    // 按钮色
     'c-button-font': theme.config.themeColors['c-primary-alpha-100'],
     'c-button-font-selected': theme.config.themeColors['c-primary-dark-100-alpha-100'],
-    'c-button-background': theme.config.themeColors['c-primary-light-400-alpha-700'],
+    'c-button-background': isDark
+      ? theme.config.themeColors['c-primary-alpha-800']
+      : theme.config.themeColors['c-primary-alpha-900'],
     'c-button-background-selected': theme.config.themeColors['c-primary-alpha-600'],
-    'c-button-background-hover': theme.config.themeColors['c-primary-light-300-alpha-600'],
-    'c-button-background-active': theme.config.themeColors['c-primary-light-100-alpha-600'],
-    'c-list-header-border-bottom': theme.config.themeColors['c-primary-alpha-900'],
-    'c-content-background': theme.config.themeColors['c-primary-light-1000'],
-    'c-border-background': theme.config.themeColors['c-primary-light-100-alpha-700'],
+    'c-button-background-hover': isDark
+      ? theme.config.themeColors['c-primary-alpha-700']
+      : theme.config.themeColors['c-primary-alpha-800'],
+    'c-button-background-active': isDark
+      ? theme.config.themeColors['c-primary-alpha-600']
+      : theme.config.themeColors['c-primary-alpha-700'],
+    // 列表分隔线 — Apple 极细半透明
+    'c-list-header-border-bottom': isDark
+      ? 'rgba(255, 255, 255, 0.08)'
+      : 'rgba(60, 60, 67, 0.10)',
+    // 内容背景 — 亮色纯白 / 暗色纯黑
+    'c-content-background': isDark ? 'rgb(0, 0, 0)' : 'rgb(255, 255, 255)',
+    // 分隔线/边框 — Apple separator 色
+    'c-border-background': isDark
+      ? 'rgba(255, 255, 255, 0.08)'
+      : 'rgba(60, 60, 67, 0.10)',
+    // 卡片/分组背景 — Apple secondary system background
+    'c-card-background': isDark ? 'rgb(28, 28, 30)' : 'rgb(242, 242, 247)',
+    // 毛玻璃/导航栏背景
+    'c-glass-background': isDark
+      ? 'rgba(22, 22, 23, 0.72)'
+      : 'rgba(248, 248, 248, 0.80)',
     'bg-image': bgImg,
   } as const
 }

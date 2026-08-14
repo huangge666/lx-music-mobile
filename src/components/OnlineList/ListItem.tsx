@@ -1,6 +1,5 @@
 import { memo, useRef } from 'react'
 import { View, TouchableOpacity } from 'react-native'
-// import Button from '@/components/common/Button'
 import Text from '@/components/common/Text'
 import Badge, { type BadgeType } from '@/components/common/Badge'
 import { Icon } from '@/components/common/Icon'
@@ -29,6 +28,16 @@ const useQualityTag = (musicInfo: LX.Music.MusicInfoOnline) => {
   return info
 }
 
+/**
+ * Apple Music 风格列表项
+ *
+ * 视觉特征：
+ * — 左侧序号（次要色、较小字体）
+ * — 歌名 15pt + 歌手/专辑 12pt 次要色
+ * — 右侧时长 + 更多按钮
+ * — 选中态：圆角浅色背景
+ * — 行间无分隔线，靠间距区分（Apple Music 风格）
+ */
 export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu, selectedList, rowInfo, isShowAlbumName, isShowInterval }: {
   item: LX.Music.MusicInfoOnline
   index: number
@@ -49,7 +58,6 @@ export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu
   const handleShowMenu = () => {
     if (moreButtonRef.current?.measure) {
       moreButtonRef.current.measure((fx, fy, width, height, px, py) => {
-        // console.log(fx, fy, width, height, px, py)
         onShowMenu(item, index, { x: Math.ceil(px), y: Math.ceil(py), w: Math.ceil(width), h: Math.ceil(height) })
       })
     }
@@ -60,24 +68,27 @@ export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu
 
   return (
     <View style={{ ...styles.listItem, width: rowInfo.rowWidth, height: ITEM_HEIGHT, backgroundColor: isSelected ? theme['c-primary-background-hover'] : 'rgba(0,0,0,0)' }}>
-      <TouchableOpacity style={styles.listItemLeft} onPress={() => { onPress(item, index) }} onLongPress={() => { onLongPress(item, index) }}>
-        <Text style={styles.sn} size={13} color={theme['c-300']}>{index + 1}</Text>
+      <TouchableOpacity style={styles.listItemLeft} onPress={() => { onPress(item, index) }} onLongPress={() => { onLongPress(item, index) }} activeOpacity={0.6}>
+        {/* Apple Music 风格序号 — 居中、次要色 */}
+        <Text style={styles.sn} size={15} color={theme['c-font-label']}>{index + 1}</Text>
         <View style={styles.itemInfo}>
-          <Text numberOfLines={1}>{item.name}</Text>
+          {/* 歌名 — 主文字色 */}
+          <Text numberOfLines={1} color={theme['c-font']}>{item.name}</Text>
           <View style={styles.listItemSingle}>
             { tagInfo.type ? <Badge type={tagInfo.type}>{tagInfo.text}</Badge> : null }
             { showSource ? <Badge type="tertiary">{item.source}</Badge> : null }
-            <Text style={styles.listItemSingleText} size={11} color={theme['c-500']} numberOfLines={1}>{singer}</Text>
+            {/* 歌手/专辑 — 次要色较小字体 */}
+            <Text style={styles.listItemSingleText} size={12} color={theme['c-font-label']} numberOfLines={1}>{singer}</Text>
           </View>
         </View>
         {
           isShowInterval ? (
-            <Text size={12} color={theme['c-250']} numberOfLines={1}>{item.interval}</Text>
+            <Text size={12} color={theme['c-font-label']} numberOfLines={1}>{item.interval}</Text>
           ) : null
         }
       </TouchableOpacity>
-     <TouchableOpacity onPress={handleShowMenu} ref={moreButtonRef} style={styles.moreButton}>
-        <Icon name="dots-vertical" style={{ color: theme['c-350'] }} size={12} />
+     <TouchableOpacity onPress={handleShowMenu} ref={moreButtonRef} style={styles.moreButton} activeOpacity={0.6}>
+        <Icon name="dots-vertical" style={{ color: theme['c-font-label'] }} size={14} />
       </TouchableOpacity>
     </View>
   )
@@ -92,13 +103,10 @@ export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu
 
 const styles = createStyle({
   listItem: {
-    // width: '100%',
     flexDirection: 'row',
     flexWrap: 'nowrap',
-    // paddingLeft: 10,
-    paddingRight: 2,
+    paddingRight: 4,
     alignItems: 'center',
-    // borderBottomWidth: BorderWidths.normal,
   },
   listItemLeft: {
     flex: 1,
@@ -107,65 +115,32 @@ const styles = createStyle({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  // Apple Music 风格序号 — 固定宽度、居中对齐
   sn: {
-    width: 38,
-    // fontSize: 12,
+    width: 36,
     textAlign: 'center',
-    // backgroundColor: 'rgba(0,0,0,0.2)',
-    paddingLeft: 3,
-    paddingRight: 3,
+    paddingLeft: 4,
+    paddingRight: 4,
   },
   itemInfo: {
     flexGrow: 1,
     flexShrink: 1,
-    paddingRight: 2,
-    // paddingTop: 10,
-    // paddingBottom: 10,
+    paddingRight: 4,
   },
-  // listItemTitle: {
-  //   // backgroundColor: 'rgba(0,0,0,0.2)',
-  //   flexGrow: 0,
-  //   flexShrink: 1,
-  //   // fontSize: 15,
-  // },
   listItemSingle: {
     paddingTop: 2,
     flexDirection: 'row',
     alignItems: 'center',
-    // alignItems: 'flex-end',
-    // backgroundColor: 'rgba(0,0,0,0.2)',
-  },
-  listItemTimeLabel: {
-    marginRight: 5,
-    fontWeight: '400',
   },
   listItemSingleText: {
-    // fontSize: 13,
-    // paddingTop: 2,
     flexGrow: 0,
     flexShrink: 1,
-    fontWeight: '300',
-  },
-  listItemBadge: {
-    // fontSize: 10,
-    paddingLeft: 5,
-    paddingTop: 2,
-    alignSelf: 'flex-start',
-  },
-  listItemRight: {
-    flexGrow: 0,
-    flexShrink: 0,
-    flexBasis: 'auto',
-    justifyContent: 'center',
+    fontWeight: '400',
   },
   moreButton: {
     height: '80%',
-    paddingLeft: 16,
-    paddingRight: 16,
-    // paddingTop: 10,
-    // paddingBottom: 10,
-    // backgroundColor: 'rgba(0,0,0,0.2)',
+    paddingLeft: 12,
+    paddingRight: 12,
     justifyContent: 'center',
   },
 })
-

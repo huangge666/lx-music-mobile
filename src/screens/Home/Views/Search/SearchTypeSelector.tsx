@@ -74,7 +74,7 @@ const styles = createStyle({
     // paddingTop: 10,
     paddingTop: 3,
     paddingBottom: 3,
-    borderBottomWidth: BorderWidths.normal3,
+    borderBottomWidth: BorderWidths.normal,
     // width: 80,
   },
 })

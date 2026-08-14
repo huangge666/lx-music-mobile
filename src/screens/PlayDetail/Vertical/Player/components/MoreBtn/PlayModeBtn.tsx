@@ -5,6 +5,7 @@ import { useSettingValue } from '@/store/setting/hook'
 import { useI18n } from '@/lang'
 import { updateSetting } from '@/core/common'
 import Btn from './Btn'
+import { Immersive } from '../../../../macOS'
 
 
 export default memo(() => {
@@ -59,5 +60,5 @@ export default memo(() => {
     return playModeIcon
   }, [togglePlayMethod])
 
-  return <Btn icon={playModeIcon} onPress={toggleNextPlayMode} />
+  return <Btn icon={playModeIcon} color={Immersive.text} onPress={toggleNextPlayMode} />
 })

@@ -6,9 +6,18 @@ import { createStyle } from '@/utils/tools'
 import Text from '@/components/common/Text'
 import { SETTING_SCREENS, type SettingScreenIds } from '../Main'
 import { useI18n } from '@/lang'
-import { BorderRadius, BorderWidths } from '@/theme'
+import { BorderRadius } from '@/theme'
 
 
+/**
+ * Apple Music 风格设置页分段导航
+ *
+ * 视觉特征：
+ * — 水平滚动标签
+ * — 选中态：主色文字 + 底部短下划线
+ * — 默认态：次要色文字
+ * — 无边框、无背景色（极简）
+ */
 const ListItem = memo(({ id, activeId, onPress }: {
   onPress: (item: SettingScreenIds) => void
   activeId: string
@@ -24,11 +33,18 @@ const ListItem = memo(({ id, activeId, onPress }: {
   }
 
   return (
-    <View style={{ ...styles.listItem, backgroundColor: active ? theme['c-primary-background-active'] : 'transparent' }}>
-      <TouchableOpacity style={styles.listName} onPress={handlePress}>
-        <Text numberOfLines={1} color={active ? theme['c-primary-font'] : theme['c-font']}>{t(`setting_${id}`)}</Text>
-      </TouchableOpacity>
-    </View>
+    <TouchableOpacity style={styles.listItem} onPress={handlePress} activeOpacity={0.6}>
+      <Text
+        numberOfLines={1}
+        size={15}
+        color={active ? theme['c-primary'] : theme['c-font-label']}
+        style={active ? styles.textActive : styles.text}
+      >
+        {t(`setting_${id}`)}
+      </Text>
+      {/* Apple Music 风格选中指示器 — 短下划线 */}
+      {active ? <View style={{ ...styles.indicator, backgroundColor: theme['c-primary'] }} /> : null}
+    </TouchableOpacity>
   )
 }, (prevProps, nextProps) => {
   return !!(prevProps.id === nextProps.id &&
@@ -52,7 +68,13 @@ export default ({ onChangeId }: {
   }, [])
 
   return (
-    <ScrollView horizontal style={{ ...styles.container, borderBottomColor: theme['c-border-background'] }} contentContainerStyle={styles.contentContainer} keyboardShouldPersistTaps={'always'}>
+    <ScrollView
+      horizontal
+      style={{ ...styles.container, borderBottomColor: theme['c-border-background'] }}
+      contentContainerStyle={styles.contentContainer}
+      keyboardShouldPersistTaps={'always'}
+      showsHorizontalScrollIndicator={false}
+    >
       {
         SETTING_SCREENS.map(id => <ListItem key={id} id={id} activeId={activeId} onPress={handleChangeId} />)
       }
@@ -63,41 +85,37 @@ export default ({ onChangeId }: {
 
 const styles = createStyle({
   container: {
-    height: 50,
+    height: 44,
     flexGrow: 0,
     flexShrink: 0,
-    borderBottomWidth: BorderWidths.normal,
-    opacity: 0.7,
+    borderBottomWidth: 0.5,
   },
   contentContainer: {
     flexDirection: 'row',
     flexWrap: 'nowrap',
-    padding: 5,
-    // backgroundColor: 'rgba(0, 0, 0, 0.1)',
-  },
-  // listContainer: {
-  //   // borderBottomWidth: BorderWidths.normal2,
-  // },
-
-  listItem: {
-    // width: '33.33%',
-    height: 40,
-    paddingLeft: 15,
-    paddingRight: 15,
-    // height: 'auto',
-    // flexDirection: 'row',
-    // alignItems: 'center',
-    paddingHorizontal: 5,
-    // paddingVertical: 10,
-    borderRadius: BorderRadius.normal,
-    marginBottom: 5,
-    // backgroundColor: 'rgba(0,0,0,0.1)',
-  },
-  listName: {
-    justifyContent: 'center',
+    paddingHorizontal: 12,
     alignItems: 'center',
-    flex: 1,
-    // paddingLeft: 5,
-    // backgroundColor: 'rgba(0,0,0,0.1)',
+  },
+  listItem: {
+    height: 44,
+    paddingLeft: 14,
+    paddingRight: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  text: {
+    fontWeight: '400',
+  },
+  textActive: {
+    fontWeight: '600',
+  },
+  // Apple Music 风格选中下划线 — 主色、短宽、圆角
+  indicator: {
+    position: 'absolute',
+    bottom: 0,
+    width: 24,
+    height: 3,
+    borderRadius: BorderRadius.small,
+    backgroundColor: undefined, // 动态设置在组件内
   },
 })

@@ -20,7 +20,7 @@ export default memo(({ value, minimumValue, maximumValue, onSlidingStart, onSlid
       maximumValue={maximumValue}
       minimumTrackTintColor={theme['c-button-background-active']}
       maximumTrackTintColor={theme['c-button-background']}
-      thumbTintColor={theme['c-primary-light-100']}
+      thumbTintColor={theme['c-primary']}
       onSlidingStart={onSlidingStart}
       onSlidingComplete={onSlidingComplete}
       onValueChange={onValueChange}

@@ -7,64 +7,80 @@ import { Icon } from '@/components/common/Icon'
 import { confirmDialog, createStyle, exitApp as backHome } from '@/utils/tools'
 import { NAV_MENUS } from '@/config/constant'
 import type { InitState } from '@/store/common/state'
-// import { navigations } from '@/navigation'
-// import commonState from '@/store/common/state'
 import { exitApp, setNavActiveId } from '@/core/common'
 import Text from '@/components/common/Text'
 import { useSettingValue } from '@/store/setting/hook'
+import { BorderRadius } from '@/theme'
 
 const styles = createStyle({
   container: {
     flex: 1,
-    // alignItems: 'center',
-    // justifyContent: 'center',
-    // padding: 10,
   },
   header: {
-    paddingTop: 40,
-    paddingBottom: 50,
+    paddingTop: 16,
+    paddingBottom: 24,
+    paddingLeft: 24,
     flexDirection: 'row',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'center',
   },
   headerText: {
-    textAlign: 'center',
-    marginLeft: 16,
+    marginLeft: 12,
+    fontWeight: '700',
   },
   menus: {
     flex: 1,
   },
   list: {
-    paddingTop: 10,
-    paddingBottom: 10,
+    paddingTop: 4,
+    paddingBottom: 8,
+    paddingHorizontal: 12,
   },
+  /**
+   * Apple Music 风格菜单项
+   * — 圆角矩形 (radius 12)
+   * — 选中态：主色浅底 + 主色文字
+   * — 默认态：透明底 + 默认文字色
+   */
   menuItem: {
     flexDirection: 'row',
     paddingTop: 13,
     paddingBottom: 13,
-    paddingLeft: 25,
-    paddingRight: 25,
+    paddingLeft: 16,
+    paddingRight: 16,
     alignItems: 'center',
-    // backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    borderRadius: BorderRadius.medium,
+    marginVertical: 1,
   },
   iconContent: {
-    width: 24,
+    width: 28,
     alignItems: 'center',
   },
   text: {
-    paddingLeft: 20,
-    // fontWeight: '500',
+    paddingLeft: 14,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  // 底部操作区
+  footer: {
+    paddingHorizontal: 12,
+    paddingBottom: 16,
+    borderTopWidth: 0,
   },
 })
 
+/**
+ * Apple Music 风格侧边栏头部
+ * Logo + 应用名，左对齐
+ */
 const Header = () => {
   const theme = useTheme()
   const statusBarHeight = useStatusbarHeight()
   return (
-    <View style={{ paddingTop: statusBarHeight, backgroundColor: theme['c-primary-light-700-alpha-500'] }}>
+    <View style={{ paddingTop: statusBarHeight, backgroundColor: 'transparent' }}>
       <View style={styles.header}>
-        <Icon name="logo" color={theme['c-primary-dark-100-alpha-300']} size={28} />
-        <Text style={styles.headerText} size={28} color={theme['c-primary-dark-100-alpha-300']}>LX Music</Text>
+        <Icon name="logo" color={theme['c-primary']} size={30} />
+        <Text style={styles.headerText} size={26} color={theme['c-font']}>LX Music</Text>
       </View>
     </View>
   )
@@ -72,6 +88,9 @@ const Header = () => {
 
 type IdType = InitState['navActiveId'] | 'nav_exit' | 'back_home'
 
+/**
+ * 菜单项 — Apple Music 风格圆角选中态
+ */
 const MenuItem = ({ id, icon, onPress }: {
   id: IdType
   icon: string
@@ -80,25 +99,35 @@ const MenuItem = ({ id, icon, onPress }: {
   const t = useI18n()
   const activeId = useNavActiveId()
   const theme = useTheme()
+  const isActive = activeId == id
 
-  return activeId == id
-    ? <View style={styles.menuItem}>
+  if (isActive) {
+    return (
+      <View style={{ ...styles.menuItem, backgroundColor: theme['c-primary-background-hover'] }}>
         <View style={styles.iconContent}>
-          <Icon name={icon} size={20} color={theme['c-primary-font-active']} />
+          <Icon name={icon} size={20} color={theme['c-primary']} />
         </View>
-        <Text style={styles.text} color={theme['c-primary-font']}>{t(id)}</Text>
+        <Text style={styles.text} color={theme['c-primary']}>{t(id)}</Text>
       </View>
-    : <TouchableOpacity style={styles.menuItem} onPress={() => { onPress(id) }}>
-        <View style={styles.iconContent}>
-          <Icon name={icon} size={20} color={theme['c-font-label']} />
-        </View>
-        <Text style={styles.text}>{t(id)}</Text>
-      </TouchableOpacity>
+    )
+  }
+
+  return (
+    <TouchableOpacity
+      style={styles.menuItem}
+      onPress={() => { onPress(id) }}
+      activeOpacity={0.6}
+    >
+      <View style={styles.iconContent}>
+        <Icon name={icon} size={20} color={theme['c-font-label']} />
+      </View>
+      <Text style={styles.text} color={theme['c-font']}>{t(id)}</Text>
+    </TouchableOpacity>
+  )
 }
 
 export default memo(() => {
   const theme = useTheme()
-  // console.log('render drawer nav')
   const showBackBtn = useSettingValue('common.showBackBtn')
   const showExitBtn = useSettingValue('common.showExitBtn')
 
@@ -124,7 +153,7 @@ export default memo(() => {
 
 
   return (
-    <View style={{ ...styles.container, backgroundColor: theme['c-content-background'] }}>
+    <View style={{ ...styles.container, backgroundColor: theme['c-glass-background'] }}>
       <Header />
       <ScrollView style={styles.menus}>
         <View style={styles.list}>
@@ -132,13 +161,10 @@ export default memo(() => {
         </View>
       </ScrollView>
 
-      {
-        showBackBtn ? <MenuItem id="back_home" icon="home" onPress={handlePress} /> : null
-      }
-      {
-        showExitBtn ? <MenuItem id="nav_exit" icon="exit2" onPress={handlePress} /> : null
-      }
+      <View style={styles.footer}>
+        {showBackBtn ? <MenuItem id="back_home" icon="home" onPress={handlePress} /> : null}
+        {showExitBtn ? <MenuItem id="nav_exit" icon="exit2" onPress={handlePress} /> : null}
+      </View>
     </View>
   )
 })
-

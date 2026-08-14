@@ -7,6 +7,7 @@ import Text from '@/components/common/Text'
 import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
+import { BorderRadius } from '@/theme'
 
 
 interface ListProps {
@@ -19,24 +20,30 @@ export interface HotSearchType {
 
 export type List = NonNullable<InitState['sourceList'][keyof InitState['sourceList']]>
 
+/**
+ * Apple Music 风格热搜标签项
+ * — 胶囊式圆角 (radius 999)
+ * — 浅色背景 + 圆角
+ */
 const ListItem = ({ keyword, onSearch }: {
   keyword: string
   onSearch: (keyword: string) => void
 }) => {
   const theme = useTheme()
   return (
-    <Button style={{ ...styles.button, backgroundColor: theme['c-button-background'] }} onPress={() => { onSearch(keyword) }}>
-      <Text color={theme['c-button-font']} size={13}>{keyword}</Text>
+    <Button
+      style={{ ...styles.button, backgroundColor: theme['c-card-background'] }}
+      onPress={() => { onSearch(keyword) }}
+    >
+      <Text color={theme['c-font']} size={14}>{keyword}</Text>
     </Button>
   )
 }
 
 export default forwardRef<HotSearchType, ListProps>((props, ref) => {
-  // const [listType, setListType] = useState<SearchState['searchType']>('music')
-  // const listRef = useRef<MusicListType>(null)
   const [list, setList] = useState<List>([])
   const t = useI18n()
-  // const theme = useTheme()
+  const theme = useTheme()
 
   const isUnmountedRef = useRef(false)
   useEffect(() => {
@@ -59,7 +66,8 @@ export default forwardRef<HotSearchType, ListProps>((props, ref) => {
     list.length
       ? (
           <ScrollView>
-            <Text style={styles.title} size={16}>{t('search_hot_search')}</Text>
+            {/* Apple Music 风格区段标题 — 粗体大号 */}
+            <Text style={styles.title} size={20} color={theme['c-font']}>{t('search_hot_search')}</Text>
             <View style={styles.list}>
               {
                 list.map(keyword => <ListItem keyword={keyword} key={keyword} onSearch={props.onSearch} />)
@@ -74,25 +82,22 @@ export default forwardRef<HotSearchType, ListProps>((props, ref) => {
 
 const styles = createStyle({
   title: {
-    // paddingLeft: 15,
-    paddingTop: 15,
-    // paddingBottom: 10,
+    paddingTop: 20,
+    paddingBottom: 8,
+    fontWeight: '700',
   },
   list: {
-    // paddingLeft: 15,
-    // paddingRight: 15,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    // paddingBottom: 15,
   },
+  // Apple Music 胶囊式标签
   button: {
-    textAlign: 'center',
-    paddingLeft: 10,
-    paddingRight: 10,
-    paddingTop: 5,
-    paddingBottom: 5,
-    borderRadius: 4,
-    marginRight: 10,
+    paddingLeft: 16,
+    paddingRight: 16,
+    paddingTop: 8,
+    paddingBottom: 8,
+    borderRadius: BorderRadius.round,
+    marginRight: 8,
     marginTop: 8,
   },
 })

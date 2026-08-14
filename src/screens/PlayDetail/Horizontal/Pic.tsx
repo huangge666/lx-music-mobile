@@ -6,6 +6,7 @@ import { useWindowSize } from '@/utils/hooks'
 import { useNavigationComponentDidAppear } from '@/navigation'
 import { NAV_SHEAR_NATIVE_IDS } from '@/config/constant'
 import { createStyle } from '@/utils/tools'
+import { BorderRadius } from '@/theme'
 import { HEADER_HEIGHT } from './components/Header'
 import { BTN_WIDTH } from './MoreBtn/Btn'
 import { marginLeft } from './constant'
@@ -40,7 +41,7 @@ export default memo(({ componentId }: { componentId: string }) => {
         <Image url={pic} nativeID={NAV_SHEAR_NATIVE_IDS.playDetail_pic} style={{
           width: imgWidth,
           height: imgWidth,
-          borderRadius: 2,
+          borderRadius: BorderRadius.small,
         }} />
       </View>
     </View>
@@ -59,6 +60,6 @@ const styles = createStyle({
   content: {
     // elevation: 3,
     backgroundColor: 'rgba(0,0,0,0)',
-    borderRadius: 4,
+    borderRadius: BorderRadius.medium,
   },
 })

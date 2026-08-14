@@ -2,21 +2,22 @@ import { memo, useMemo } from 'react'
 import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import Text from './Text'
-// const menuItemHeight = 42
-// const menuItemWidth = 100
+import { BorderRadius } from '@/theme'
 
+/**
+ * Apple Music 风格 Badge
+ *
+ * 类型：
+ * — normal: 主色文字
+ * — secondary: 次要色文字
+ * — tertiary: 第三色文字
+ *
+ * 视觉：小号文字 + 极小圆角，无背景填充（Apple Music 的品质标签风格）
+ */
 const styles = createStyle({
   text: {
-    // paddingLeft: 4,
-    // paddingRight: 4,
-    // borderRadius: 2,
-    // lineHeight: 12,
-    // marginTop: 2,
     marginRight: 5,
-    fontWeight: '400',
-    // marginRight: 5,
-    // marginBottom: 2,
-    // alignSelf: 'flex-start',
+    fontWeight: '500',
     alignSelf: 'center',
   },
 })
@@ -28,26 +29,21 @@ export default memo(({ type = 'normal', children }: {
   children: string
 }) => {
   const theme = useTheme()
-  // console.log(visible)
   const colors = useMemo(() => {
     const colors = { textColor: '' }
     switch (type) {
       case 'normal':
-        // colors.bgColor = theme.primary
         colors.textColor = theme['c-badge-primary']
         break
       case 'secondary':
-        // colors.bgColor = theme.primary
         colors.textColor = theme['c-badge-secondary']
         break
       case 'tertiary':
-        // colors.bgColor = theme.primary
         colors.textColor = theme['c-badge-tertiary']
         break
     }
     return colors
   }, [type, theme])
 
-  return <Text style={styles.text} size={9} color={colors.textColor}>{children}</Text>
+  return <Text style={styles.text} size={10} color={colors.textColor}>{children}</Text>
 })
-

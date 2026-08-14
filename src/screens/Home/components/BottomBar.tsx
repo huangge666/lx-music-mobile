@@ -8,13 +8,17 @@ import { useTheme } from '@/store/theme/hook'
 import { Icon } from '@/components/common/Icon'
 import Text from '@/components/common/Text'
 import { createStyle } from '@/utils/tools'
-import { BorderWidths } from '@/theme'
 
 interface BarItemProps {
   id: typeof NAV_MENUS[number]['id']
   icon: typeof NAV_MENUS[number]['icon']
 }
 
+/**
+ * Apple Music 风格底部 Tab 项
+ * 选中态：主色图标 + 主色文字
+ * 默认态：灰色图标 + 灰色文字
+ */
 const BarItem = ({ id, icon }: BarItemProps) => {
   const theme = useTheme()
   const t = useI18n()
@@ -31,22 +35,19 @@ const BarItem = ({ id, icon }: BarItemProps) => {
 
   return (
     <TouchableOpacity
-      style={[
-        styles.item,
-        isActive ? { backgroundColor: theme['c-primary-light-700-alpha-500'] } : null,
-      ]}
+      style={styles.item}
       onPress={handlePress}
-      activeOpacity={0.75}
+      activeOpacity={0.6}
     >
       <Icon
         name={icon}
-        size={18}
-        color={isActive ? theme['c-primary-font-active'] : theme['c-font-label']}
+        size={22}
+        color={isActive ? theme['c-primary'] : theme['c-font-label']}
       />
       <Text
         style={styles.label}
-        size={11}
-        color={isActive ? theme['c-primary-font-active'] : theme['c-font-label']}
+        size={10}
+        color={isActive ? theme['c-primary'] : theme['c-font-label']}
         numberOfLines={1}
       >
         {t(id)}
@@ -55,14 +56,20 @@ const BarItem = ({ id, icon }: BarItemProps) => {
   )
 }
 
+/**
+ * Apple Music 风格底部导航栏
+ * — 毛玻璃半透明背景
+ * — 无顶部边框（使用极细 separator）
+ * — 图标 + 文字垂直排列
+ */
 export default memo(() => {
   const theme = useTheme()
   return (
     <View style={[
       styles.container,
       {
+        backgroundColor: theme['c-glass-background'],
         borderTopColor: theme['c-border-background'],
-        backgroundColor: theme['c-content-background'],
       },
     ]}>
       {NAV_MENUS.map(item => <BarItem key={item.id} id={item.id} icon={item.icon} />)}
@@ -72,23 +79,25 @@ export default memo(() => {
 
 const styles = createStyle({
   container: {
-    borderTopWidth: BorderWidths.normal,
+    borderTopWidth: 0.5,
     flexDirection: 'row',
-    paddingHorizontal: 6,
+    paddingHorizontal: 4,
     paddingTop: 6,
-    paddingBottom: 6,
+    // iOS safe area 底部间距由系统自动处理
+    paddingBottom: 2,
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   item: {
     flex: 1,
-    minHeight: 42,
-    marginHorizontal: 2,
+    minHeight: 48,
+    marginHorizontal: 1,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
   label: {
-    marginTop: 2,
+    marginTop: 3,
+    fontWeight: '500',
   },
 })

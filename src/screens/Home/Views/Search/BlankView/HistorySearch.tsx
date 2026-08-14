@@ -8,6 +8,7 @@ import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
 import { clearHistoryList, getSearchHistory, removeHistoryWord } from '@/core/search/search'
 import { Icon } from '@/components/common/Icon'
+import { BorderRadius } from '@/theme'
 
 
 export type List = NonNullable<InitState['sourceList'][keyof InitState['sourceList']]>
@@ -123,7 +124,7 @@ const styles = createStyle({
     paddingRight: 10,
     paddingTop: 5,
     paddingBottom: 5,
-    borderRadius: 4,
+    borderRadius: BorderRadius.medium,
     marginRight: 10,
     marginTop: 8,
   },

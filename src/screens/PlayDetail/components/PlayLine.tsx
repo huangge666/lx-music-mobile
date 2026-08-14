@@ -124,7 +124,7 @@ const styles = createStyle({
   },
   line: {
     marginLeft: 30,
-    borderBottomWidth: BorderWidths.normal2,
+    borderBottomWidth: BorderWidths.normal,
     borderStyle: 'dashed',
     flex: 1,
   },

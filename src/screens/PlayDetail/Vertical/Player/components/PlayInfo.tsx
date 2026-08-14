@@ -1,69 +1,136 @@
-import { memo } from 'react'
+import { memo, useMemo } from 'react'
 import { View } from 'react-native'
 
 import Progress from '@/components/player/ProgressBar'
-import Status from './Status'
 import { usePlayerMusicInfo, useProgress } from '@/store/player/hook'
-import { useTheme } from '@/store/theme/hook'
 import { createStyle } from '@/utils/tools'
+import { formatPlayTime2 } from '@/utils'
 import Text from '@/components/common/Text'
 import { useBufferProgress } from '@/plugins/player'
-import Badge from '@/components/common/Badge'
+import { useI18n } from '@/lang'
+import {
+  Immersive,
+  MacSpacing,
+  MacFontSize,
+} from '../../../macOS'
 
-// const FONT_SIZE = 13
 
+/**
+ * 进度区 — 无卡片背景
+ * 左已播 / 中音质纯文字 / 右剩余 -m:ss
+ */
 const PlayTimeCurrent = ({ timeStr }: { timeStr: string }) => {
-  const theme = useTheme()
-  // console.log(timeStr)
-  return <Text color={theme['c-500']}>{timeStr}</Text>
+  return (
+    <Text color={Immersive.textSecondary} size={MacFontSize.caption} style={styles.timeText}>
+      {timeStr}
+    </Text>
+  )
 }
 
-const PlayTimeMax = memo(({ timeStr }: { timeStr: string }) => {
-  const theme = useTheme()
-  return <Text color={theme['c-500']}>{timeStr}</Text>
+const PlayTimeRemain = memo(({ remainStr }: { remainStr: string }) => {
+  return (
+    <Text color={Immersive.textSecondary} size={MacFontSize.caption} style={styles.timeText}>
+      {remainStr}
+    </Text>
+  )
 })
 
 export default () => {
-  const { maxPlayTimeStr, nowPlayTimeStr, progress, maxPlayTime } = useProgress()
+  const { nowPlayTimeStr, progress, maxPlayTime, nowPlayTime } = useProgress()
   const playerMusicInfo = usePlayerMusicInfo()
   const buffered = useBufferProgress()
+  const t = useI18n()
 
-  // console.log('render playInfo')
+  const remainStr = useMemo(() => {
+    const remain = Math.max(0, maxPlayTime - nowPlayTime)
+    return `-${formatPlayTime2(remain)}`
+  }, [maxPlayTime, nowPlayTime])
+
+  const qLabel = useMemo(() => {
+    const quality = playerMusicInfo.quality
+    if (!quality) return ''
+    switch (quality) {
+      case 'flac24bit':
+        return t('quality_lossless_24bit')
+      case 'flac':
+      case 'ape':
+      case 'wav':
+        return '无损'
+      case '320k':
+        return t('quality_high_quality')
+      case '192k':
+      case '128k':
+        return quality.toUpperCase()
+      default:
+        return String(quality)
+    }
+  }, [playerMusicInfo.quality, t])
 
   return (
-    <>
-      <View style={styles.progress}><Progress progress={progress} duration={maxPlayTime} buffered={buffered} /></View>
+    <View style={styles.container}>
+      <View style={styles.progressRow}>
+        <Progress
+          progress={progress}
+          duration={maxPlayTime}
+          buffered={buffered}
+          playedColor={Immersive.fill}
+          bufferedColor="rgba(255,255,255,0.16)"
+          dotColor={Immersive.fill}
+          trackColor={Immersive.track}
+        />
+      </View>
+
       <View style={styles.info}>
         <PlayTimeCurrent timeStr={nowPlayTimeStr} />
-        <View style={styles.status} >
-          <Status />
+
+        <View style={styles.status}>
+          {qLabel
+            ? (
+                <Text color={Immersive.textSecondary} size={MacFontSize.caption} style={styles.quality}>
+                  {qLabel}
+                </Text>
+              )
+            : null}
         </View>
-        {playerMusicInfo.quality ? <Badge type="tertiary">{playerMusicInfo.quality}</Badge> : null}
-        <PlayTimeMax timeStr={maxPlayTimeStr} />
+
+        <PlayTimeRemain remainStr={remainStr} />
       </View>
-    </>
+    </View>
   )
 }
 
 
 const styles = createStyle({
-  progress: {
-    flexGrow: 1,
-    flexShrink: 0,
+  container: {
+    width: '100%',
     flexDirection: 'column',
-    justifyContent: 'center',
+    backgroundColor: 'transparent',
+  },
+  progressRow: {
+    width: '100%',
+    paddingTop: 0,
+    paddingBottom: 0,
   },
   info: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 8,
-    // alignItems: 'center',
-    // backgroundColor: '#ccc',
+    alignItems: 'center',
+    paddingTop: 2,
   },
   status: {
     flexGrow: 1,
     flexShrink: 1,
-    paddingLeft: 10,
-    paddingRight: 10,
+    paddingHorizontal: MacSpacing.sm,
+    alignItems: 'center',
+  },
+  // 音质仅文字，无胶囊底
+  quality: {
+    fontWeight: '600',
+    letterSpacing: 0.4,
+  },
+  timeText: {
+    fontVariant: ['tabular-nums'],
+    letterSpacing: 0.2,
+    minWidth: 42,
   },
 })

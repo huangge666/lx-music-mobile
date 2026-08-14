@@ -2,6 +2,7 @@ import { useRef, useImperativeHandle, forwardRef, useState } from 'react'
 import Text from '@/components/common/Text'
 import { View, TouchableOpacity } from 'react-native'
 import { createStyle, openUrl } from '@/utils/tools'
+import { BorderRadius } from '@/theme'
 import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
 import Dialog, { type DialogType } from '@/components/common/Dialog'
@@ -168,7 +169,7 @@ const styles = createStyle({
     flex: 1,
     padding: 10,
     alignItems: 'center',
-    borderRadius: 4,
+    borderRadius: BorderRadius.medium,
     marginRight: 15,
   },
 })

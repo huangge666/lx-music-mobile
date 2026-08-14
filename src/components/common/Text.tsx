@@ -4,7 +4,6 @@ import { useTextShadow, useTheme } from '@/store/theme/hook'
 import { setSpText } from '@/utils/pixelRatio'
 import { useAnimateColor } from '@/utils/hooks/useAnimateColor'
 import { DEFAULT_DURATION, useAnimateNumber } from '@/utils/hooks/useAnimateNumber'
-// import { AppColors } from '@/theme'
 
 export interface TextProps extends _TextProps {
   /**
@@ -17,30 +16,26 @@ export interface TextProps extends _TextProps {
   color?: ColorValue
 }
 
-// const warpText = <P extends TextProps>(Component: ComponentType<TextProps>) => {
-//   return ({ style, size = 15, color, children, ...props }: P) => {
-//     const theme = useTheme()
-//     return (
-//       <Component
-//         style={StyleSheet.compose({ fontFamily: 'System', fontSize: setSpText(size), color: color ?? theme['c-font'] }, style)}
-//         {...props}
-//       >{children}</Component>
-//     )
-//   }
-// }
-
+/**
+ * Apple Music 风格 Text 组件
+ *
+ * 特征：
+ * — 系统默认字体（iOS 自动使用 SF Pro）
+ * — 字体阴影仅在 theme.fontShadow 开启时添加
+ * — 默认颜色为主文字色 c-font
+ * — fontSize 经过 setSpText 缩放适配
+ */
 export default memo(({ style, size = 15, color, children, ...props }: TextProps) => {
   const theme = useTheme()
   const textShadow = useTextShadow()
   style = StyleSheet.compose(textShadow ? {
-    // fontFamily: 'System',
     textShadowColor: theme['c-primary-dark-300-alpha-800'],
     textShadowOffset: { width: 0.2, height: 0.2 },
     textShadowRadius: 2,
     fontSize: setSpText(size),
     color: color ?? theme['c-font'],
   } : {
-    // fontFamily: 'System',
+    // Apple Music 风格 — 无阴影时简洁渲染
     fontSize: setSpText(size),
     color: color ?? theme['c-font'],
   }, style)
@@ -67,14 +62,12 @@ export const AnimatedText = ({ style, size = 15, color, children, ...props }: An
   const theme = useTheme()
   const textShadow = useTextShadow()
   style = StyleSheet.compose(textShadow ? {
-    // fontFamily: 'System',
     textShadowColor: theme['c-primary-dark-300-alpha-800'],
     textShadowOffset: { width: 0.2, height: 0.2 },
     textShadowRadius: 2,
     fontSize: setSpText(size),
     color: color ?? theme['c-font'],
   } : {
-    // fontFamily: 'System',
     fontSize: setSpText(size),
     color: color ?? theme['c-font'],
   }, style as TextStyle)
@@ -106,7 +99,6 @@ export const AnimatedColorText = ({ style, size = 15, opacity: _opacity, color: 
   const [opacity] = useAnimateNumber(_opacity ?? 1, DEFAULT_DURATION, false)
 
   style = StyleSheet.compose(textShadow ? {
-    // fontFamily: 'System',
     textShadowColor: theme['c-primary-dark-300-alpha-800'],
     textShadowOffset: { width: 0.2, height: 0.2 },
     textShadowRadius: 2,
@@ -114,7 +106,6 @@ export const AnimatedColorText = ({ style, size = 15, opacity: _opacity, color: 
     color: color as unknown as ColorValue,
     opacity,
   } : {
-    // fontFamily: 'System',
     fontSize: setSpText(size),
     color: color as unknown as ColorValue,
     opacity,

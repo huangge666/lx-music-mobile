@@ -8,7 +8,17 @@ import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import Text from './Text'
 import { scaleSizeH } from '@/utils/pixelRatio'
+import { BorderRadius } from '@/theme'
 
+/**
+ * Apple Music 风格 Dialog 弹窗
+ *
+ * 视觉特征：
+ * — 圆角 14pt（Apple modal 标准圆角）
+ * — 内容背景使用 c-content-background
+ * — 标题栏使用 c-card-background 次级背景
+ * — 关闭按钮使用主色
+ */
 const HEADER_HEIGHT = 20
 const styles = createStyle({
   centeredView: {
@@ -20,23 +30,15 @@ const styles = createStyle({
     maxWidth: '90%',
     minWidth: '60%',
     maxHeight: '78%',
-    // backgroundColor: 'white',
-    borderRadius: 4,
-    // shadowColor: '#000',
-    // shadowOffset: {
-    //   width: 0,
-    //   height: 2,
-    // },
-    // shadowOpacity: 0.25,
-    // shadowRadius: 4,
+    borderRadius: BorderRadius.normal,
     elevation: 3,
   },
   header: {
     flexGrow: 0,
     flexShrink: 0,
     flexDirection: 'row',
-    borderTopLeftRadius: 4,
-    borderTopRightRadius: 4,
+    borderTopLeftRadius: BorderRadius.normal,
+    borderTopRightRadius: BorderRadius.normal,
     height: HEADER_HEIGHT,
   },
   title: {
@@ -47,7 +49,7 @@ const styles = createStyle({
   closeBtn: {
     position: 'absolute',
     right: 0,
-    borderTopRightRadius: 4,
+    borderTopRightRadius: BorderRadius.normal,
     flexGrow: 0,
     flexShrink: 0,
     height: HEADER_HEIGHT,
@@ -91,8 +93,8 @@ export default forwardRef<DialogType, DialogProps>(({
 
   const closeBtnComponent = useMemo(() => {
     return closeBtn
-      ? <TouchableHighlight style={{ ...styles.closeBtn, width: scaleSizeH(HEADER_HEIGHT) }} underlayColor={theme['c-primary-dark-200-alpha-600']} onPress={() => modalRef.current?.setVisible(false)}>
-          <Icon name="close" color={theme['c-primary-dark-500-alpha-500']} size={10} />
+      ? <TouchableHighlight style={{ ...styles.closeBtn, width: scaleSizeH(HEADER_HEIGHT) }} underlayColor={theme['c-primary-background-active']} onPress={() => modalRef.current?.setVisible(false)}>
+          <Icon name="close" color={theme['c-font-label']} size={10} />
         </TouchableHighlight>
       : null
   }, [closeBtn, theme])
@@ -101,8 +103,8 @@ export default forwardRef<DialogType, DialogProps>(({
     <Modal onHide={onHide} keyHide={keyHide} bgHide={bgHide} bgColor="rgba(50,50,50,.3)" ref={modalRef}>
       <View style={{ ...styles.centeredView, paddingBottom: keyboardShown ? keyboardHeight : 0 }}>
         <View style={{ ...styles.modalView, height, backgroundColor: theme['c-content-background'] }} onStartShouldSetResponder={() => true}>
-          <View style={{ ...styles.header, backgroundColor: theme['c-primary-light-100-alpha-100'] }}>
-            <Text style={styles.title} size={13} color={theme['c-primary-light-1000']} numberOfLines={1}>{title}</Text>
+          <View style={{ ...styles.header, backgroundColor: theme['c-card-background'] }}>
+            <Text style={styles.title} size={13} color={theme['c-font']} numberOfLines={1}>{title}</Text>
             {closeBtnComponent}
           </View>
           {children}

@@ -13,45 +13,31 @@ interface Props {
   children: React.ReactNode
 }
 
-const BLUR_RADIUS = Math.max(scaleSizeAbsHR(18), 10)
+// Apple Music 风格背景模糊半径 — 较大值产生沉浸式氛围
+const BLUR_RADIUS = Math.max(scaleSizeAbsHR(24), 12)
 
+/**
+ * Apple Music 风格页面容器
+ *
+ * 两种背景模式：
+ * 1. 主题背景（默认）：纯色 c-content-background，干净简洁
+ * 2. 自定义背景图（useBgPic）：模糊放大 + 半透明遮罩，营造氛围感
+ *
+ * 不再使用 c-main-background 的半透明叠加层 — Apple Music 用单一纯色背景
+ */
 export default ({ children }: Props) => {
   const theme = useTheme()
   const windowSize = useWindowSize()
   const pic = useBgPic()
-  // const [wh, setWH] = useState<{ width: number | string, height: number | string }>({ width: '100%', height: Dimensions.get('screen').height })
 
-  // 固定宽高度 防止弹窗键盘时大小改变导致背景被缩放
-  // useEffect(() => {
-  //   const onChange = () => {
-  //     setWH({ width: '100%', height: '100%' })
-  //   }
-
-  //   const changeEvent = Dimensions.addEventListener('change', onChange)
-  //   return () => {
-  //     changeEvent.remove()
-  //   }
-  // }, [])
-  // const handleLayout = (e: LayoutChangeEvent) => {
-  //   // console.log('handleLayout', e.nativeEvent)
-  //   // console.log(Dimensions.get('screen'))
-  //   setWH({ width: e.nativeEvent.layout.width, height: Dimensions.get('screen').height })
-  // }
-  // console.log('render page content')
-
+  // 主题背景模式 — 纯色，无叠加
   const themeComponent = useMemo(() => (
-    <View style={{ flex: 1, overflow: 'hidden' }}>
-      <ImageBackground
-        style={{ position: 'absolute', left: 0, top: 0, height: windowSize.height, width: windowSize.width, backgroundColor: theme['c-content-background'] }}
-        source={theme['bg-image']}
-        resizeMode="cover"
-      >
-      </ImageBackground>
-      <View style={{ flex: 1, flexDirection: 'column', backgroundColor: theme['c-main-background'] }}>
-        {children}
-      </View>
+    <View style={{ flex: 1, overflow: 'hidden', backgroundColor: theme['c-content-background'] }}>
+      {children}
     </View>
-  ), [children, theme, windowSize.height, windowSize.width])
+  ), [children, theme])
+
+  // 自定义背景图模式 — 模糊 + 遮罩
   const picComponent = useMemo(() => {
     return (
       <View style={{ flex: 1, overflow: 'hidden' }}>
@@ -61,7 +47,8 @@ export default ({ children }: Props) => {
           resizeMode="cover"
           blurRadius={BLUR_RADIUS}
         >
-          <View style={{ flex: 1, flexDirection: 'column', backgroundColor: theme['c-content-background'], opacity: 0.76 }}></View>
+          {/* 半透明遮罩层 — 保证内容可读性 */}
+          <View style={{ flex: 1, backgroundColor: theme.isDark ? 'rgba(0,0,0,0.72)' : 'rgba(255,255,255,0.78)' }}></View>
         </ImageBackground>
         <View style={{ flex: 1, flexDirection: 'column' }}>
           {children}

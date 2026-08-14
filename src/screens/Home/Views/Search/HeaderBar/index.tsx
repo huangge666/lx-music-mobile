@@ -1,9 +1,6 @@
 import { useRef, forwardRef, useImperativeHandle } from 'react'
 import { View } from 'react-native'
 
-// import music from '@/utils/musicSdk'
-import { BorderWidths } from '@/theme'
-// import InsetShadow from 'react-native-inset-shadow'
 import SourceSelector, {
   type SourceSelectorType as _SourceSelectorType,
   type SourceSelectorProps as _SourceSelectorProps,
@@ -11,6 +8,7 @@ import SourceSelector, {
 import SearchInput, { type SearchInputType, type SearchInputProps } from './SearchInput'
 import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
+import { BorderRadius } from '@/theme'
 import { type Source as MusicSource } from '@/store/search/music/state'
 import { type Source as SonglistSource } from '@/store/search/songlist/state'
 
@@ -33,6 +31,13 @@ export interface HeaderBarType {
 }
 
 
+/**
+ * Apple Music 风格搜索栏
+ *
+ * — 整体浅灰圆角背景容器
+ * — 源选择器 + 搜索输入横向排列
+ * — 无硬边框，用背景色区分
+ */
 export default forwardRef<HeaderBarType, HeaderBarProps>(({ onSourceChange, onTipSearch, onSearch, onHideTipList, onShowTipList }, ref) => {
   const sourceSelectorRef = useRef<SourceSelectorType>(null)
   const searchInputRef = useRef<SearchInputType>(null)
@@ -52,7 +57,7 @@ export default forwardRef<HeaderBarType, HeaderBarProps>(({ onSourceChange, onTi
 
 
   return (
-    <View style={{ ...styles.searchBar, borderBottomColor: theme['c-border-background'] }}>
+    <View style={{ ...styles.searchBar, backgroundColor: theme['c-primary-input-background'] }}>
       <View style={styles.selector}>
         <SourceSelector ref={sourceSelectorRef} onSourceChange={onSourceChange} center />
       </View>
@@ -70,12 +75,13 @@ export default forwardRef<HeaderBarType, HeaderBarProps>(({ onSourceChange, onTi
 const styles = createStyle({
   searchBar: {
     flexDirection: 'row',
-    height: 38,
+    height: 44,
+    marginHorizontal: 16,
+    marginVertical: 8,
+    borderRadius: BorderRadius.medium,
+    paddingHorizontal: 4,
+    alignItems: 'center',
     zIndex: 2,
-    paddingRight: 10,
-    borderBottomWidth: BorderWidths.normal,
   },
-  selector: {
-    // width: 86,
-  },
+  selector: {},
 })

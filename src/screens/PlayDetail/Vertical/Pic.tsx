@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { View } from 'react-native'
-// import { useLayout } from '@/utils/hooks'
+import { View, TouchableOpacity, Platform } from 'react-native'
 import { createStyle } from '@/utils/tools'
 import { usePlayerMusicInfo } from '@/store/player/hook'
 import { useWindowSize } from '@/utils/hooks'
@@ -10,9 +9,20 @@ import { HEADER_HEIGHT } from './components/Header'
 import Image from '@/components/common/Image'
 import { useStatusbarHeight } from '@/store/common/hook'
 import commonState from '@/store/common/state'
+import { MacSpacing } from '../macOS'
 
 
-export default ({ componentId }: { componentId: string }) => {
+/**
+ * Apple Music 风格大封面
+ * — 屏宽约 82%，大圆角矩形
+ * — 深色长投影营造立体悬浮感
+ * — 点击切换到歌词页（必填 onPress）
+ */
+export default ({ componentId, onPress }: {
+  componentId: string
+  /** 点击封面 → 切换歌词页 */
+  onPress: () => void
+}) => {
   const musicInfo = usePlayerMusicInfo()
   const { width: winWidth, height: winHeight } = useWindowSize()
   const statusBarHeight = useStatusbarHeight()
@@ -26,41 +36,68 @@ export default ({ componentId }: { componentId: string }) => {
   useNavigationComponentDidAppear(componentId, () => {
     setAnimated(true)
   })
-  // console.log('render pic')
 
-  const style = useMemo(() => {
-    const imgWidth = Math.min(winWidth * 0.85, (winHeight - statusBarHeight - HEADER_HEIGHT) * 0.55) // slightly larger
+  const { imgStyle, shadowStyle } = useMemo(() => {
+    // 大封面：宽 82%，高度上限 42% 可用区
+    const maxByWidth = winWidth * 0.82
+    const maxByHeight = (winHeight - statusBarHeight - HEADER_HEIGHT) * 0.42
+    const imgWidth = Math.min(maxByWidth, maxByHeight)
+    // 更大圆角 — Apple Music 质感
+    const radius = Math.min(imgWidth * 0.1, 28)
     return {
-      width: imgWidth,
-      height: imgWidth,
-      borderRadius: 12, // More rounded corners
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 16 },
-      shadowOpacity: 0.3,
-      shadowRadius: 24,
+      imgStyle: {
+        width: imgWidth,
+        height: imgWidth,
+        borderRadius: radius,
+      },
+      shadowStyle: Platform.select({
+        ios: {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 22 },
+          shadowOpacity: 0.45,
+          shadowRadius: 36,
+        },
+        android: {
+          elevation: animated ? 18 : 0,
+          // Android elevation 阴影色
+          shadowColor: '#000',
+        },
+        default: {},
+      }) as object,
     }
-  }, [statusBarHeight, winHeight, winWidth])
+  }, [animated, statusBarHeight, winHeight, winWidth])
 
   return (
     <View style={styles.container}>
-      <View style={{ ...styles.content, elevation: animated ? 3 : 0 }}>
-        <Image url={pic} nativeID={NAV_SHEAR_NATIVE_IDS.playDetail_pic} style={style} />
-      </View>
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel="查看歌词"
+        style={[styles.shadowWrap, shadowStyle]}
+      >
+        <Image
+          url={pic}
+          nativeID={NAV_SHEAR_NATIVE_IDS.playDetail_pic}
+          style={imgStyle}
+        />
+      </TouchableOpacity>
     </View>
   )
 }
 
 const styles = createStyle({
   container: {
-    flexGrow: 1,
-    flexShrink: 1,
+    flexGrow: 0,
+    flexShrink: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    // backgroundColor: 'rgba(0,0,0,0.1)',
+    paddingTop: MacSpacing.sm,
+    width: '100%',
   },
-  content: {
-    // elevation: 3,
-    backgroundColor: 'rgba(0,0,0,0)',
-    borderRadius: 4,
+  shadowWrap: {
+    backgroundColor: 'transparent',
+    // iOS 阴影需要背景不透明才能生效；用近黑极透明垫底
+    borderRadius: 28,
   },
 })
