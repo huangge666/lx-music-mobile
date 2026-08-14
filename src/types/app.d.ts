@@ -38,6 +38,24 @@ interface GlobalData {
   apis: Partial<LX.UserApi.UserApiSources>
   apiInitPromise: [Promise<boolean>, boolean, (success: boolean) => void]
 
+  /**
+   * 多选源支持：每个用户源（userApi）独立存储其注册到的源对应的处理函数。
+   * key 为 `apiId`，value 中再按 `LX.Source` 索引各源 handler。
+   * 与旧的 `apis` 字段并存：旧的 `apis` 仍保留为合并视图，供未做多源适配的代码使用。
+   */
+  userApiApis: Record<string, Partial<LX.UserApi.UserApiSources>>
+  /**
+   * 多选源支持：每个用户源独立的音质列表。key 为 `apiId`。
+   */
+  userApiQualityList: Record<string, LX.QualityList>
+  /**
+   * 多选源支持：每个用户源独立的初始化 Promise + 解析器。
+   * 元素结构与 `apiInitPromise` 类似：`[Promise<boolean>, boolean, (success: boolean) => void]`。
+   * 当 setUserApi 串行初始化某个 apiId 时，会先在表中创建对应条目；
+   * handleStateChange 在收到该 apiId 的状态时会调用解析器，从而推动队列往下走。
+   */
+  userApiInitPromises: Record<string, [Promise<boolean>, boolean, (success: boolean) => void]>
+
   jumpMyListPosition: boolean
 
   settingActiveId: SettingScreenIds

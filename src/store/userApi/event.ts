@@ -2,7 +2,7 @@ import Event from '@/event/Event'
 
 
 class UserApiEvent extends Event {
-  status_changed(status: { status: boolean, message?: string }) {
+  status_changed(status: { apiId: string, status: boolean, message?: string }) {
     this.emit('status_changed', status)
   }
 

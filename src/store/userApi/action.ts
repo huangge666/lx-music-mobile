@@ -1,11 +1,12 @@
 import { state } from './state'
 import { event } from './event'
 
-export const setStatus = (status: LX.UserApi.UserApiStatus['status'], message: LX.UserApi.UserApiStatus['message']) => {
-  state.status.status = status
-  state.status.message = message
+export const setStatus = (apiId: string, status: LX.UserApi.UserApiStatus['status'], message?: LX.UserApi.UserApiStatus['message']) => {
+  if (!state.status[apiId]) state.status[apiId] = { status: false, message: '' }
+  state.status[apiId].status = status
+  state.status[apiId].message = message
 
-  event.status_changed({ status, message })
+  event.status_changed({ apiId, status, message })
 }
 
 

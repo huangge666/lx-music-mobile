@@ -10,9 +10,11 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
 import java.lang.Thread;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class UserApiModule extends ReactContextBaseJavaModule {
-  private JavaScriptThread javaScriptThread;
+  private final Map<String, JavaScriptThread> javaScriptThreads;
   private final ReactApplicationContext reactContext;
   private UtilsEvent utilsEvent;
 
@@ -20,7 +22,7 @@ public class UserApiModule extends ReactContextBaseJavaModule {
 
   UserApiModule(ReactApplicationContext reactContext) {
     super(reactContext);
-    this.javaScriptThread = null;
+    this.javaScriptThreads = new ConcurrentHashMap<>();
     this.utilsEvent = null;
     this.reactContext = reactContext;
   }
@@ -50,12 +52,19 @@ public class UserApiModule extends ReactContextBaseJavaModule {
   @ReactMethod
   public void loadScript(ReadableMap data) {
     if (this.utilsEvent == null) this.utilsEvent = new UtilsEvent(this.reactContext);
-    if (this.javaScriptThread != null) destroy();
     Bundle info = Arguments.toBundle(data);
-    this.javaScriptThread = new JavaScriptThread(this.reactContext, info);
-    this.javaScriptThread.prepareHandler(new JsHandler(this.reactContext.getMainLooper(), this.utilsEvent));
-    this.javaScriptThread.getHandler().sendEmptyMessage(HandlerWhat.INIT);
-    this.javaScriptThread.setUncaughtExceptionHandler((thread, ex) -> {
+    if (info == null) return;
+    String apiId = info.getString("id");
+    if (apiId == null || apiId.isEmpty()) return;
+
+    JavaScriptThread previousThread = this.javaScriptThreads.remove(apiId);
+    if (previousThread != null) previousThread.stopThread();
+
+    JavaScriptThread javaScriptThread = new JavaScriptThread(this.reactContext, info);
+    this.javaScriptThreads.put(apiId, javaScriptThread);
+    javaScriptThread.prepareHandler(new JsHandler(this.reactContext.getMainLooper(), this.utilsEvent, apiId));
+    javaScriptThread.getHandler().sendEmptyMessage(HandlerWhat.INIT);
+    javaScriptThread.setUncaughtExceptionHandler((thread, ex) -> {
       Handler jsHandler = javaScriptThread.getHandler();
       Message message = jsHandler.obtainMessage();
       message.what = HandlerWhat.LOG;
@@ -63,12 +72,12 @@ public class UserApiModule extends ReactContextBaseJavaModule {
       jsHandler.sendMessage(message);
       Log.e("JavaScriptThread", "Uncaught exception in JavaScriptThread: " + ex.getMessage());
     });
-    Log.d("UserApi", "Module Thread id: " + Thread.currentThread().getId());
+    Log.d("UserApi", "Module Thread id: " + Thread.currentThread().getId() + ", apiId: " + apiId);
   }
 
   @ReactMethod
-  public boolean sendAction(String action, String info) {
-    JavaScriptThread javaScriptThread = this.javaScriptThread;
+  public boolean sendAction(String apiId, String action, String info) {
+    JavaScriptThread javaScriptThread = this.javaScriptThreads.get(apiId);
     if (javaScriptThread == null) return false;
     Handler jsHandler = javaScriptThread.getHandler();
     Message message = jsHandler.obtainMessage();
@@ -79,11 +88,16 @@ public class UserApiModule extends ReactContextBaseJavaModule {
   }
 
   @ReactMethod
-  public void destroy() {
-    JavaScriptThread javaScriptThread = this.javaScriptThread;
-    if (javaScriptThread == null) return;
-    javaScriptThread.getHandler().sendEmptyMessage(HandlerWhat.DESTROY);
-    javaScriptThread.stopThread();
-    this.javaScriptThread = null;
+  public void destroy(String apiId) {
+    JavaScriptThread javaScriptThread = this.javaScriptThreads.remove(apiId);
+    if (javaScriptThread != null) javaScriptThread.stopThread();
+  }
+
+  @ReactMethod
+  public void destroyAll() {
+    for (JavaScriptThread javaScriptThread : this.javaScriptThreads.values()) {
+      javaScriptThread.stopThread();
+    }
+    this.javaScriptThreads.clear();
   }
 }

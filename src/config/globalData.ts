@@ -55,6 +55,11 @@ global.lx = {
   apis: {},
   apiInitPromise: [Promise.resolve(false), true, () => {}],
 
+  // 多选源支持：每个用户源独立存储 handler、音质、初始化 Promise。
+  userApiApis: {},
+  userApiQualityList: {},
+  userApiInitPromises: {},
+
   jumpMyListPosition: false,
 
   settingActiveId: 'basic',

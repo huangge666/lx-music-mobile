@@ -8,7 +8,7 @@ import dataInit from './dataInit'
 import initSync from './sync'
 import initCommonState from './common'
 import { initDeeplink } from './deeplink'
-import { setApiSource } from '@/core/apiSource'
+import { setApiSource, enqueueUserApiInit, getActiveApiSources } from '@/core/apiSource'
 import commonActions from '@/store/common/action'
 import settingState from '@/store/setting/state'
 import { checkUpdate } from '@/core/version'
@@ -49,6 +49,11 @@ export default async() => {
   bootLog('User Api inited.')
 
   setApiSource(setting['common.apiSource'])
+  // 首个源由 setApiSource 初始化；其余已勾选的用户源再依次入队，
+  // 避免同一脚本在启动时被重复加载，同时确保每个已选源都会完成初始化。
+  for (const id of getActiveApiSources()) {
+    if (/^user_api/.test(id) && id != setting['common.apiSource']) enqueueUserApiInit(id)
+  }
   bootLog('Api inited.')
 
   registerPlaybackService()

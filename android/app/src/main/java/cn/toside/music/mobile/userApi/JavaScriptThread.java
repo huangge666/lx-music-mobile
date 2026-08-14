@@ -65,6 +65,18 @@ public class JavaScriptThread extends HandlerThread {
   }
 
   public void stopThread() {
-    quit();
+    Handler currentHandler = this.handler;
+    if (currentHandler == null) {
+      quitSafely();
+      return;
+    }
+    // QuickJS 必须在所属线程销毁；销毁完成后再退出 Looper，避免 DESTROY 消息被 quit() 丢弃。
+    currentHandler.post(() -> {
+      if (javaScriptExecutor != null) {
+        javaScriptExecutor.destroy();
+        javaScriptExecutor = null;
+      }
+      quitSafely();
+    });
   }
 }

@@ -22,6 +22,12 @@ declare global {
       'common.apiSource': string
 
       /**
+       * 同时启用的自定义源 ID 列表，最多 5 个。
+       * 若为空则回退到 `common.apiSource`；若非空则覆盖单源选择。
+       */
+      'common.apiSourceList': string[]
+
+      /**
        * 音源名称类型，原名、别名
        */
       'common.sourceNameType': 'alias' | 'real'

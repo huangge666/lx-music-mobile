@@ -11,6 +11,8 @@ import { exitApp, tipDialog } from '@/utils/tools'
 
 const primitiveType = ['string', 'boolean', 'number']
 const checkPrimitiveType = (val: any): boolean => val === null || primitiveType.includes(typeof val)
+// 数组类型字段通过引用替换更新；对象类型字段跳过（避免深层合并带来的副作用）
+const checkUpdatableType = (val: any): boolean => checkPrimitiveType(val) || Array.isArray(val)
 
 const mergeSetting = (originSetting: LX.AppSetting, targetSetting?: Partial<LX.AppSetting> | null): {
   setting: LX.AppSetting
@@ -29,9 +31,9 @@ const mergeSetting = (originSetting: LX.AppSetting, targetSetting?: Partial<LX.A
     if (originSettingKeys.length > targetSettingKeys.length) {
       for (const key of targetSettingKeys as Array<keyof LX.AppSetting>) {
         const targetValue: any = targetSetting[key]
-        const isPrimitive = checkPrimitiveType(targetValue)
+        const isUpdatable = checkUpdatableType(targetValue)
         // if (checkPrimitiveType(value)) {
-        if (!isPrimitive || targetValue == originSettingCopy[key] || originSettingCopy[key] === undefined) continue
+        if (!isUpdatable || targetValue == originSettingCopy[key] || originSettingCopy[key] === undefined) continue
         updatedSettingKeys.push(key)
         updatedSetting[key] = targetValue
         // @ts-expect-error
@@ -43,9 +45,9 @@ const mergeSetting = (originSetting: LX.AppSetting, targetSetting?: Partial<LX.A
     } else {
       for (const key of originSettingKeys as Array<keyof LX.AppSetting>) {
         const targetValue: any = targetSetting[key]
-        const isPrimitive = checkPrimitiveType(targetValue)
+        const isUpdatable = checkUpdatableType(targetValue)
         // if (checkPrimitiveType(value)) {
-        if (!isPrimitive || targetValue == originSettingCopy[key]) continue
+        if (!isUpdatable || targetValue == originSettingCopy[key]) continue
         updatedSettingKeys.push(key)
         updatedSetting[key] = targetValue
         // @ts-expect-error

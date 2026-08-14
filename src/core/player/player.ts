@@ -29,6 +29,8 @@ import { checkIgnoringBatteryOptimization, checkNotificationPermission, debounce
 import { LIST_IDS } from '@/config/constant'
 import { addListMusics, removeListMusics } from '@/core/list'
 import { addDislikeInfo } from '@/core/dislikeList'
+import { getActiveApiSources, getUserApiHandlers, isUserApiReady } from '@/core/apiSource'
+import { toOldMusicInfo } from '@/utils'
 
 // import { checkMusicFileAvailable } from '@renderer/utils/music'
 
@@ -100,6 +102,39 @@ const delayRetry = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListItem, i
     }
   })
 }
+/**
+ * 多选源支持：在主流程失败时按顺序尝试其它已成功初始化的用户源。
+ * 仅对在线（非 local、非下载）歌曲生效，遍历 `common.apiSourceList` 中
+ * 所有已 settle 的 userApi，对每个 apiId 取其对应当前 musicInfo.source 的
+ * handler 直接拉取 URL。
+ * 返回值：
+ * - string：找到可用的 URL
+ * - null：所有其它用户源均失败或不存在可用的源
+ */
+const tryOtherUserApiHandlers = async(musicInfo: LX.Music.MusicInfoOnline): Promise<string | null> => {
+  const activeList = getActiveApiSources()
+  const userApiIds = activeList.filter(id => /^user_api/.test(id))
+  if (userApiIds.length < 1) return null
+
+  for (const apiId of userApiIds) {
+    if (!isUserApiReady(apiId)) continue
+    const handlers = getUserApiHandlers(apiId, musicInfo.source)
+    if (!handlers?.getMusicUrl) continue
+    try {
+      const targetQuality = getPlayQuality(settingState.setting['player.playQuality'], musicInfo)
+      const sourceMusicInfo = toOldMusicInfo(musicInfo) as LX.Music.MusicInfo
+      const result = await handlers.getMusicUrl(sourceMusicInfo, targetQuality).promise
+      if (result.url) {
+        console.log('tryOtherUserApiHandlers: success with', apiId)
+        return result.url
+      }
+    } catch (e) {
+      console.log('tryOtherUserApiHandlers: failed with', apiId, e)
+    }
+  }
+  return null
+}
+
 const getMusicPlayUrl = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListItem, isRefresh = false, isRetryed = false): Promise<string | null> => {
   // this.musicInfo.url = await getMusicPlayUrl(targetSong, type)
   setStatusText(global.i18n.t('player__getting_url'))
@@ -132,6 +167,19 @@ const getMusicPlayUrl = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListIt
       err.message == requestMsg.cancelRequest) return null
 
     if (err.message == requestMsg.tooManyRequests) return delayRetry(musicInfo, isRefresh)
+
+    // 多选源支持：在进入内部重试之前，先尝试其它已成功初始化的用户源。
+    // 仅对普通在线歌曲（非 download item）生效。
+    // LX.Music.MusicInfoOnline 已排除 'local'，无需额外判断。
+    if (!isRetryed && !('progress' in musicInfo)) {
+      const onlineInfo = musicInfo as LX.Music.MusicInfoOnline
+      const otherUrl = await tryOtherUserApiHandlers(onlineInfo)
+      if (otherUrl) {
+        if (global.lx.isPlayedStop || diffCurrentMusicInfo(musicInfo)) return null
+        setStatusText(global.i18n.t('toggle_source_success', { source: onlineInfo.source }))
+        return otherUrl
+      }
+    }
 
     if (!isRetryed) return getMusicPlayUrl(musicInfo, isRefresh, true)
 

@@ -46,8 +46,18 @@ for (const api of apiSourceInfo) {
 
 const getAPI = source => apiList[`${settingState.setting['common.apiSource']}_api_${source}`]
 
+/**
+ * 获取某源（LX.Source）的 handler 集合。
+ *
+ * 多选源支持：合并视图由 handleStateChange / recomputeApiViews 维护，
+ * 即 `global.lx.apis[source]` 来自 `common.apiSourceList` 中所有已成功
+ * 初始化的用户源的合并结果，列表中靠前的 apiId 优先级更高。
+ *
+ * 因此 `apis(source)` 优先读取该合并视图，再回退到内置源。
+ */
 const apis = source => {
-  if (/^user_api/.test(settingState.setting['common.apiSource'])) return global.lx.apis[source]
+  if (global.lx.apis && global.lx.apis[source]) return global.lx.apis[source]
+  if (/^user_api/.test(settingState.setting['common.apiSource'])) return global.lx.apis?.[source]
   const api = getAPI(source)
   if (api) return api
   throw new Error('Api is not found')

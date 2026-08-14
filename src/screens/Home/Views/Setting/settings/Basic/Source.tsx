@@ -5,7 +5,7 @@ import { View } from 'react-native'
 import SubTitle from '../../components/SubTitle'
 import CheckBox from '@/components/common/CheckBox'
 import { createStyle } from '@/utils/tools'
-import { setApiSource } from '@/core/apiSource'
+import { setApiSource, toggleApiSourceEnabled } from '@/core/apiSource'
 import { useI18n } from '@/lang'
 import apiSourceInfo from '@/utils/musicSdk/api-source-info'
 import { useSettingValue } from '@/store/setting/hook'
@@ -22,24 +22,25 @@ const apiSourceList = apiSourceInfo.map(api => ({
   disabled: api.disabled,
 }))
 
-const useActive = (id: string) => {
-  const activeLangId = useSettingValue('common.apiSource')
-  const isActive = useMemo(() => activeLangId == id, [activeLangId, id])
-  return isActive
+const useActive = (id: string, multiple = false) => {
+  const activeId = useSettingValue('common.apiSource')
+  const activeList = useSettingValue('common.apiSourceList')
+  return useMemo(() => multiple ? activeList.includes(id) : activeId == id, [activeId, activeList, id, multiple])
 }
 
-const Item = ({ id, name, desc, statusLabel, change }: {
+const Item = ({ id, name, desc, statusLabel, change, multiple = false }: {
   id: string
   name: string
   desc?: string
   statusLabel?: string
   change: (id: string) => void
+  multiple?: boolean
 }) => {
-  const isActive = useActive(id)
+  const isActive = useActive(id, multiple)
   const theme = useTheme()
   // const [toggleCheckBox, setToggleCheckBox] = useState(false)
   return (
-    <CheckBox marginBottom={5} check={isActive} onChange={() => { change(id) }} need>
+    <CheckBox marginBottom={5} check={isActive} onChange={() => { change(id) }} need={!multiple}>
       <Text style={styles.sourceLabel}>
         {name}
         {
@@ -63,32 +64,30 @@ export default memo(() => {
   const setApiSourceId = useCallback((id: string) => {
     setApiSource(id)
   }, [])
+  const toggleUserApiSource = useCallback((id: string) => {
+    toggleApiSourceEnabled(id)
+  }, [])
   const userApiListRaw = useUserApiList()
-  const apiStatus = useStatus()
-  const apiSourceSetting = useSettingValue('common.apiSource')
+  const getApiStatus = useStatus()
+  const apiSourceListSetting = useSettingValue('common.apiSourceList')
   const userApiList = useMemo(() => {
-    const getApiStatus = () => {
-      let status
-      if (apiStatus.status) status = t('setting_basic_source_status_success')
-      else if (apiStatus.message == 'initing') status = t('setting_basic_source_status_initing')
-      else status = t('setting_basic_source_status_failed')
-
-      return status
-    }
     return userApiListRaw.map(api => {
-      const statusLabel = api.id == apiSourceSetting ? `[${getApiStatus()}]` : ''
+      const apiStatus = getApiStatus(api.id)
+      let statusLabel = ''
+      if (apiSourceListSetting.includes(api.id)) {
+        if (apiStatus.status) statusLabel = `[${t('setting_basic_source_status_success')}]`
+        else if (apiStatus.message == 'initing') statusLabel = `[${t('setting_basic_source_status_initing')}]`
+        else statusLabel = `[${t('setting_basic_source_status_failed')}]`
+      }
       return {
         id: api.id,
         name: api.name,
         label: `${api.name}${statusLabel}`,
         desc: [/^\d/.test(api.version) ? `v${api.version}` : api.version].filter(Boolean).join(', '),
         statusLabel,
-        // status: apiStatus.status,
-        // message: apiStatus.message,
-        // disabled: false,
       }
     })
-  }, [userApiListRaw, apiStatus, apiSourceSetting, t])
+  }, [userApiListRaw, getApiStatus, apiSourceListSetting, t])
 
   const modalRef = useRef<UserApiEditModalType>(null)
   const handleShow = () => {
@@ -102,7 +101,7 @@ export default memo(() => {
           list.map(({ id, name }) => <Item name={name} id={id} key={id} change={setApiSourceId} />)
         }
         {
-          userApiList.map(({ id, name, desc, statusLabel }) => <Item name={name} desc={desc} statusLabel={statusLabel} id={id} key={id} change={setApiSourceId} />)
+          userApiList.map(({ id, name, desc, statusLabel }) => <Item name={name} desc={desc} statusLabel={statusLabel} id={id} key={id} change={toggleUserApiSource} multiple />)
         }
       </View>
       <View style={styles.btn}>

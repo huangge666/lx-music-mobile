@@ -1,18 +1,12 @@
 
 interface InitState {
   list: LX.UserApi.UserApiInfo[]
-  status: {
-    status: boolean
-    message?: string
-  }
+  status: Record<string, LX.UserApi.UserApiStatus>
   apis: Partial<LX.UserApi.UserApiSources>
 }
 const state: InitState = {
   list: [],
-  status: {
-    status: false,
-    message: 'initing',
-  },
+  status: {},
   apis: {},
 }
 

@@ -6,7 +6,7 @@ import { log as writeLog } from '@/utils/log'
 
 export const setUserApi = async(apiId: string) => {
   global.lx.qualityList = {}
-  setUserApiStatus(false, 'initing')
+  setUserApiStatus(apiId, false, 'initing')
 
   const target = state.list.find(api => api.id === apiId)
   if (!target) throw new Error('api not found')
@@ -19,8 +19,8 @@ export const destroyUserApi = () => {
 }
 
 
-export const setUserApiStatus: typeof action['setStatus'] = (status, message) => {
-  action.setStatus(status, message)
+export const setUserApiStatus: typeof action['setStatus'] = (apiId, status, message) => {
+  action.setStatus(apiId, status, message)
 }
 
 export const setUserApiList: typeof action['setUserApiList'] = (list) => {
