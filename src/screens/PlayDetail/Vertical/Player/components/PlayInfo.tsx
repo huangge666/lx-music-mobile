@@ -56,6 +56,7 @@ const styles = createStyle({
   info: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    paddingHorizontal: 8,
     // alignItems: 'center',
     // backgroundColor: '#ccc',
   },

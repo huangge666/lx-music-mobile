@@ -9,13 +9,13 @@ import Image from '@/components/common/Image'
 import { useCallback } from 'react'
 import { setLoadErrorPicUrl, setMusicInfo } from '@/core/player/playInfo'
 
-const PIC_HEIGHT = scaleSizeH(46)
+const PIC_HEIGHT = scaleSizeH(48)
 
 const styles = StyleSheet.create({
   image: {
     width: PIC_HEIGHT,
     height: PIC_HEIGHT,
-    borderRadius: 2,
+    borderRadius: 8, // Apple Music uses rounded square for art
   },
 })
 

@@ -95,6 +95,8 @@ const styles = createStyle({
     // paddingLeft: 10,
     paddingRight: 2,
     alignItems: 'center',
+    marginHorizontal: 8,
+    borderRadius: 8, // Apple Music style rounded items
     // borderBottomWidth: BorderWidths.normal,
   },
   listItemLeft: {

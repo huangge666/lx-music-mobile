@@ -10,17 +10,17 @@ const defaultThemes = [
     name: '绿意盎然',
     isDark: false,
     config: {
-      primary: 'rgb(77, 175, 124)',
+      primary: 'rgb(250, 35, 59)', // Apple Music red
       font: 'rgb(33, 33, 33)',
-      'c-app-background': 'var(c-primary-light-600-alpha-700)',
+      'c-app-background': 'rgba(255, 255, 255, 1)', // Solid background
       'c-main-background': 'rgba(255, 255, 255, 1)',
       'bg-image': '',
       'bg-image-position': 'center',
       'bg-image-size': 'cover',
 
       'c-badge-primary': 'var(c-primary)',
-      'c-badge-secondary': '#4baed5',
-      'c-badge-tertiary': '#e7aa36',
+      'c-badge-secondary': 'rgba(250, 35, 59, 0.8)',
+      'c-badge-tertiary': 'rgba(250, 35, 59, 0.6)',
     },
   },
   {
@@ -208,11 +208,11 @@ const defaultThemes = [
     name: '黑灯瞎火',
     isDark: true,
     config: {
-      primary: 'rgb(190, 190, 190)',
+      primary: 'rgb(250, 35, 59)', // Apple Music red
       font: 'rgb(255, 255, 255)',
-      'c-app-background': 'rgba(0, 0, 0, 0)',
-      'c-main-background': 'rgba(19, 19, 19, 0.95)',
-      'bg-image': 'landingMoon.png',
+      'c-app-background': 'rgba(0, 0, 0, 1)',
+      'c-main-background': 'rgba(0, 0, 0, 1)',
+      'bg-image': '',
       'bg-image-position': 'center',
       'bg-image-size': 'cover',
 

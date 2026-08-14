@@ -48,22 +48,22 @@ export default memo(({ isHome = false }: { isHome?: boolean }) => {
 const styles = createStyle({
   container: {
     width: 'auto',
-    marginHorizontal: 6,
+    marginHorizontal: 16, // Apple Music has more margin
     marginTop: 4,
-    marginBottom: 4,
-    paddingVertical: 6,
+    marginBottom: 16, // Lifted off the bottom
+    paddingVertical: 8,
     paddingLeft: 8,
-    borderRadius: 14,
+    borderRadius: 24, // More rounded like iOS
     borderWidth: 0.5,
     flexDirection: 'row',
     alignItems: 'center',
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 8,
     },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOpacity: 0.2, // Stronger shadow for floating effect
+    shadowRadius: 16,
+    elevation: 8,
   },
   left: {
     // borderRadius: 3,

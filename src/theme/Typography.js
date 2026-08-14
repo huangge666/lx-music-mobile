@@ -47,5 +47,8 @@ export const BorderWidths = {
 }
 
 export const BorderRadius = {
-  normal: 4,
+  normal: 10,
+  large: 16,
+  xlarge: 24,
+  round: 999,
 }
