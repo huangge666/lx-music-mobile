@@ -20,7 +20,7 @@ export default memo(() => {
 
   return (
     <View style={styles.content}>
-      <CheckBoxItem check={isLock} onChange={setLock} label={t('setting_lyric_desktop_lock')} />
+      <CheckBoxItem icon="lyric-off" check={isLock} onChange={setLock} label={t('setting_lyric_desktop_lock')} />
     </View>
   )
 })

@@ -17,7 +17,7 @@ export default memo(() => {
 
   return (
     <View style={styles.content}>
-      <CheckBoxItem check={isShowHotSearch} onChange={handleUpdate} label={t('setting_search_show_hot_search')} />
+      <CheckBoxItem icon="search-2" check={isShowHotSearch} onChange={handleUpdate} label={t('setting_search_show_hot_search')} />
     </View>
   )
 })

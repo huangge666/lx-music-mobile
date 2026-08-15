@@ -19,6 +19,7 @@ export default memo(() => {
     <View style={styles.content}>
       <CheckBoxItem
         check={val}
+        icon="full_stop"
         label={t('setting_basic_always_keep_statusbar_height')}
         helpDesc={t('setting_basic_always_keep_statusbar_height_tip')}
         onChange={update} />

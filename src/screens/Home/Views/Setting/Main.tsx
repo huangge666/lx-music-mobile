@@ -1,6 +1,7 @@
 import { forwardRef, useImperativeHandle, useMemo, useState } from 'react'
 
 import Basic from './settings/Basic'
+import Source from './settings/Source'
 import Player from './settings/Player'
 import LyricDesktop from './settings/LyricDesktop'
 import Search from './settings/Search'
@@ -13,6 +14,7 @@ import About from './settings/About'
 
 export const SETTING_SCREENS = [
   'basic',
+  'source',
   'player',
   'lyric_desktop',
   'search',
@@ -48,6 +50,7 @@ const Main = forwardRef<MainType, {}>((props, ref) => {
 
   const component = useMemo(() => {
     switch (id) {
+      case 'source': return <Source />
       case 'player': return <Player />
       case 'lyric_desktop': return <LyricDesktop />
       case 'search': return <Search />
@@ -67,4 +70,3 @@ const Main = forwardRef<MainType, {}>((props, ref) => {
 
 
 export default Main
-

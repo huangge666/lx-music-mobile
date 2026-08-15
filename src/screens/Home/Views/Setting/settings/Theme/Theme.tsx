@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
-import { View, TouchableOpacity, type ImageSourcePropType } from 'react-native'
+import { View, TouchableOpacity, StyleSheet, type ImageSourcePropType } from 'react-native'
 import { setTheme } from '@/core/theme'
 import { useI18n } from '@/lang'
 import { useSettingValue } from '@/store/setting/hook'
@@ -9,8 +9,6 @@ import SubTitle from '../../components/SubTitle'
 import { BG_IMAGES, getAllThemes, type LocalTheme } from '@/theme/themes'
 import Text from '@/components/common/Text'
 import { createStyle } from '@/utils/tools'
-import { BorderRadius } from '@/theme'
-import { scaleSizeH } from '@/utils/pixelRatio'
 import { Icon } from '@/components/common/Icon'
 import ImageBackground from '@/components/common/ImageBackground'
 
@@ -33,17 +31,21 @@ const ThemeItem = ({ id, name, color, image, setTheme, showAll }: {
 
   return (
     showAll || isActive ? (
-      <TouchableOpacity style={{ ...styles.item, width: scaleSizeH(ITEM_HEIGHT) }} activeOpacity={0.5} onPress={() => { setTheme(id) }}>
-        <View style={{ ...styles.colorContent, width: scaleSizeH(COLOR_ITEM_HEIGHT), borderColor: isActive ? color : 'transparent' }}>
+      <TouchableOpacity style={styles.item} activeOpacity={0.5} onPress={() => { setTheme(id) }}>
+        <View style={{
+          ...styles.colorContent,
+          backgroundColor: color,
+          borderColor: isActive ? theme['c-primary'] : theme['c-border-background'],
+          borderWidth: isActive ? 3 : 1,
+        }}>
           {
             image
-              ? <ImageBackground style={{ ...styles.imageContent, width: scaleSizeH(IMAGE_HEIGHT), backgroundColor: color }}
-                  imageStyle={{ borderRadius: BorderRadius.small }}
-                  source={image} />
-              : <View style={{ ...styles.imageContent, width: scaleSizeH(IMAGE_HEIGHT), backgroundColor: color }}></View>
-            }
+              ? <ImageBackground style={styles.imageContent} imageStyle={styles.imageInner} source={image} />
+              : null
+          }
+          {isActive ? <Icon name="checkbox-marked" size={16} color="#ffffff" /> : null}
         </View>
-        <Text style={styles.name} size={12} color={isActive ? color : theme['c-font']} numberOfLines={1}>{name}</Text>
+        <Text style={styles.name} size={11} color={isActive ? theme['c-primary'] : theme['c-font-label']} numberOfLines={1}>{name}</Text>
       </TouchableOpacity>
     ) : null
   )
@@ -121,43 +123,39 @@ export default memo(() => {
   )
 })
 
-const ITEM_HEIGHT = 62
-const COLOR_ITEM_HEIGHT = 36
-const IMAGE_HEIGHT = 29
 const styles = createStyle({
   list: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
-    marginTop: 5,
+    gap: 12,
+    marginTop: 2,
+    alignItems: 'center',
   },
   item: {
-    // marginRight: 15,
+    width: 52,
     alignItems: 'center',
-    // marginTop: 5,
-    // backgroundColor: 'rgba(0,0,0,0.2)',
   },
   colorContent: {
-    height: COLOR_ITEM_HEIGHT,
-    borderRadius: BorderRadius.small,
-    borderWidth: 1.6,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    // backgroundColor: 'rgba(0,0,0,0.2)',
+    overflow: 'hidden',
   },
   imageContent: {
-    height: IMAGE_HEIGHT,
-    borderRadius: BorderRadius.small,
-    // elevation: 1,
+    ...StyleSheet.absoluteFillObject,
+  },
+  imageInner: {
+    borderRadius: 20,
   },
   name: {
-    marginTop: 2,
+    marginTop: 4,
   },
   moreBtn: {
-    marginLeft: 10,
+    marginLeft: 4,
     flexDirection: 'row',
     alignItems: 'center',
-    // justifyContent: 'center',
-    gap: 8,
+    gap: 6,
   },
 })

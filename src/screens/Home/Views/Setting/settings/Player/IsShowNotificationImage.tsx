@@ -17,7 +17,7 @@ export default memo(() => {
 
   return (
     <View style={styles.content}>
-      <CheckBoxItem check={isShowNotificationImage} onChange={setShowNotificationImage} label={t('setting_play_show_notification_image')} />
+      <CheckBoxItem icon="album" check={isShowNotificationImage} onChange={setShowNotificationImage} label={t('setting_play_show_notification_image')} />
     </View>
   )
 })

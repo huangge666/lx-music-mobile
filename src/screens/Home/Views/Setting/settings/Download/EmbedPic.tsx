@@ -20,7 +20,7 @@ export default memo(() => {
   return (
     <SubTitle title={t('setting_download_album_pic')}>
       <View style={styles.content}>
-        <CheckBoxItem check={isEmbedPic} onChange={handleChange} label={t('setting_download_embed_pic')} />
+        <CheckBoxItem icon="album" check={isEmbedPic} onChange={handleChange} label={t('setting_download_embed_pic')} />
       </View>
     </SubTitle>
   )

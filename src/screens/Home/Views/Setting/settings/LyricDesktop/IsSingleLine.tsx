@@ -20,7 +20,7 @@ export default memo(() => {
 
   return (
     <View style={styles.content}>
-      <CheckBoxItem check={isSingleLine} onChange={update} label={t('setting_lyric_desktop_single_line')} />
+      <CheckBoxItem icon="single" check={isSingleLine} onChange={update} label={t('setting_lyric_desktop_single_line')} />
     </View>
   )
 })

@@ -32,13 +32,13 @@ export default memo(() => {
   return (
     <SubTitle title={t('setting_download_lyric')}>
       <View style={styles.content}>
-        <CheckBoxItem check={isEmbedLyric} onChange={handleChange} label={t('setting_download_embed_lyric')} />
+        <CheckBoxItem icon="lyric-on" check={isEmbedLyric} onChange={handleChange} label={t('setting_download_embed_lyric')} />
         {isEmbedLyric
           ? (
               <View style={styles.children}>
-                <CheckBoxItem check={isEmbedLyricTranslation} onChange={handleChangeTranslation} label={t('setting_download_embed_lyric_translation')} />
-                <CheckBoxItem check={isEmbedLyricRoma} onChange={handleChangeRoma} label={t('setting_download_embed_lyric_roma')} />
-                <CheckBoxItem check={isEmbedLyricAwlrc} onChange={handleChangeAwlrc} label={t('setting_download_embed_lyric_awlrc')} />
+                <CheckBoxItem icon="lyric-on" check={isEmbedLyricTranslation} onChange={handleChangeTranslation} label={t('setting_download_embed_lyric_translation')} />
+                <CheckBoxItem icon="lyric-on" check={isEmbedLyricRoma} onChange={handleChangeRoma} label={t('setting_download_embed_lyric_roma')} />
+                <CheckBoxItem icon="lyric-on" check={isEmbedLyricAwlrc} onChange={handleChangeAwlrc} label={t('setting_download_embed_lyric_awlrc')} />
               </View>
             )
           : null}

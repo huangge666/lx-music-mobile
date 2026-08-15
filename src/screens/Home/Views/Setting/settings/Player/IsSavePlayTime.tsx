@@ -17,7 +17,7 @@ export default memo(() => {
 
   return (
     <View style={styles.content}>
-      <CheckBoxItem check={isSavePlayTime} label={t('setting_player_save_play_time')} onChange={setSavePlayTime} />
+      <CheckBoxItem icon="music_time" check={isSavePlayTime} label={t('setting_player_save_play_time')} onChange={setSavePlayTime} />
     </View>
   )
 })

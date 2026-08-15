@@ -17,7 +17,7 @@ export default memo(() => {
 
   return (
     <View style={styles.content}>
-      <CheckBoxItem check={isS2t} onChange={setS2T} label={t('setting_play_s2t')} />
+      <CheckBoxItem icon="comment" check={isS2t} onChange={setS2T} label={t('setting_play_s2t')} />
     </View>
   )
 })

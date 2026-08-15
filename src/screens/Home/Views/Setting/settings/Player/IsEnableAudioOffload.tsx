@@ -21,6 +21,7 @@ export default memo(() => {
       <CheckBoxItem
         check={isEnableAudioOffload}
         onChange={setHandleAudioFocus}
+        icon="volume-low"
         helpDesc={t('setting_play_audio_offload_tip')}
         label={t('setting_play_audio_offload')}
       />

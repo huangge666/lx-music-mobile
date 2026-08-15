@@ -17,7 +17,7 @@ export default memo(() => {
 
   return (
     <View style={styles.content}>
-      <CheckBoxItem check={isDynamicBg} label={t('setting_basic_theme_dynamic_bg')} onChange={setIsDynamicBg} />
+      <CheckBoxItem icon="album" check={isDynamicBg} label={t('setting_basic_theme_dynamic_bg')} onChange={setIsDynamicBg} />
     </View>
   )
 })

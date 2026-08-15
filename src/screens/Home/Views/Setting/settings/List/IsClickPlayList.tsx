@@ -17,7 +17,7 @@ export default memo(() => {
 
   return (
     <View style={styles.content}>
-      <CheckBoxItem check={isClickPlayList} onChange={setClickPlayList} label={t('setting_list_click_action')} />
+      <CheckBoxItem icon="play" check={isClickPlayList} onChange={setClickPlayList} label={t('setting_list_click_action')} />
     </View>
   )
 })

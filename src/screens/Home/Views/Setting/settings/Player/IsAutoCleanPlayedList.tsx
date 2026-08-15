@@ -20,6 +20,7 @@ export default memo(() => {
       <CheckBoxItem
         check={isAutoCleanPlayedList}
         onChange={setAutoCleanPlayedList}
+        icon="eraser"
         helpDesc={t('setting_play_auto_clean_played_list_tip')}
         label={t('setting_play_auto_clean_played_list')}
       />

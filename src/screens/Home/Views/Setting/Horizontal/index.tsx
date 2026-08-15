@@ -10,18 +10,17 @@ const styles = createStyle({
   container: {
     flex: 1,
     flexDirection: 'row',
-    borderTopWidth: BorderWidths.normal,
   },
   nav: {
     height: '100%',
     width: '22%',
-    borderRightWidth: BorderWidths.normal,
+    borderRightWidth: BorderWidths.hairline,
   },
   main: {
-    paddingLeft: 15,
-    paddingRight: 15,
-    paddingTop: 15,
-    paddingBottom: 15,
+    paddingLeft: 24,
+    paddingRight: 24,
+    paddingTop: 16,
+    paddingBottom: 48,
     flex: 0,
   },
 })
@@ -31,11 +30,11 @@ export default () => {
   const mainRef = useRef<MainType>(null)
 
   return (
-    <View style={{ ...styles.container, borderTopColor: theme['c-border-background'] }}>
-      <View style={{ ...styles.nav, borderRightColor: theme['c-border-background'] }}>
+    <View style={{ ...styles.container, backgroundColor: theme['c-card-background'] }}>
+      <View style={{ ...styles.nav, borderRightColor: theme['c-border-background'], backgroundColor: theme['c-content-background'] }}>
         <NavList onChangeId={(id) => mainRef.current?.setActiveId(id)} />
       </View>
-      <ScrollView keyboardShouldPersistTaps={'always'}>
+      <ScrollView keyboardShouldPersistTaps={'always'} style={{ backgroundColor: theme['c-card-background'] }}>
         <View style={styles.main}>
           <Main ref={mainRef} />
         </View>

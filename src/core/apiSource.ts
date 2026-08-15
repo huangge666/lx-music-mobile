@@ -6,7 +6,7 @@ import settingState from '@/store/setting/state'
 import { destroyUserApi, setUserApi } from './userApi'
 import { state as userApiState } from '@/store/userApi'
 
-const USER_API_SOURCE_LIMIT = 5
+export const USER_API_SOURCE_LIMIT = 5
 const isUserApi = (apiId: string) => /^user_api/.test(apiId)
 const getConfiguredUserApiSources = () => {
   // 清理旧逻辑可能写入的内置源和重复项，避免界面只显示 4 项时

@@ -3,15 +3,13 @@ import { View } from 'react-native'
 import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import Text from '@/components/common/Text'
-import { BorderRadius } from '@/theme'
+import { settingLayout, useSettingCardStyle } from './style'
 
 /**
- * Apple Music / iOS Settings 风格 Section 分组
- *
- * 视觉特征：
- * — 区段标题：全大写次要色小号文字（Apple 设置页风格）
- * — 无左边框竖线（旧 Material 风格已移除）
- * — 内容区正常排列，由子组件自行处理圆角卡片
+ * CyShineMusic 风格设置分组卡
+ * — 标题在卡片内，小号字距拉开
+ * — 大圆角 + 轻阴影
+ * — 子项作为卡片内的行，不再各自套一层底板
  */
 interface Props {
   title: string
@@ -20,11 +18,11 @@ interface Props {
 
 export default ({ title, children }: Props) => {
   const theme = useTheme()
+  const cardStyle = useSettingCardStyle()
 
   return (
-    <View style={styles.container}>
-      {/* Apple 风格区段标题 — 次要色、小号、左缩进 */}
-      <Text style={styles.title} size={13} color={theme['c-font-label']}>{title}</Text>
+    <View style={[styles.container, settingLayout.card, cardStyle]}>
+      <Text style={settingLayout.cardTitle} size={12} color={theme['c-font-label']}>{title}</Text>
       <View style={styles.content}>
         {children}
       </View>
@@ -34,15 +32,8 @@ export default ({ title, children }: Props) => {
 
 
 const styles = createStyle({
-  container: {
-    marginBottom: 24,
+  container: {},
+  content: {
+    gap: 0,
   },
-  title: {
-    paddingLeft: 16,
-    paddingBottom: 8,
-    paddingTop: 8,
-    fontWeight: '500',
-    letterSpacing: 0.5,
-  },
-  content: {},
 })

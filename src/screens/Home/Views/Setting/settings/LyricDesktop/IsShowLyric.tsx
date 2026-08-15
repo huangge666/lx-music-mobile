@@ -21,7 +21,7 @@ export default memo(() => {
 
   return (
     <View style={styles.content}>
-      <CheckBoxItem check={isEnable} onChange={(enable) => { void handleChangeEnableDesktopLyric(enable) }} label={t('setting_lyric_desktop_enable')} />
+      <CheckBoxItem icon="lyric-on" check={isEnable} onChange={(enable) => { void handleChangeEnableDesktopLyric(enable) }} label={t('setting_lyric_desktop_enable')} />
       <DesktopLyricEnable ref={desktopLyricEnableRef} />
     </View>
   )

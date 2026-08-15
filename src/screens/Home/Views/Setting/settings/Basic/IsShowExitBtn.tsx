@@ -17,7 +17,7 @@ export default memo(() => {
 
   return (
     <View style={styles.content}>
-      <CheckBoxItem check={showExitBtn} label={t('setting_basic_show_exit_btn')} onChange={setShowExitBtn} />
+      <CheckBoxItem icon="exit2" check={showExitBtn} label={t('setting_basic_show_exit_btn')} onChange={setShowExitBtn} />
     </View>
   )
 })

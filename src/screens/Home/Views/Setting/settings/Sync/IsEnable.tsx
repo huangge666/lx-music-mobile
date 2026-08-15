@@ -156,9 +156,14 @@ export default memo(({ host, setHost }: {
   return (
     <>
       <View style={styles.infoContent}>
-        <CheckBoxItem disabled={!host} check={isEnableSync} label={t('setting_sync_enable')} onChange={handleSetEnableSync} />
-        <Text style={styles.textAddr} size={13}>{t('setting_sync_address', { address })}</Text>
-        <Text style={styles.text} size={13}>{t('setting_sync_status', { status })}</Text>
+        <CheckBoxItem
+          icon="share"
+          disabled={!host}
+          check={isEnableSync}
+          label={t('setting_sync_enable')}
+          subtitle={`${t('setting_sync_address', { address })}  ${t('setting_sync_status', { status })}`}
+          onChange={handleSetEnableSync}
+        />
       </View>
       <View style={styles.inputContent} >
         <HostInput setHost={handleUpdateHost} host={host} disabled={isEnableSync} />
@@ -186,13 +191,6 @@ export default memo(({ host, setHost }: {
 const styles = createStyle({
   infoContent: {
     marginTop: 5,
-  },
-  textAddr: {
-    marginLeft: 25,
-    marginTop: 5,
-  },
-  text: {
-    marginLeft: 25,
   },
   inputContent: {
     marginTop: 8,

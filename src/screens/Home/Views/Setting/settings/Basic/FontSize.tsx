@@ -3,7 +3,7 @@ import { memo, useMemo } from 'react'
 import { StyleSheet, View } from 'react-native'
 
 import SubTitle from '../../components/SubTitle'
-import CheckBox from '@/components/common/CheckBox'
+import ChoicePills from '../../components/ChoicePills'
 import { useI18n } from '@/lang'
 import { setFontSize } from '@/core/common'
 import { useFontSize } from '@/store/common/hook'
@@ -40,12 +40,6 @@ const LIST = [
 
 type SIZE_TYPE = typeof LIST[number]['size']
 
-const useActive = (size: SIZE_TYPE) => {
-  const _size = useFontSize()
-  const isActive = useMemo(() => _size == size, [_size, size])
-  return isActive
-}
-
 const SizeText = () => {
   const size = getTextSize(14) * useFontSize()
   const t = useI18n()
@@ -54,20 +48,12 @@ const SizeText = () => {
   return <Text style={{ fontSize: size }} color={theme['c-primary']}>{t('setting_basic_font_size_preview')}</Text>
 }
 
-const Item = ({ size, label }: {
-  size: SIZE_TYPE
-  label: string
-}) => {
-  const isActive = useActive(size)
-  // const [toggleCheckBox, setToggleCheckBox] = useState(false)
-  return <CheckBox marginRight={8} check={isActive} label={label} onChange={() => { setFontSize(size) }} need />
-}
-
 export default memo(() => {
   const t = useI18n()
+  const fontSize = useFontSize()
 
-  const list = useMemo(() => {
-    return LIST.map((item) => ({ size: item.size, name: t(item.name) }))
+  const options = useMemo(() => {
+    return LIST.map((item) => ({ id: String(item.size), label: t(item.name) }))
   }, [t])
 
   return (
@@ -75,11 +61,11 @@ export default memo(() => {
       <View style={styles.preview}>
         <SizeText />
       </View>
-      <View style={styles.list}>
-        {
-          list.map(({ size, name }) => <Item key={size} size={size} label={name} />)
-        }
-      </View>
+      <ChoicePills
+        value={String(fontSize)}
+        options={options}
+        onChange={(id) => { setFontSize(Number(id) as SIZE_TYPE) }}
+      />
     </SubTitle>
   )
 })
@@ -87,12 +73,7 @@ export default memo(() => {
 const styles = StyleSheet.create({
   preview: {
     justifyContent: 'center',
-    // paddingTop: 3,
     paddingBottom: 10,
     height: 45,
-  },
-  list: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
   },
 })

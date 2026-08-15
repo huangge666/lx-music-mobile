@@ -1,7 +1,5 @@
 import { memo, useRef, useState } from 'react'
-import { View, TouchableOpacity, FlatList, type FlatListProps } from 'react-native'
-
-import { Icon } from '@/components/common/Icon'
+import { TouchableOpacity, FlatList, type FlatListProps } from 'react-native'
 
 import { useTheme } from '@/store/theme/hook'
 import { createStyle } from '@/utils/tools'
@@ -29,16 +27,24 @@ const ListItem = memo(({ id, activeId, onPress }: {
   }
 
   return (
-    <View style={{ ...styles.listItem, height: ITEM_HEIGHT }}>
-      {
-        active
-          ? <Icon style={styles.listActiveIcon} name="chevron-right" size={12} color={theme['c-primary-font']} />
-          : null
-      }
-      <TouchableOpacity style={styles.listName} onPress={handlePress}>
-        <Text numberOfLines={1} size={16} color={active ? theme['c-primary-font'] : theme['c-font']}>{t(`setting_${id}`)}</Text>
-      </TouchableOpacity>
-    </View>
+    <TouchableOpacity
+      style={{
+        ...styles.listItem,
+        height: ITEM_HEIGHT,
+        backgroundColor: active ? theme['c-primary-background'] : 'transparent',
+      }}
+      onPress={handlePress}
+      activeOpacity={0.7}
+    >
+      <Text
+        numberOfLines={1}
+        size={14}
+        color={active ? theme['c-primary'] : theme['c-font-label']}
+        style={active ? styles.textActive : styles.text}
+      >
+        {t(`setting_${id}`)}
+      </Text>
+    </TouchableOpacity>
   )
 }, (prevProps, nextProps) => {
   return !!(prevProps.id === nextProps.id &&
@@ -105,26 +111,16 @@ const styles = createStyle({
     height: 'auto',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingRight: 10,
-    paddingLeft: 10,
-    // borderBottomWidth: BorderWidths.normal,
+    marginHorizontal: 10,
+    paddingRight: 12,
+    paddingLeft: 14,
+    borderRadius: 14,
   },
-  listActiveIcon: {
-    // width: 18,
-    marginLeft: 3,
-    // paddingRight: 5,
-    textAlign: 'center',
+  text: {
+    fontWeight: '500',
   },
-  listName: {
-    height: '100%',
-    // height: 46,
-    // paddingTop: 12,
-    // paddingBottom: 12,
-    justifyContent: 'center',
-    flexGrow: 1,
-    flexShrink: 1,
-    paddingLeft: 5,
-    // backgroundColor: 'rgba(0,0,0,0.1)',
+  textActive: {
+    fontWeight: '600',
   },
 })
 

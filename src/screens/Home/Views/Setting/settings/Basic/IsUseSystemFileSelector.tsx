@@ -19,6 +19,7 @@ export default memo(() => {
     <View style={styles.content}>
       <CheckBoxItem
       check={val}
+      icon="sd-card"
       label={t('setting_basic_use_system_file_selector')}
       helpDesc={t('setting_basic_use_system_file_selector_tip')}
       onChange={update} />

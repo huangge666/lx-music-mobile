@@ -117,8 +117,6 @@ export default memo(() => {
 
 const styles = createStyle({
   part: {
-    marginLeft: 15,
-    marginRight: 15,
     marginBottom: 10,
     flexDirection: 'row',
     flexWrap: 'wrap',

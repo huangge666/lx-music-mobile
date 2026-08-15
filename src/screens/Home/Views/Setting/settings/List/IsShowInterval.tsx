@@ -19,7 +19,7 @@ export default memo(() => {
 
   return (
     <View style={styles.content}>
-      <CheckBoxItem check={isShowInterval} onChange={setShowInterval} label={t('setting_list_show interval')} />
+      <CheckBoxItem icon="music_time" check={isShowInterval} onChange={setShowInterval} label={t('setting_list_show interval')} />
     </View>
   )
 })

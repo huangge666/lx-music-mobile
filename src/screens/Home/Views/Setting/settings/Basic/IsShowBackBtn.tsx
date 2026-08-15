@@ -17,7 +17,7 @@ export default memo(() => {
 
   return (
     <View style={styles.content}>
-      <CheckBoxItem check={showBackBtn} label={t('setting_basic_show_back_btn')} onChange={setShowBackBtn} />
+      <CheckBoxItem icon="home" check={showBackBtn} label={t('setting_basic_show_back_btn')} onChange={setShowBackBtn} />
     </View>
   )
 })

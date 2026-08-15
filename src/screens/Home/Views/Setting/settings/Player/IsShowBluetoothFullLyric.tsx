@@ -25,7 +25,7 @@ export default memo(() => {
 
   return (
     <View style={styles.content}>
-      <CheckBoxItem check={isShowBluetoothFullLyric} onChange={setShowBluetoothFullLyric} label={t('setting_play_show_bluetooth_full_lyric')} />
+      <CheckBoxItem icon="lyric-on" check={isShowBluetoothFullLyric} onChange={setShowBluetoothFullLyric} label={t('setting_play_show_bluetooth_full_lyric')} />
     </View>
   )
 })

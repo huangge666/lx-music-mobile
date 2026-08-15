@@ -28,7 +28,7 @@ export default memo(() => {
     isSupportedAutoTheme
       ? (
           <View style={styles.content}>
-            <CheckBoxItem check={isAutoTheme} label={t('setting_basic_theme_auto_theme')} onChange={setIsAutoTheme} />
+            <CheckBoxItem icon="available_updates" check={isAutoTheme} label={t('setting_basic_theme_auto_theme')} onChange={setIsAutoTheme} />
           </View>
         )
       : null

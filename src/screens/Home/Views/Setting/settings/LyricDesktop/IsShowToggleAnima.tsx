@@ -20,7 +20,7 @@ export default memo(() => {
 
   return (
     <View style={styles.content}>
-      <CheckBoxItem check={showToggleAnima} onChange={update} label={t('setting_lyric_desktop_toggle_anima')} />
+      <CheckBoxItem icon="play-outline" check={showToggleAnima} onChange={update} label={t('setting_lyric_desktop_toggle_anima')} />
     </View>
   )
 })

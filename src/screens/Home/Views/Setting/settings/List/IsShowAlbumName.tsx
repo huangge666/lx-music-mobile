@@ -19,7 +19,7 @@ export default memo(() => {
 
   return (
     <View style={styles.content}>
-      <CheckBoxItem check={isShowAlbumName} onChange={setShowAlbumName} label={t('setting_list_show_album_name')} />
+      <CheckBoxItem icon="album" check={isShowAlbumName} onChange={setShowAlbumName} label={t('setting_list_show_album_name')} />
     </View>
   )
 })

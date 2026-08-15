@@ -5,7 +5,6 @@ import { memo } from 'react'
 import { StyleSheet, View, TouchableOpacity } from 'react-native'
 
 import SubTitle from '../../components/SubTitle'
-import { BorderRadius } from '@/theme'
 
 const themes = [
   ['#08e664', 'rgba(0,0,0,0.6)'],
@@ -60,24 +59,21 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   item: {
-    marginRight: 15,
-    marginTop: 5,
+    marginRight: 10,
+    marginTop: 4,
     alignItems: 'center',
-    width: 26,
-    // backgroundColor: 'rgba(0,0,0,0.2)',
+    width: 36,
   },
   colorContent: {
-    width: 26,
-    height: 26,
-    borderRadius: BorderRadius.small,
-    // borderWidth: 1.6,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
   image: {
-    width: 20,
-    height: 20,
-    borderRadius: BorderRadius.small,
-    elevation: 1,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
   },
 })

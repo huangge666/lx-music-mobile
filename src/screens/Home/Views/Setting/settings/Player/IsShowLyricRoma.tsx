@@ -19,7 +19,7 @@ export default memo(() => {
 
   return (
     <View style={styles.content}>
-      <CheckBoxItem check={isShowLyricRoma} onChange={setShowLyricRoma} label={t('setting_play_show_roma')} />
+      <CheckBoxItem icon="lyric-on" check={isShowLyricRoma} onChange={setShowLyricRoma} label={t('setting_play_show_roma')} />
     </View>
   )
 })

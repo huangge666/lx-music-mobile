@@ -24,7 +24,7 @@ export default memo(() => {
 
   return (
     <View style={styles.content}>
-      <CheckBoxItem check={isHideBgDark} label={t('setting_basic_theme_hide_bg_dark')} onChange={setIsAutoTheme} />
+      <CheckBoxItem icon="lyric-off" check={isHideBgDark} label={t('setting_basic_theme_hide_bg_dark')} onChange={setIsAutoTheme} />
     </View>
   )
 })
