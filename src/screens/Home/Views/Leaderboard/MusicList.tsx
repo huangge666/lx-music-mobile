@@ -4,19 +4,17 @@ import { clearListDetail, getListDetail, setListDetail, setListDetailInfo } from
 import boardState from '@/store/leaderboard/state'
 import { handlePlay } from './listAction'
 
-// export type MusicListProps = Pick<OnlineListProps,
-// 'onLoadMore'
-// | 'onPlayList'
-// | 'onRefresh'
-// >
-
 export interface MusicListType {
   loadList: (source: LX.OnlineSource, listId: string) => void
 }
 
+/**
+ * 排行榜歌曲列表
+ */
 export default forwardRef<MusicListType, {}>((props, ref) => {
   const listRef = useRef<OnlineListType>(null)
   const isUnmountedRef = useRef(false)
+
   useImperativeHandle(ref, () => ({
     async loadList(source, id) {
       const listDetailInfo = boardState.listDetailInfo
@@ -54,7 +52,6 @@ export default forwardRef<MusicListType, {}>((props, ref) => {
 
   const handlePlayList: OnlineListProps['onPlayList'] = (index) => {
     const listDetailInfo = boardState.listDetailInfo
-    // console.log(boardState.listDetailInfo)
     void handlePlay(listDetailInfo.id, listDetailInfo.list, index)
   }
   const handleRefresh: OnlineListProps['onRefresh'] = () => {
@@ -93,4 +90,3 @@ export default forwardRef<MusicListType, {}>((props, ref) => {
     rowType='medium'
    />
 })
-

@@ -8,8 +8,6 @@ import DrawerLayoutFixed, { type DrawerLayoutFixedType } from '@/components/comm
 import HeaderBar, { type HeaderBarType, type HeaderBarProps } from './HeaderBar'
 import { scaleSizeW } from '@/utils/pixelRatio'
 import { useTheme } from '@/store/theme/hook'
-// import { BorderWidths } from '@/theme'
-// import { useTheme } from '@/store/theme/hook'
 import BoardsList, { type BoardsListType, type BoardsListProps } from '../BoardsList'
 import type { InitState as CommonState } from '@/store/common/state'
 import settingState from '@/store/setting/state'
@@ -29,7 +27,6 @@ export default () => {
   const boardsListRef = useRef<BoardsListType>(null)
   const headerBarRef = useRef<HeaderBarType>(null)
   const boundInfo = useRef<{ source: LX.OnlineSource, id: string | null }>({ source: 'kw', id: null })
-  // const [width, setWidth] = useState(0)
 
   const handleBoundChange = (source: LX.OnlineSource, id: string) => {
     musicListRef.current?.loadList(source, id)
@@ -90,9 +87,6 @@ export default () => {
     )
   }
 
-  // const theme = useTheme()
-
-
   useEffect(() => {
     const handleFixDrawer = (id: CommonState['navActiveId']) => {
       if (id == 'nav_top') drawer.current?.fixWidth()
@@ -123,7 +117,6 @@ export default () => {
     <DrawerLayoutFixed
       ref={drawer}
       visibleNavNames={[COMPONENT_IDS.home]}
-      // drawerWidth={width}
       widthPercentage={0.82}
       widthPercentageMax={MAX_WIDTH}
       drawerPosition={settingState.setting['common.drawerLayoutPosition']}
@@ -136,15 +129,6 @@ export default () => {
         <MusicList ref={musicListRef} />
       </View>
     </DrawerLayoutFixed>
-    // <View style={styles.container}>
-    //   <LeftBar
-    //     ref={leftBarRef}
-    //     onChangeList={handleChangeBound}
-    //   />
-    //   <MusicList
-    //     ref={musicListRef}
-    //   />
-    // </View>
   )
 }
 
@@ -153,9 +137,5 @@ const styles = createStyle({
     width: '100%',
     flex: 1,
     flexDirection: 'column',
-    // borderTopWidth: BorderWidths.normal,
   },
-  // content: {
-  //   flex: 1,
-  // },
 })
