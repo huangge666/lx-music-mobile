@@ -38,8 +38,8 @@ export default memo(() => {
         activeOpacity={0.78}
         style={{ ...styles.primaryBtn, backgroundColor: theme['c-primary'] }}
       >
-        <Icon name="play" color={theme['c-button-font']} size={15} />
-        <Text style={styles.primaryBtnText} color={theme['c-button-font']}>{t('play_all')}</Text>
+        <Icon name="play" color="#fff" size={15} />
+        <Text style={styles.primaryBtnText} color="#fff">{t('play_all')}</Text>
       </TouchableOpacity>
       <TouchableOpacity
         onPress={handleCollection}
