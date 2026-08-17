@@ -6,6 +6,24 @@ Project versioning adheres to [Semantic Versioning](http://semver.org/).
 Commit convention is based on [Conventional Commits](http://conventionalcommits.org).
 Change log format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [20260817](https://github.com/lyswhut/lx-music-mobile/compare/v1.8.4...v20260817) - 2026-08-17
+
+### 新增
+
+- 重构界面为 Apple Music 沉浸风格，全新视觉体验
+- 重做竖屏播放详情页
+
+### 优化
+
+- 重构设置页为 CyShine 风格，重做音源管理界面
+- 优化设置页入口与动态壁纸显示
+- 重构歌单页面布局：平台入口置顶 Tab，分类入口改为右下角悬浮按钮
+- 重构排行榜页面UI：平台Tab置顶并移除播放全部功能
+
+### 修复
+
+- 修复歌单详情页播放按钮文字看不清的问题
+
 ## [1.8.4](https://github.com/lyswhut/lx-music-mobile/compare/v1.8.3...v1.8.4) - 2026-05-01
 
 我们很高兴地宣布新项目 Any Listen 的桌面版已发布，目前已支持列表跟随本地文件自动更新、加载并播放WebDAV上的歌曲等功能，更多功能仍在积极开发中，桌面版与Web版将同步更新。
