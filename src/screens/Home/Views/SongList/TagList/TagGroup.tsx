@@ -4,7 +4,6 @@ import Button from '@/components/common/Button'
 import { type TagInfoItem } from '@/store/songlist/state'
 import { useTheme } from '@/store/theme/hook'
 import { createStyle } from '@/utils/tools'
-import { BorderRadius } from '@/theme'
 import Text from '@/components/common/Text'
 
 export interface TagGroupProps {
@@ -27,17 +26,17 @@ export default ({ name, list, onTagChange, activeId }: TagGroupProps) => {
         {list.map(item => (
           activeId == item.id
             ? (
-                <View style={{ ...styles.tagButton, backgroundColor: theme['c-button-background'] }} key={item.id}>
-                  <Text style={styles.tagButtonText} color={theme['c-primary-font-active']}>{item.name}</Text>
+                <View style={{ ...styles.tagButton, backgroundColor: theme['c-primary-background'], borderColor: theme['c-primary-alpha-700'] }} key={item.id}>
+                  <Text style={styles.tagButtonText} color={theme['c-primary-font']}>{item.name}</Text>
                 </View>
               )
             : (
                 <Button
-                  style={{ ...styles.tagButton, backgroundColor: theme['c-button-background'] }}
+                  style={{ ...styles.tagButton, backgroundColor: theme['c-card-background'], borderColor: theme['c-border-background'] }}
                   key={item.id}
                   onPress={() => { onTagChange(item.name, item.id) }}
                 >
-                  <Text style={styles.tagButtonText} color={theme['c-font']} >{item.name}</Text>
+                  <Text style={styles.tagButtonText} color={theme['c-font']}>{item.name}</Text>
                 </Button>
               )
 
@@ -57,8 +56,8 @@ const styles = createStyle({
     flexWrap: 'wrap',
   },
   tagButton: {
-    // marginRight: 10,
-    borderRadius: BorderRadius.medium,
+    borderRadius: 4,
+    borderWidth: 0.5,
     marginRight: 10,
     marginBottom: 10,
   },

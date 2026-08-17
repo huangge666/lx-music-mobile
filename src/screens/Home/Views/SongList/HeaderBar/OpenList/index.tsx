@@ -4,6 +4,7 @@ import Button from '@/components/common/Button'
 // import { navigations } from '@/navigation'
 import Modal, { type ModalType } from './Modal'
 import { type Source } from '@/store/songlist/state'
+import { useTheme } from '@/store/theme/hook'
 import { createStyle } from '@/utils/tools'
 import Text from '@/components/common/Text'
 import { useI18n } from '@/lang'
@@ -20,6 +21,7 @@ export interface OpenListType {
 
 export default forwardRef<OpenListType, {}>((props, ref) => {
   const t = useI18n()
+  const theme = useTheme()
   const modalRef = useRef<ModalType>(null)
   const songlistInfoRef = useRef<{ source: Source }>({ source: 'kw' })
 
@@ -49,8 +51,8 @@ export default forwardRef<OpenListType, {}>((props, ref) => {
 
   return (
     <>
-      <Button style={styles.button} onPress={() => modalRef.current?.show(songlistInfoRef.current.source)}>
-        <Text>{t('songlist_open')}</Text>
+      <Button style={{ ...styles.button, backgroundColor: theme['c-card-background'], borderColor: theme['c-border-background'] }} onPress={() => modalRef.current?.show(songlistInfoRef.current.source)}>
+        <Text color={theme['c-font']}>{t('songlist_open')}</Text>
       </Button>
       <Modal ref={modalRef} onOpenId={handleOpenSonglist} />
     </>
@@ -59,10 +61,11 @@ export default forwardRef<OpenListType, {}>((props, ref) => {
 
 const styles = createStyle({
   button: {
-    // backgroundColor: '#ccc',
+    minHeight: 32,
+    paddingHorizontal: 13,
+    borderRadius: 4,
+    borderWidth: 0.5,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingLeft: 12,
-    paddingRight: 12,
   },
 })

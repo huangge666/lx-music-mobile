@@ -1,17 +1,16 @@
 import { memo } from 'react'
-import { View } from 'react-native'
-import Button from '@/components/common/Button'
+import { View, TouchableOpacity } from 'react-native'
+import Text from '@/components/common/Text'
+import { Icon } from '@/components/common/Icon'
 
 import { createStyle } from '@/utils/tools'
 import { pop } from '@/navigation'
 import { useTheme } from '@/store/theme/hook'
 import commonState from '@/store/common/state'
-import Text from '@/components/common/Text'
 import { handleCollect, handlePlay } from './listAction'
 import songlistState from '@/store/songlist/state'
 import { useI18n } from '@/lang'
 import { useListInfo } from './state'
-// import { NAV_SHEAR_NATIVE_IDS } from '@/config/constant'
 
 export default memo(() => {
   const theme = useTheme()
@@ -34,15 +33,30 @@ export default memo(() => {
 
   return (
     <View style={styles.container}>
-      <Button onPress={handleCollection} style={styles.controlBtn}>
-        <Text style={{ ...styles.controlBtnText, color: theme['c-button-font'] }}>{t('collect_songlist')}</Text>
-      </Button>
-      <Button onPress={handlePlayAll} style={styles.controlBtn}>
-        <Text style={{ ...styles.controlBtnText, color: theme['c-button-font'] }}>{t('play_all')}</Text>
-      </Button>
-      <Button onPress={back} style={styles.controlBtn}>
-        <Text style={{ ...styles.controlBtnText, color: theme['c-button-font'] }}>{t('back')}</Text>
-      </Button>
+      <TouchableOpacity
+        onPress={handlePlayAll}
+        activeOpacity={0.78}
+        style={{ ...styles.primaryBtn, backgroundColor: theme['c-primary'] }}
+      >
+        <Icon name="play" color={theme['c-button-font']} size={15} />
+        <Text style={styles.primaryBtnText} color={theme['c-button-font']}>{t('play_all')}</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        onPress={handleCollection}
+        activeOpacity={0.72}
+        style={{ ...styles.secondaryBtn, backgroundColor: theme['c-card-background'], borderColor: theme['c-border-background'] }}
+      >
+        <Icon name="love" color={theme['c-primary']} size={15} />
+        <Text style={styles.secondaryBtnText} color={theme['c-font']}>{t('collect_songlist')}</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        accessibilityLabel={t('back')}
+        onPress={back}
+        activeOpacity={0.72}
+        style={{ ...styles.backBtn, backgroundColor: theme['c-card-background'], borderColor: theme['c-border-background'] }}
+      >
+        <Icon name="chevron-left" color={theme['c-font']} size={17} />
+      </TouchableOpacity>
     </View>
   )
 })
@@ -51,21 +65,45 @@ const styles = createStyle({
   container: {
     flexDirection: 'row',
     width: '100%',
-    flexGrow: 0,
-    flexShrink: 0,
+    alignItems: 'center',
+    paddingTop: 16,
+    gap: 10,
   },
-  controlBtn: {
+  primaryBtn: {
+    minHeight: 46,
+    paddingHorizontal: 18,
+    borderRadius: 23,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     flexGrow: 1,
-    flexShrink: 1,
-    width: '33%',
-    paddingTop: 12,
-    paddingBottom: 12,
-    paddingLeft: 10,
-    paddingRight: 10,
+    gap: 8,
   },
-  controlBtnText: {
+  primaryBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  secondaryBtn: {
+    minHeight: 46,
+    paddingHorizontal: 16,
+    borderRadius: 23,
+    borderWidth: 0.5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+  },
+  secondaryBtnText: {
     fontSize: 13,
-    textAlign: 'center',
+    fontWeight: '600',
+  },
+  backBtn: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    borderWidth: 0.5,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 })
 

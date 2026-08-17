@@ -1,11 +1,10 @@
 import { forwardRef, useImperativeHandle, useMemo, useRef, useState } from 'react'
-import { ScrollView, TouchableOpacity } from 'react-native'
+import { ScrollView, TouchableOpacity, View } from 'react-native'
 import songlistState, { type SortInfo, type Source } from '@/store/songlist/state'
 import { useI18n } from '@/lang'
 import { useTheme } from '@/store/theme/hook'
 import Text from '@/components/common/Text'
 import { createStyle } from '@/utils/tools'
-import { BorderWidths } from '@/theme'
 
 export interface SortTabProps {
   onSortChange: (id: string) => void
@@ -41,13 +40,29 @@ export default forwardRef<SortTabType, SortTabProps>(({ onSortChange }, ref) => 
   }
 
   return (
-    <ScrollView ref={scrollViewRef} style={styles.container} keyboardShouldPersistTaps={'always'} horizontal>
+    <ScrollView
+      ref={scrollViewRef}
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      showsHorizontalScrollIndicator={false}
+      keyboardShouldPersistTaps={'always'}
+      horizontal
+    >
       {
-        sorts.map(s => (
-          <TouchableOpacity style={styles.button} onPress={() => { handleSortChange(s.id) }} key={s.id}>
-            <Text style={{ ...styles.buttonText, borderBottomColor: activeId == s.id ? theme['c-primary-background-active'] : 'transparent' }} color={activeId == s.id ? theme['c-primary-font-active'] : theme['c-font']}>{s.label}</Text>
-          </TouchableOpacity>
-        ))
+        sorts.map(s => {
+          const active = activeId == s.id
+          return (
+            <TouchableOpacity
+              style={{ ...styles.button, backgroundColor: active ? theme['c-primary-background'] : theme['c-card-background'], borderColor: active ? theme['c-primary-alpha-700'] : theme['c-border-background'] }}
+              activeOpacity={0.72}
+              onPress={() => { handleSortChange(s.id) }}
+              key={s.id}
+            >
+              <View style={{ ...styles.dot, backgroundColor: active ? theme['c-primary'] : theme['c-font-label'] }} />
+              <Text style={styles.buttonText} size={13} color={active ? theme['c-primary-font'] : theme['c-font']}>{s.label}</Text>
+            </TouchableOpacity>
+          )
+        })
       }
     </ScrollView>
   )
@@ -58,24 +73,28 @@ const styles = createStyle({
   container: {
     flexGrow: 1,
     flexShrink: 1,
-    // paddingLeft: 5,
-    // paddingRight: 5,
+  },
+  content: {
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    gap: 8,
   },
   button: {
-    // height: 38,
-    // lineHeight: 38,
-    justifyContent: 'center',
-    paddingLeft: 14,
-    paddingRight: 14,
-    // width: 80,
-    // backgroundColor: 'rgba(0,0,0,0.1)',
+    height: 32,
+    borderRadius: 4,
+    borderWidth: 0.5,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  dot: {
+    width: 5,
+    height: 5,
+    borderRadius: 1,
+    marginRight: 7,
+    opacity: 0.9,
   },
   buttonText: {
-    // height: 38,
-    // lineHeight: 38,
-    textAlign: 'center',
-    paddingHorizontal: 2,
-    paddingVertical: 3,
-    borderBottomWidth: BorderWidths.normal,
+    fontWeight: '600',
   },
 })
