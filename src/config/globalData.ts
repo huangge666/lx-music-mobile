@@ -62,7 +62,7 @@ global.lx = {
 
   jumpMyListPosition: false,
 
-  settingActiveId: 'basic',
+  settingActiveId: 'source',
 
   homePagerIdle: true,
 

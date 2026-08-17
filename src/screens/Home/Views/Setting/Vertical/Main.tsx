@@ -15,6 +15,7 @@ import About from '../settings/About'
 import { createStyle } from '@/utils/tools'
 import { SETTING_SCREENS, type SettingScreenIds } from '../Main'
 import { useTheme } from '@/store/theme/hook'
+import { useBgPic } from '@/store/common/hook'
 
 type FlatListType = FlatListProps<SettingScreenIds>
 
@@ -50,6 +51,7 @@ const ListItem = memo(({
 
 export default () => {
   const theme = useTheme()
+  const hasDynamicBg = useBgPic() != null
   const renderItem: FlatListType['renderItem'] = ({ item }) => <ListItem id={item} />
   const getkey: FlatListType['keyExtractor'] = item => item
 
@@ -59,7 +61,7 @@ export default () => {
       keyboardShouldPersistTaps={'always'}
       renderItem={renderItem}
       keyExtractor={getkey}
-      style={{ backgroundColor: theme['c-card-background'] }}
+      style={{ backgroundColor: hasDynamicBg ? 'transparent' : theme['c-card-background'] }}
       contentContainerStyle={styles.content}
       maxToRenderPerBatch={2}
       // updateCellsBatchingPeriod={80}

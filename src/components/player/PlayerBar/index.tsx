@@ -9,6 +9,7 @@ import ControlBtn from './components/ControlBtn'
 import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import { useSettingValue } from '@/store/setting/hook'
+import { useNavActiveId } from '@/store/common/hook'
 
 
 /**
@@ -23,6 +24,7 @@ export default memo(({ isHome = false }: { isHome?: boolean }) => {
   const { keyboardShown } = useKeyboard()
   const theme = useTheme()
   const autoHidePlayBar = useSettingValue('common.autoHidePlayBar')
+  const navActiveId = useNavActiveId()
 
   const playerComponent = useMemo(() => (
     <View style={{
@@ -43,6 +45,7 @@ export default memo(({ isHome = false }: { isHome?: boolean }) => {
     </View>
   ), [theme, isHome])
 
+  if (isHome && navActiveId == 'nav_setting') return null
   return autoHidePlayBar && keyboardShown ? null : playerComponent
 })
 

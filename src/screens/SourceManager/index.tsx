@@ -8,7 +8,7 @@ import { Icon } from '@/components/common/Icon'
 import SourceManager from '@/screens/Home/Views/Setting/settings/Source/Manager'
 import { useI18n } from '@/lang'
 import { useTheme } from '@/store/theme/hook'
-import { useStatusbarHeight } from '@/store/common/hook'
+import { useBgPic, useStatusbarHeight } from '@/store/common/hook'
 import { setComponentId } from '@/core/common'
 import { COMPONENT_IDS } from '@/config/constant'
 import { pop } from '@/navigation'
@@ -18,7 +18,7 @@ import { createStyle } from '@/utils/tools'
 
 const HEADER_HEIGHT = scaleSizeH(56)
 
-const Header = memo(({ componentId }: { componentId: string }) => {
+const Header = memo(({ componentId, transparent }: { componentId: string, transparent: boolean }) => {
   const t = useI18n()
   const theme = useTheme()
   const statusBarHeight = useStatusbarHeight()
@@ -34,7 +34,7 @@ const Header = memo(({ componentId }: { componentId: string }) => {
         {
           height: HEADER_HEIGHT + statusBarHeight,
           paddingTop: statusBarHeight,
-          backgroundColor: theme['c-content-background'],
+          backgroundColor: transparent ? theme['c-glass-background'] : theme['c-content-background'],
           borderBottomColor: theme['c-border-background'],
         },
       ]}
@@ -62,6 +62,7 @@ const Header = memo(({ componentId }: { componentId: string }) => {
  */
 export default ({ componentId }: { componentId: string }) => {
   const theme = useTheme()
+  const hasDynamicBg = useBgPic() != null
 
   useEffect(() => {
     setComponentId(COMPONENT_IDS.sourceManager, componentId)
@@ -69,11 +70,11 @@ export default ({ componentId }: { componentId: string }) => {
 
   return (
     <PageContent>
-      <Header componentId={componentId} />
+      <Header componentId={componentId} transparent={hasDynamicBg} />
       <ScrollView
         keyboardShouldPersistTaps="always"
         showsVerticalScrollIndicator={false}
-        style={[styles.scroll, { backgroundColor: theme['c-card-background'] }]}
+        style={[styles.scroll, { backgroundColor: hasDynamicBg ? 'transparent' : theme['c-card-background'] }]}
         contentContainerStyle={styles.content}
       >
         <View style={styles.contentInner}>

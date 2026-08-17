@@ -13,8 +13,8 @@ import Version from './settings/Version'
 import About from './settings/About'
 
 export const SETTING_SCREENS = [
-  'basic',
   'source',
+  'basic',
   'player',
   'lyric_desktop',
   'search',
