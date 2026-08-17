@@ -34,7 +34,12 @@ jobs:
         shell: bash
         run: |
           cd android
-          echo "$KEYSTORE_STORE_FILE_BASE64" | base64 --decode > "app/$KEYSTORE_STORE_FILE"
+          # 去除 Secret 值中可能存在的多余空白字符，避免粘贴时引入换行/空格导致签名失败
+          KEYSTORE_STORE_FILE=$(echo "$KEYSTORE_STORE_FILE" | tr -d '[:space:]')
+          KEYSTORE_KEY_ALIAS=$(echo "$KEYSTORE_KEY_ALIAS" | tr -d '[:space:]')
+          KEYSTORE_PASSWORD=$(echo "$KEYSTORE_PASSWORD" | tr -d '[:space:]')
+          KEYSTORE_KEY_PASSWORD=$(echo "$KEYSTORE_KEY_PASSWORD" | tr -d '[:space:]')
+          echo "$KEYSTORE_STORE_FILE_BASE64" | tr -d '[:space:]' | base64 --decode > "app/$KEYSTORE_STORE_FILE"
           ./gradlew assembleRelease -PMYAPP_UPLOAD_STORE_FILE="$KEYSTORE_STORE_FILE" -PMYAPP_UPLOAD_KEY_ALIAS="$KEYSTORE_KEY_ALIAS" -PMYAPP_UPLOAD_STORE_PASSWORD="$KEYSTORE_PASSWORD" -PMYAPP_UPLOAD_KEY_PASSWORD="$KEYSTORE_KEY_PASSWORD"
           rm -f "app/$KEYSTORE_STORE_FILE"
 
