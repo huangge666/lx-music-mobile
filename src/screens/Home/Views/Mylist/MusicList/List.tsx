@@ -49,6 +49,8 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
   const flatListRef = useRef<FlatList>(null)
   const [currentList, setList] = useState<LX.List.ListMusics>([])
   const listFirstScrollRef = useRef(false)
+  // 记录当前滚动偏移，用于 scrollToTop 时判断距离：距离过远时带动画滚动会非常慢，改为直接跳转
+  const scrollOffsetRef = useRef(0)
   const isMultiSelectModeRef = useRef(false)
   const selectModeRef = useRef<SelectMode>('single')
   const prevSelectIndexRef = useRef(-1)
@@ -93,9 +95,12 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
       })
     },
     scrollToTop() {
+      // 距离较远（约超过 2 屏）时跳过动画直接回到顶部，避免长列表带动画滚动耗时过长
+      // 每屏约 10 行，2 屏 ≈ 20 行 * ITEM_HEIGHT
+      const animated = scrollOffsetRef.current < ITEM_HEIGHT * 20
       flatListRef.current?.scrollToOffset({
         offset: 0,
-        animated: true,
+        animated,
       })
     },
   }))
@@ -241,6 +246,8 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
   }
 
   const handleScroll = ({ nativeEvent }: NativeSyntheticEvent<NativeScrollEvent>) => {
+    // 实时记录滚动位置，供 scrollToTop 判断是否需要跳过动画
+    scrollOffsetRef.current = nativeEvent.contentOffset.y
     if (listFirstScrollRef.current) {
       listFirstScrollRef.current = false
       return
