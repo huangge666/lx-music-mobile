@@ -11,6 +11,7 @@ import settingState from '@/store/setting/state'
 import { requestMsg } from '@/utils/message'
 import BackgroundTimer from 'react-native-background-timer'
 import { apis } from '@/utils/musicSdk/api-source'
+import { getActiveApiSources, isUserApiReady, getUserApiHandlers } from '@/core/apiSource'
 
 
 const getOtherSourcePromises = new Map()
@@ -297,6 +298,42 @@ const withTimeout = <T>(promise: Promise<T>, ms: number, label: string): Promise
   })
 }
 
+/**
+ * 多选源回退：当主源的 handler 不支持某平台或请求失败时，
+ * 遍历其他已初始化的用户 API 源，尝试用它们的 handler 获取 URL。
+ * 这解决了多源模式下主源不支持原始平台导致搜索结果被跳过的问题。
+ * @returns URL 和实际音质，或 null 表示所有备用用户源均失败
+ */
+const tryOtherUserApiForMusicUrl = async(musicInfo: LX.Music.MusicInfoOnline, targetQuality: LX.Quality): Promise<{ url: string, type: LX.Quality } | null> => {
+  const activeList = getActiveApiSources()
+  const primaryApiId = settingState.setting['common.apiSource']
+  const userApiIds = activeList.filter(id => /^user_api/.test(id) && id != primaryApiId)
+  if (userApiIds.length < 1) return null
+
+  const oldMusicInfo = toOldMusicInfo(musicInfo) as LX.Music.MusicInfo
+
+  for (const apiId of userApiIds) {
+    if (!isUserApiReady(apiId)) continue
+    const handlers = getUserApiHandlers(apiId, musicInfo.source)
+    if (!handlers?.getMusicUrl) continue
+    const getMusicUrlHandler = handlers.getMusicUrl
+    try {
+      const result = await withTimeout<{ url: string, type: LX.Quality }>(
+        getMusicUrlHandler(oldMusicInfo, targetQuality).promise,
+        SOURCE_REQUEST_TIMEOUT,
+        `user api ${apiId} for ${musicInfo.source}`,
+      )
+      if (result.url) {
+        console.log('tryOtherUserApiForMusicUrl: success with', apiId, 'for source', musicInfo.source)
+        return result
+      }
+    } catch (e) {
+      console.log('tryOtherUserApiForMusicUrl: failed with', apiId, e)
+    }
+  }
+  return null
+}
+
 export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggleSource, isRefresh, retryedSource = [], currentMusicInfo, qualityFallbacks, attemptCount = 0, isAborted, excludeMusicIds = [] }: {
   musicInfos: LX.Music.MusicInfoOnline[]
   quality?: LX.Quality
@@ -373,9 +410,17 @@ export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggl
   return withTimeout<{ url: string, type: LX.Quality }>(reqPromise, SOURCE_REQUEST_TIMEOUT, `source ${musicInfo.source}`).then(({ url, type }) => {
     return { musicInfo, url, quality: type, isFromCache: false }
     // eslint-disable-next-line @typescript-eslint/promise-function-async
-  }).catch((err: any) => {
+  }).catch(async(err: any) => {
     if (err.message == requestMsg.tooManyRequests) throw err
     console.log(err)
+
+    // 多源模式下主源可能不支持当前平台，先尝试其他已初始化用户源的同平台 handler。
+    // 备用源返回成功后直接结束当前条目，避免误跳到其他平台。
+    const otherApiResult = await tryOtherUserApiForMusicUrl(musicInfo, itemQuality)
+    if (otherApiResult) {
+      return { musicInfo, url: otherApiResult.url, quality: otherApiResult.type, isFromCache: false }
+    }
+
     // 如果当前源还有剩余音质可尝试，先降级音质再试
     if (remainingFallbacks.length) {
       console.log('quality fallback, trying next quality:', remainingFallbacks[0], 'for source:', musicInfo.source)

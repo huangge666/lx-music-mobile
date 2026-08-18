@@ -143,7 +143,17 @@ export const toast = (message: string, duration: 'long' | 'short' = 'short', pos
 export const openUrl = async(url: string): Promise<void> => Linking.canOpenURL(url).then(async() => Linking.openURL(url))
 
 export const assertApiSupport = (source: LX.Source): boolean => {
-  return source == 'local' || global.lx.qualityList[source] != null
+  if (source == 'local') return true
+  // 检查主源的音质列表
+  if (global.lx.qualityList[source] != null) return true
+  // 多选源模式：检查所有已初始化的用户 API 的音质列表
+  // 确保备用源支持的平台不会被跳过
+  if (global.lx.userApiQualityList) {
+    for (const apiId of Object.keys(global.lx.userApiQualityList)) {
+      if (global.lx.userApiApis[apiId] != null && global.lx.userApiQualityList[apiId]?.[source] != null) return true
+    }
+  }
+  return false
 }
 
 // const handleRemoveDataMultiple = async keys => {
