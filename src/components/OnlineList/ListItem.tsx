@@ -70,7 +70,7 @@ export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu
     <View style={{ ...styles.listItem, width: rowInfo.rowWidth, height: ITEM_HEIGHT, backgroundColor: isSelected ? theme['c-primary-background-hover'] : 'rgba(0,0,0,0)' }}>
       <TouchableOpacity style={styles.listItemLeft} onPress={() => { onPress(item, index) }} onLongPress={() => { onLongPress(item, index) }} activeOpacity={0.6}>
         {/* Apple Music 风格序号 — 居中、次要色 */}
-        <Text style={styles.sn} size={15} color={theme['c-font-label']}>{index + 1}</Text>
+        <Text style={styles.sn} size={15} color={theme['c-font-label']} numberOfLines={1}>{index + 1}</Text>
         <View style={styles.itemInfo}>
           {/* 歌名 — 主文字色 */}
           <Text numberOfLines={1} color={theme['c-font']}>{item.name}</Text>
@@ -115,9 +115,9 @@ const styles = createStyle({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  // Apple Music 风格序号 — 固定宽度、居中对齐
+  // Apple Music 风格序号 — 固定宽度、居中对齐，宽度足够容纳4位数序号
   sn: {
-    width: 36,
+    width: 44,
     textAlign: 'center',
     paddingLeft: 4,
     paddingRight: 4,
