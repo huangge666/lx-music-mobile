@@ -249,8 +249,8 @@ export const onStateChange = async(listener: (state: PlayStatus) => void) => {
 // export const playState = callback => TrackPlayer.addEventListener('playback-state', callback)
 
 export const updateOptions = async(options = {
-  // Whether the player should stop running when the app is closed on Android
-  // stopWithApp: true,
+  // Android 从最近任务移除应用时，同时停止播放器服务，避免应用界面关闭后继续播放
+  stopWithApp: true,
 
   // An array of media controls capabilities
   // Can contain CAPABILITY_PLAY, CAPABILITY_PAUSE, CAPABILITY_STOP, CAPABILITY_SEEK_TO,
