@@ -58,13 +58,20 @@ export const init = () => {
 }
 
 
+/**
+ * 跨源搜索歌曲
+ * 注意：不再排除原始源平台（source: s），允许在原始平台上搜索同一首歌的其他条目。
+ * 这样当歌曲在原始平台存在但 URL 获取失败时（如某音质不可用），
+ * 换源搜索仍能在原始平台上找到该歌曲的其他可用条目。
+ * 调用方通过 excludeMusicIds 排除已失败的同一首歌条目，避免重复请求。
+ */
 export const searchMusic = async({ name, singer, source: s, limit = 25 }) => {
   const trimStr = str => typeof str == 'string' ? str.trim() : str
   const musicName = trimStr(name)
   const tasks = []
   const excludeSource = ['xm']
   for (const source of sources.sources) {
-    if (!sources[source.id].musicSearch || source.id == s || excludeSource.includes(source.id)) continue
+    if (!sources[source.id].musicSearch || excludeSource.includes(source.id)) continue
     tasks.push(sources[source.id].musicSearch.search(`${musicName} ${singer || ''}`.trim(), 1, limit).catch(_ => null))
   }
   return (await Promise.all(tasks)).filter(s => s)

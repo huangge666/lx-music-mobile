@@ -297,7 +297,7 @@ const withTimeout = <T>(promise: Promise<T>, ms: number, label: string): Promise
   })
 }
 
-export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggleSource, isRefresh, retryedSource = [], currentMusicInfo, qualityFallbacks, attemptCount = 0, isAborted }: {
+export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggleSource, isRefresh, retryedSource = [], currentMusicInfo, qualityFallbacks, attemptCount = 0, isAborted, excludeMusicIds = [] }: {
   musicInfos: LX.Music.MusicInfoOnline[]
   quality?: LX.Quality
   onToggleSource: (musicInfo?: LX.Music.MusicInfoOnline) => void
@@ -311,6 +311,8 @@ export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggl
   attemptCount?: number
   /** 中止检查回调：返回 true 时停止换源（如用户已切歌） */
   isAborted?: () => boolean
+  /** 需要排除的歌曲 ID 列表（如原始源上已失败的同一首歌） */
+  excludeMusicIds?: string[]
 }): Promise<{
   url: string
   musicInfo: LX.Music.MusicInfoOnline
@@ -337,6 +339,8 @@ export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggl
     // 选取下一个可用源
     // eslint-disable-next-line no-cond-assign
     while (musicInfo = (musicInfos.shift()!)) {
+      // 跳过已排除的歌曲条目（如原始源上已失败的同一首歌）
+      if (excludeMusicIds.includes(musicInfo.id)) continue
       if (retryedSource.includes(musicInfo.source)) continue
       retryedSource.push(musicInfo.source)
       if (!assertApiSupport(musicInfo.source)) continue
@@ -375,10 +379,10 @@ export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggl
     // 如果当前源还有剩余音质可尝试，先降级音质再试
     if (remainingFallbacks.length) {
       console.log('quality fallback, trying next quality:', remainingFallbacks[0], 'for source:', musicInfo.source)
-      return getOnlineOtherSourceMusicUrl({ musicInfos, quality, onToggleSource, isRefresh, retryedSource, currentMusicInfo: musicInfo, qualityFallbacks: remainingFallbacks, attemptCount: attemptCount + 1, isAborted })
+      return getOnlineOtherSourceMusicUrl({ musicInfos, quality, onToggleSource, isRefresh, retryedSource, currentMusicInfo: musicInfo, qualityFallbacks: remainingFallbacks, attemptCount: attemptCount + 1, isAborted, excludeMusicIds })
     }
     // 当前源所有音质都失败了，切换到下一个源
-    return getOnlineOtherSourceMusicUrl({ musicInfos, quality, onToggleSource, isRefresh, retryedSource, attemptCount: attemptCount + 1, isAborted })
+    return getOnlineOtherSourceMusicUrl({ musicInfos, quality, onToggleSource, isRefresh, retryedSource, attemptCount: attemptCount + 1, isAborted, excludeMusicIds })
   })
 }
 
@@ -414,6 +418,33 @@ export const handleGetOnlineMusicUrl = async({ musicInfo, quality, onToggleSourc
   }).catch(async(err: any) => {
     console.log(err)
     if (!allowToggleSource || err.message == requestMsg.tooManyRequests) throw err
+
+    // 第一步：在原始源上尝试音质降级
+    // 歌曲在原始平台存在但当前音质不可用时，先尝试降低音质获取
+    const fallbacks = getQualityFallbacks(targetQuality, musicInfo)
+    if (fallbacks.length > 1) {
+      // fallbacks[0] 是当前已失败的音质，从第二个开始尝试
+      const remainingFallbacks = fallbacks.slice(1)
+      console.log('original source quality fallback, trying:', remainingFallbacks[0], 'for source:', musicInfo.source)
+      try {
+        const result = await getOnlineOtherSourceMusicUrl({
+          musicInfos: [],
+          quality,
+          onToggleSource,
+          isRefresh,
+          retryedSource: [],
+          currentMusicInfo: musicInfo,
+          qualityFallbacks: remainingFallbacks,
+          isAborted,
+        })
+        return result
+      } catch (fallbackErr: any) {
+        // 音质降级也失败了，继续进入换源搜索
+        console.log('original source quality fallback failed:', fallbackErr.message)
+      }
+    }
+
+    // 第二步：搜索其他源（包括原始平台的其他条目）
     onToggleSource()
     // eslint-disable-next-line @typescript-eslint/promise-function-async
     return getOtherSource(musicInfo).then(otherSource => {
@@ -424,7 +455,10 @@ export const handleGetOnlineMusicUrl = async({ musicInfo, quality, onToggleSourc
           onToggleSource,
           quality,
           isRefresh,
-          retryedSource: [musicInfo.source],
+          // 不再预先排除原始源，允许搜索到原始平台的其他条目
+          retryedSource: [],
+          // 排除已失败的同一首歌条目，避免重复请求
+          excludeMusicIds: [musicInfo.id],
           isAborted,
         })
       }
@@ -434,11 +468,13 @@ export const handleGetOnlineMusicUrl = async({ musicInfo, quality, onToggleSourc
 }
 
 
-export const getOnlineOtherSourcePicUrl = async({ musicInfos, onToggleSource, isRefresh, retryedSource = [] }: {
+export const getOnlineOtherSourcePicUrl = async({ musicInfos, onToggleSource, isRefresh, retryedSource = [], excludeMusicIds = [] }: {
   musicInfos: LX.Music.MusicInfoOnline[]
   onToggleSource: (musicInfo?: LX.Music.MusicInfoOnline) => void
   isRefresh: boolean
   retryedSource?: LX.OnlineSource[]
+  /** 需要排除的歌曲 ID 列表（如原始源上已失败的同一首歌） */
+  excludeMusicIds?: string[]
 }): Promise<{
   url: string
   musicInfo: LX.Music.MusicInfoOnline
@@ -447,6 +483,8 @@ export const getOnlineOtherSourcePicUrl = async({ musicInfos, onToggleSource, is
   let musicInfo: LX.Music.MusicInfoOnline | null = null
   // eslint-disable-next-line no-cond-assign
   while (musicInfo = (musicInfos.shift()!)) {
+    // 跳过已排除的歌曲条目
+    if (excludeMusicIds.includes(musicInfo.id)) continue
     if (retryedSource.includes(musicInfo.source)) continue
     retryedSource.push(musicInfo.source)
     // if (!assertApiSupport(musicInfo.source)) continue
@@ -471,7 +509,7 @@ export const getOnlineOtherSourcePicUrl = async({ musicInfos, onToggleSource, is
     // eslint-disable-next-line @typescript-eslint/promise-function-async
   }).catch((err: any) => {
     console.log(err)
-    return getOnlineOtherSourcePicUrl({ musicInfos, onToggleSource, isRefresh, retryedSource })
+    return getOnlineOtherSourcePicUrl({ musicInfos, onToggleSource, isRefresh, retryedSource, excludeMusicIds })
   })
 }
 
@@ -509,7 +547,10 @@ export const handleGetOnlinePicUrl = async({ musicInfo, isRefresh, onToggleSourc
           musicInfos: [...otherSource],
           onToggleSource,
           isRefresh,
-          retryedSource: [musicInfo.source],
+          // 不再预先排除原始源，允许搜索到原始平台的其他条目
+          retryedSource: [],
+          // 排除已失败的同一首歌条目，避免重复请求
+          excludeMusicIds: [musicInfo.id],
         })
       }
       throw err
@@ -518,11 +559,13 @@ export const handleGetOnlinePicUrl = async({ musicInfo, isRefresh, onToggleSourc
 }
 
 
-export const getOnlineOtherSourceLyricInfo = async({ musicInfos, onToggleSource, isRefresh, retryedSource = [] }: {
+export const getOnlineOtherSourceLyricInfo = async({ musicInfos, onToggleSource, isRefresh, retryedSource = [], excludeMusicIds = [] }: {
   musicInfos: LX.Music.MusicInfoOnline[]
   onToggleSource: (musicInfo?: LX.Music.MusicInfoOnline) => void
   isRefresh: boolean
   retryedSource?: LX.OnlineSource[]
+  /** 需要排除的歌曲 ID 列表（如原始源上已失败的同一首歌） */
+  excludeMusicIds?: string[]
 }): Promise<{
   lyricInfo: LX.Music.LyricInfo | LX.Player.LyricInfo
   musicInfo: LX.Music.MusicInfoOnline
@@ -531,6 +574,8 @@ export const getOnlineOtherSourceLyricInfo = async({ musicInfos, onToggleSource,
   let musicInfo: LX.Music.MusicInfoOnline | null = null
   // eslint-disable-next-line no-cond-assign
   while (musicInfo = (musicInfos.shift()!)) {
+    // 跳过已排除的歌曲条目
+    if (excludeMusicIds.includes(musicInfo.id)) continue
     if (retryedSource.includes(musicInfo.source)) continue
     retryedSource.push(musicInfo.source)
     // if (!assertApiSupport(musicInfo.source)) continue
@@ -563,7 +608,7 @@ export const getOnlineOtherSourceLyricInfo = async({ musicInfos, onToggleSource,
     // eslint-disable-next-line @typescript-eslint/promise-function-async
   }).catch((err: any) => {
     console.log(err)
-    return getOnlineOtherSourceLyricInfo({ musicInfos, onToggleSource, isRefresh, retryedSource })
+    return getOnlineOtherSourceLyricInfo({ musicInfos, onToggleSource, isRefresh, retryedSource, excludeMusicIds })
   })
 }
 
@@ -607,7 +652,10 @@ export const handleGetOnlineLyricInfo = async({ musicInfo, onToggleSource, isRef
           musicInfos: [...otherSource],
           onToggleSource,
           isRefresh,
-          retryedSource: [musicInfo.source],
+          // 不再预先排除原始源，允许搜索到原始平台的其他条目
+          retryedSource: [],
+          // 排除已失败的同一首歌条目，避免重复请求
+          excludeMusicIds: [musicInfo.id],
         })
       }
       throw err
