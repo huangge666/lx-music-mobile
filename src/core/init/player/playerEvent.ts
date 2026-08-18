@@ -98,8 +98,14 @@ export default () => {
         // console.log(this.retryNum)
         if (playerState.playMusicInfo.musicInfo !== musicInfo) return
         retryNum++
-        setMusicUrl(playerState.playMusicInfo.musicInfo, true)
+        // 添加递增延迟：第1次重试等1秒，第2次等2秒，避免快速连续请求加剧服务端压力
+        const retryDelay = retryNum * 1000
         setStatusText(global.i18n.t('player__refresh_url'))
+        BackgroundTimer.setTimeout(() => {
+          // 延迟期间用户可能已切歌，需再次校验
+          if (playerState.playMusicInfo.musicInfo !== musicInfo || global.lx.isPlayedStop) return
+          setMusicUrl(playerState.playMusicInfo.musicInfo, true)
+        }, retryDelay)
       })
       return
     }

@@ -15,14 +15,33 @@ import { apis } from '@/utils/musicSdk/api-source'
 
 const getOtherSourcePromises = new Map()
 export const existTimeExp = /\[\d{1,2}:.*\d{1,4}\]/
-const otherSourceCache = new Map<LX.Music.MusicInfo | LX.Download.ListItem, LX.Music.MusicInfoOnline[]>()
+/**
+ * 换源搜索结果缓存
+ * 使用字符串键（source_id）而非对象引用，确保同一首歌的不同实例也能命中缓存
+ * 采用 LRU 策略：超过容量时淘汰最早的条目，而非全部清空
+ */
+const OTHER_SOURCE_CACHE_MAX = 30
+const otherSourceCache = new Map<string, LX.Music.MusicInfoOnline[]>()
+
+/** 生成换源缓存键 */
+const getOtherSourceCacheKey = (musicInfo: LX.Music.MusicInfo | LX.Download.ListItem): string => {
+  if ('progress' in musicInfo) return `local_${musicInfo.id}`
+  return `${musicInfo.source}_${musicInfo.id}`
+}
 
 export const getOtherSource = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListItem, isRefresh = false): Promise<LX.Music.MusicInfoOnline[]> => {
   // if (!isRefresh) {
   //   const cachedInfo = await getOtherSourceFromStore(musicInfo.id)
   //   if (cachedInfo.length) return cachedInfo
   // }
-  if (otherSourceCache.has(musicInfo)) return otherSourceCache.get(musicInfo)!
+  const cacheKey = getOtherSourceCacheKey(musicInfo)
+  if (!isRefresh && otherSourceCache.has(cacheKey)) {
+    // LRU: 将命中的条目移到末尾（最近使用）
+    const cached = otherSourceCache.get(cacheKey)!
+    otherSourceCache.delete(cacheKey)
+    otherSourceCache.set(cacheKey, cached)
+    return cached
+  }
   let key: string
   let searchMusicInfo: {
     name: string
@@ -58,9 +77,13 @@ export const getOtherSource = async(musicInfo: LX.Music.MusicInfo | LX.Download.
       reject(new Error('find music timeout'))
     }, 12_000)
     findMusic(searchMusicInfo).then((otherSource) => {
-      if (otherSourceCache.size > 10) otherSourceCache.clear()
+      // LRU 淘汰：超过容量时删除最早的条目（Map 迭代顺序为插入顺序）
+      if (otherSourceCache.size >= OTHER_SOURCE_CACHE_MAX) {
+        const firstKey = otherSourceCache.keys().next().value
+        if (firstKey !== undefined) otherSourceCache.delete(firstKey)
+      }
       const source = otherSource.map(toNewMusicInfo) as LX.Music.MusicInfoOnline[]
-      otherSourceCache.set(musicInfo, source)
+      otherSourceCache.set(cacheKey, source)
       resolve(source)
     }).catch(reject).finally(() => {
       if (timeout) BackgroundTimer.clearTimeout(timeout)
@@ -229,12 +252,65 @@ export const getPlayQuality = (highQuality: LX.Quality, musicInfo: LX.Music.Musi
   return type
 }
 
-export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggleSource, isRefresh, retryedSource = [] }: {
+/**
+ * 逐级降低音质的完整列表（从高到低）
+ * 用于换源时逐级尝试，确保不会因为单一音质不可用就跳过整个源
+ */
+const QUALITY_FALLBACK_LIST: LX.Quality[] = ['flac24bit', 'flac', 'ape', 'wav', '320k', '192k', '128k']
+
+/**
+ * 获取指定音质及其以下的可用降级音质列表
+ * @param startQuality 起始音质
+ * @param musicInfo 歌曲信息
+ * @returns 从起始音质逐级降低的可用音质列表
+ */
+const getQualityFallbacks = (startQuality: LX.Quality, musicInfo: LX.Music.MusicInfoOnline): LX.Quality[] => {
+  const list = global.lx.qualityList[musicInfo.source]
+  const startIdx = QUALITY_FALLBACK_LIST.indexOf(startQuality)
+  // 如果起始音质不在列表中，直接返回 128k
+  if (startIdx < 0) return ['128k']
+  // 从起始音质开始，逐级向下筛选该源支持的音质
+  return QUALITY_FALLBACK_LIST.slice(startIdx).filter(q => musicInfo.meta._qualitys[q] && (!list || list.includes(q)))
+}
+
+/** 单个源请求的超时时间（毫秒），防止某个源挂起阻塞整条换源链 */
+const SOURCE_REQUEST_TIMEOUT = 15_000
+/** 换源递归的最大尝试次数，防止极端情况下无限递归 */
+const MAX_TOGGLE_ATTEMPTS = 10
+
+/**
+ * 为请求 Promise 添加超时保护
+ * 超时后 reject，避免某个无响应的源阻塞后续换源尝试
+ */
+const withTimeout = <T>(promise: Promise<T>, ms: number, label: string): Promise<T> => {
+  return new Promise<T>((resolve, reject) => {
+    const timer = BackgroundTimer.setTimeout(() => {
+      reject(new Error(`${label} timeout (${ms}ms)`))
+    }, ms)
+    promise.then((result) => {
+      BackgroundTimer.clearTimeout(timer)
+      resolve(result)
+    }).catch((err) => {
+      BackgroundTimer.clearTimeout(timer)
+      reject(err)
+    })
+  })
+}
+
+export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggleSource, isRefresh, retryedSource = [], currentMusicInfo, qualityFallbacks, attemptCount = 0, isAborted }: {
   musicInfos: LX.Music.MusicInfoOnline[]
   quality?: LX.Quality
   onToggleSource: (musicInfo?: LX.Music.MusicInfoOnline) => void
   isRefresh: boolean
   retryedSource?: LX.OnlineSource[]
+  /** 当前正在尝试的源（音质降级重试时传入） */
+  currentMusicInfo?: LX.Music.MusicInfoOnline
+  /** 当前源剩余的待尝试音质列表（逐级降级用） */
+  qualityFallbacks?: LX.Quality[]
+  /** 当前递归尝试次数（内部使用，防止无限递归） */
+  attemptCount?: number
+  /** 中止检查回调：返回 true 时停止换源（如用户已切歌） */
+  isAborted?: () => boolean
 }): Promise<{
   url: string
   musicInfo: LX.Music.MusicInfoOnline
@@ -243,21 +319,41 @@ export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggl
 }> => {
   if (!await global.lx.apiInitPromise[0]) throw new Error('source init failed')
 
+  // 检查是否已中止（用户切歌、停止播放等场景）
+  if (isAborted?.()) throw new Error('toggle source aborted')
+  // 防止极端情况下无限递归
+  if (attemptCount >= MAX_TOGGLE_ATTEMPTS) throw new Error('toggle source max attempts reached')
+
   let musicInfo: LX.Music.MusicInfoOnline | null = null
   let itemQuality: LX.Quality | null = null
-  // eslint-disable-next-line no-cond-assign
-  while (musicInfo = (musicInfos.shift()!)) {
-    if (retryedSource.includes(musicInfo.source)) continue
-    retryedSource.push(musicInfo.source)
-    if (!assertApiSupport(musicInfo.source)) continue
-    itemQuality = quality ?? getPlayQuality(settingState.setting['player.playQuality'], musicInfo)
-    if (!musicInfo.meta._qualitys[itemQuality]) continue
+  let remainingFallbacks: LX.Quality[] = []
 
-    console.log('try toggle to: ', musicInfo.source, musicInfo.name, musicInfo.singer, musicInfo.interval)
-    onToggleSource(musicInfo)
-    break
+  if (currentMusicInfo && qualityFallbacks?.length) {
+    // 继续尝试当前源的下一个降级音质
+    musicInfo = currentMusicInfo
+    itemQuality = qualityFallbacks[0]
+    remainingFallbacks = qualityFallbacks.slice(1)
+  } else {
+    // 选取下一个可用源
+    // eslint-disable-next-line no-cond-assign
+    while (musicInfo = (musicInfos.shift()!)) {
+      if (retryedSource.includes(musicInfo.source)) continue
+      retryedSource.push(musicInfo.source)
+      if (!assertApiSupport(musicInfo.source)) continue
+      // 逐级降低音质：不再因为单一音质不可用就跳过整个源，
+      // 而是从目标音质开始逐级向下查找该源支持的可用音质
+      const targetQuality = quality ?? getPlayQuality(settingState.setting['player.playQuality'], musicInfo)
+      const fallbacks = getQualityFallbacks(targetQuality, musicInfo)
+      if (!fallbacks.length) continue
+      itemQuality = fallbacks[0]
+      remainingFallbacks = fallbacks.slice(1)
+
+      console.log('try toggle to: ', musicInfo.source, musicInfo.name, musicInfo.singer, musicInfo.interval, 'quality:', itemQuality)
+      onToggleSource(musicInfo)
+      break
+    }
+    if (!musicInfo || !itemQuality) throw new Error(global.i18n.t('toggle_source_failed'))
   }
-  if (!musicInfo || !itemQuality) throw new Error(global.i18n.t('toggle_source_failed'))
 
   const cachedUrl = await getStoreMusicUrl(musicInfo, itemQuality)
   if (cachedUrl && !isRefresh) return { url: cachedUrl, musicInfo, quality: itemQuality, isFromCache: true }
@@ -268,27 +364,35 @@ export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggl
   } catch (err: any) {
     reqPromise = Promise.reject(err)
   }
-  // retryedSource.includes(musicInfo.source)
+  // 为每个源的请求添加超时保护，防止某个源无响应阻塞整条换源链
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  return reqPromise.then(({ url, type }: { url: string, type: LX.Quality }) => {
+  return withTimeout<{ url: string, type: LX.Quality }>(reqPromise, SOURCE_REQUEST_TIMEOUT, `source ${musicInfo.source}`).then(({ url, type }) => {
     return { musicInfo, url, quality: type, isFromCache: false }
     // eslint-disable-next-line @typescript-eslint/promise-function-async
   }).catch((err: any) => {
     if (err.message == requestMsg.tooManyRequests) throw err
     console.log(err)
-    return getOnlineOtherSourceMusicUrl({ musicInfos, quality, onToggleSource, isRefresh, retryedSource })
+    // 如果当前源还有剩余音质可尝试，先降级音质再试
+    if (remainingFallbacks.length) {
+      console.log('quality fallback, trying next quality:', remainingFallbacks[0], 'for source:', musicInfo.source)
+      return getOnlineOtherSourceMusicUrl({ musicInfos, quality, onToggleSource, isRefresh, retryedSource, currentMusicInfo: musicInfo, qualityFallbacks: remainingFallbacks, attemptCount: attemptCount + 1, isAborted })
+    }
+    // 当前源所有音质都失败了，切换到下一个源
+    return getOnlineOtherSourceMusicUrl({ musicInfos, quality, onToggleSource, isRefresh, retryedSource, attemptCount: attemptCount + 1, isAborted })
   })
 }
 
 /**
  * 获取在线音乐URL
  */
-export const handleGetOnlineMusicUrl = async({ musicInfo, quality, onToggleSource, isRefresh, allowToggleSource }: {
+export const handleGetOnlineMusicUrl = async({ musicInfo, quality, onToggleSource, isRefresh, allowToggleSource, isAborted }: {
   musicInfo: LX.Music.MusicInfoOnline
   quality?: LX.Quality
   isRefresh: boolean
   allowToggleSource: boolean
   onToggleSource: (musicInfo?: LX.Music.MusicInfoOnline) => void
+  /** 中止检查回调：返回 true 时停止换源（如用户已切歌） */
+  isAborted?: () => boolean
 }): Promise<{
   url: string
   musicInfo: LX.Music.MusicInfoOnline
@@ -321,6 +425,7 @@ export const handleGetOnlineMusicUrl = async({ musicInfo, quality, onToggleSourc
           quality,
           isRefresh,
           retryedSource: [musicInfo.source],
+          isAborted,
         })
       }
       throw err
@@ -360,7 +465,8 @@ export const getOnlineOtherSourcePicUrl = async({ musicInfos, onToggleSource, is
     reqPromise = Promise.reject(err)
   }
   // retryedSource.includes(musicInfo.source)
-  return reqPromise.then((url: string) => {
+  // 添加超时保护，防止某个源无响应阻塞封面换源链
+  return withTimeout<string>(reqPromise, SOURCE_REQUEST_TIMEOUT, `pic source ${musicInfo.source}`).then((url) => {
     return { musicInfo, url, isFromCache: false }
     // eslint-disable-next-line @typescript-eslint/promise-function-async
   }).catch((err: any) => {
@@ -447,7 +553,8 @@ export const getOnlineOtherSourceLyricInfo = async({ musicInfos, onToggleSource,
     reqPromise = Promise.reject(err)
   }
   // retryedSource.includes(musicInfo.source)
-  return reqPromise.then(async(lyricInfo: LX.Music.LyricInfo) => {
+  // 添加超时保护，防止某个源无响应阻塞歌词换源链
+  return withTimeout<LX.Music.LyricInfo>(reqPromise, SOURCE_REQUEST_TIMEOUT, `lyric source ${musicInfo.source}`).then(async(lyricInfo) => {
     return existTimeExp.test(lyricInfo.lyric) ? {
       lyricInfo,
       musicInfo,

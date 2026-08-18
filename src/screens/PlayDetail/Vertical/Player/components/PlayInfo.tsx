@@ -2,7 +2,7 @@ import { memo, useMemo } from 'react'
 import { View } from 'react-native'
 
 import Progress from '@/components/player/ProgressBar'
-import { usePlayerMusicInfo, useProgress } from '@/store/player/hook'
+import { usePlayerMusicInfo, useProgress, useStatusText } from '@/store/player/hook'
 import { createStyle } from '@/utils/tools'
 import { formatPlayTime2 } from '@/utils'
 import Text from '@/components/common/Text'
@@ -18,6 +18,9 @@ import {
 /**
  * 进度区 — 无卡片背景
  * 左已播 / 中音质纯文字 / 右剩余 -m:ss
+ *
+ * 加载状态：歌曲未加载成功时（maxPlayTime === 0），
+ * 显示当前加载状态文字（statusText），替代进度条
  */
 const PlayTimeCurrent = ({ timeStr }: { timeStr: string }) => {
   return (
@@ -35,11 +38,34 @@ const PlayTimeRemain = memo(({ remainStr }: { remainStr: string }) => {
   )
 })
 
+/**
+ * 加载状态指示器
+ * 在歌曲未加载成功时显示当前加载进度文字
+ */
+const LoadingStatus = ({ statusText }: { statusText: string }) => {
+  return (
+    <View style={styles.loadingContainer}>
+      <Text
+        color={Immersive.textSecondary}
+        size={MacFontSize.footnote}
+        numberOfLines={1}
+        style={styles.loadingText}
+      >
+        {statusText || '...'}
+      </Text>
+    </View>
+  )
+}
+
 export default () => {
   const { nowPlayTimeStr, progress, maxPlayTime, nowPlayTime } = useProgress()
   const playerMusicInfo = usePlayerMusicInfo()
   const buffered = useBufferProgress()
+  const statusText = useStatusText()
   const t = useI18n()
+
+  // 歌曲是否已加载成功（有总时长说明音频已就绪）
+  const isLoaded = maxPlayTime > 0
 
   const remainStr = useMemo(() => {
     const remain = Math.max(0, maxPlayTime - nowPlayTime)
@@ -65,6 +91,15 @@ export default () => {
         return String(quality)
     }
   }, [playerMusicInfo.quality, t])
+
+  // 未加载成功时显示加载状态
+  if (!isLoaded && playerMusicInfo.id) {
+    return (
+      <View style={styles.container}>
+        <LoadingStatus statusText={statusText} />
+      </View>
+    )
+  }
 
   return (
     <View style={styles.container}>
@@ -132,5 +167,17 @@ const styles = createStyle({
     fontVariant: ['tabular-nums'],
     letterSpacing: 0.2,
     minWidth: 42,
+  },
+  // 加载状态区域 — 与进度条等高，避免布局跳动
+  loadingContainer: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: MacSpacing.sm,
+  },
+  loadingText: {
+    textAlign: 'center',
+    letterSpacing: 0.3,
+    opacity: 0.85,
   },
 })

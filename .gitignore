@@ -69,3 +69,4 @@ buck-out/
 
 # testing
 /coverage
+.reference/
