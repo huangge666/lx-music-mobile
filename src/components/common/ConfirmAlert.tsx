@@ -10,45 +10,39 @@ import { BorderRadius } from '@/theme'
 
 const styles = createStyle({
   main: {
-    // flexGrow: 0,
     flexShrink: 1,
-    marginTop: 15,
-    marginLeft: 5,
-    marginRight: 5,
-    marginBottom: 25,
+    marginTop: 16,
+    marginHorizontal: 6,
+    marginBottom: 18,
   },
   content: {
     flexGrow: 0,
-    paddingLeft: 10,
-    paddingRight: 10,
+    paddingHorizontal: 14,
   },
   btns: {
     flexDirection: 'row',
     justifyContent: 'center',
-    paddingBottom: 15,
-    // paddingRight: 15,
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    gap: 10,
   },
-  btnsDirection: {
-    paddingLeft: 15,
-  },
+  btnsDirection: {},
   btnsReversedDirection: {
-    paddingLeft: 15,
     flexDirection: 'row-reverse',
   },
   btn: {
     flex: 1,
-    paddingTop: 9,
-    paddingBottom: 9,
-    paddingLeft: 10,
-    paddingRight: 10,
+    minHeight: 44,
+    paddingTop: 11,
+    paddingBottom: 11,
+    paddingHorizontal: 12,
     alignItems: 'center',
-    borderRadius: BorderRadius.medium,
+    justifyContent: 'center',
+    borderRadius: BorderRadius.round,
   },
-  btnDirection: {
-    marginRight: 15,
-  },
-  btnReversedDirection: {
-    marginLeft: 15,
+  btnText: {
+    fontWeight: '600',
   },
 })
 
@@ -105,6 +99,8 @@ export default forwardRef<ConfirmAlertType, ConfirmAlertProps>(({
     dialogRef.current?.setVisible(false)
   }
 
+  const cancelBg = theme.isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(118, 118, 128, 0.12)'
+
   return (
     <Dialog onHide={onHide} keyHide={keyHide} bgHide={bgHide} closeBtn={closeBtn} title={title} ref={dialogRef}>
       <View style={styles.main}>
@@ -113,13 +109,19 @@ export default forwardRef<ConfirmAlertType, ConfirmAlertProps>(({
         </ScrollView>
       </View>
       <View style={{ ...styles.btns, ...(reverseBtn ? styles.btnsReversedDirection : styles.btnsDirection) }}>
-        <Button style={{ ...styles.btn, ...(reverseBtn ? styles.btnReversedDirection : styles.btnDirection), backgroundColor: theme['c-button-background'] }} onPress={handleCancel}>
-          <Text color={theme['c-button-font']}>{cancelText || t('cancel')}</Text>
+        <Button style={{ ...styles.btn, backgroundColor: cancelBg }} onPress={handleCancel}>
+          <Text style={styles.btnText} color={theme['c-font']}>{cancelText || t('cancel')}</Text>
         </Button>
         {showConfirm
-          ? <Button style={{ ...styles.btn, ...(reverseBtn ? styles.btnReversedDirection : styles.btnDirection), backgroundColor: theme['c-button-background'] }} onPress={onConfirm} disabled={disabledConfirm}>
-              <Text color={theme['c-button-font']}>{confirmText || t('confirm')}</Text>
-            </Button>
+          ? (
+              <Button
+                style={{ ...styles.btn, backgroundColor: theme['c-primary'] }}
+                onPress={onConfirm}
+                disabled={disabledConfirm}
+              >
+                <Text style={styles.btnText} color="#fff">{confirmText || t('confirm')}</Text>
+              </Button>
+            )
           : null}
       </View>
     </Dialog>

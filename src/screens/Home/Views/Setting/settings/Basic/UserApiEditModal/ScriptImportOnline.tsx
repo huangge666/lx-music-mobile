@@ -3,6 +3,7 @@ import ConfirmAlert, { type ConfirmAlertType } from '@/components/common/Confirm
 import Text from '@/components/common/Text'
 import { View } from 'react-native'
 import Input, { type InputType } from '@/components/common/Input'
+import { Icon } from '@/components/common/Icon'
 import { createStyle, toast } from '@/utils/tools'
 import { BorderRadius } from '@/theme'
 import { useTheme } from '@/store/theme/hook'
@@ -15,10 +16,11 @@ interface UrlInputType {
   getText: () => string
   focus: () => void
 }
-const UrlInput = forwardRef<UrlInputType, {}>((props, ref) => {
+
+const UrlInput = forwardRef<UrlInputType, { onSubmit: () => void }>((props, ref) => {
   const theme = useTheme()
+  const t = useI18n()
   const [text, setText] = useState('')
-  const [placeholder, setPlaceholder] = useState('')
   const inputRef = useRef<InputType>(null)
 
   useImperativeHandle(ref, () => ({
@@ -27,7 +29,6 @@ const UrlInput = forwardRef<UrlInputType, {}>((props, ref) => {
     },
     setText(text) {
       setText(text)
-      setPlaceholder(global.i18n.t('user_api_btn_import_online_input_tip'))
     },
     focus() {
       inputRef.current?.focus()
@@ -35,13 +36,21 @@ const UrlInput = forwardRef<UrlInputType, {}>((props, ref) => {
   }))
 
   return (
-    <Input
-      ref={inputRef}
-      placeholder={placeholder}
-      value={text}
-      onChangeText={setText}
-      style={{ ...styles.input, backgroundColor: theme['c-primary-input-background'] }}
-    />
+    <View style={{ ...styles.inputWrap, backgroundColor: theme['c-primary-input-background'] }}>
+      <Icon name="share" size={16} color={theme['c-font-label']} />
+      <Input
+        ref={inputRef}
+        placeholder={t('user_api_btn_import_online_input_tip')}
+        value={text}
+        onChangeText={setText}
+        onSubmitEditing={props.onSubmit}
+        returnKeyType="go"
+        keyboardType="url"
+        autoCorrect={false}
+        clearBtn
+        style={styles.input}
+      />
+    </View>
   )
 })
 
@@ -53,6 +62,7 @@ export interface ScriptImportOnlineType {
 
 export default forwardRef<ScriptImportOnlineType, {}>((props, ref) => {
   const t = useI18n()
+  const theme = useTheme()
   const alertRef = useRef<ConfirmAlertType>(null)
   const urlInputRef = useRef<UrlInputType>(null)
   const [visible, setVisible] = useState(false)
@@ -80,13 +90,16 @@ export default forwardRef<ScriptImportOnlineType, {}>((props, ref) => {
     },
   }))
 
+  const importingRef = useRef(false)
   const handleImport = async() => {
+    if (importingRef.current) return
     let url = urlInputRef.current?.getText() ?? ''
     if (!/^https?:\/\//.test(url)) {
       url = ''
       urlInputRef.current?.setText('')
     }
     if (!url.length) return
+    importingRef.current = true
     setBtn({ disabled: true, text: t('user_api_btn_import_online_input_loading') })
     let script: string
     try {
@@ -95,6 +108,7 @@ export default forwardRef<ScriptImportOnlineType, {}>((props, ref) => {
       toast(t('user_api_import_failed_tip', { message: err.message }), 'long')
       return
     } finally {
+      importingRef.current = false
       setBtn({ disabled: false, text: t('user_api_btn_import_online_input_confirm') })
     }
     if (script.length > 9_000_000) {
@@ -113,10 +127,21 @@ export default forwardRef<ScriptImportOnlineType, {}>((props, ref) => {
           onConfirm={handleImport}
           disabledConfirm={btn.disabled}
           confirmText={btn.text}
+          closeBtn={false}
         >
-          <View style={styles.reurlContent}>
-            <Text style={{ marginBottom: 5 }}>{ t('user_api_btn_import_online')}</Text>
-            <UrlInput ref={urlInputRef} />
+          <View style={styles.content}>
+            <View style={styles.header}>
+              <View style={{ ...styles.iconBubble, backgroundColor: theme['c-primary-background'] }}>
+                <Icon name="share" size={18} color={theme['c-primary']} />
+              </View>
+              <View style={styles.headerText}>
+                <Text size={17} style={styles.title}>{t('user_api_btn_import_online')}</Text>
+                <Text size={12} color={theme['c-font-label']} style={styles.subtitle}>
+                  {t('user_api_btn_import_online_desc')}
+                </Text>
+              </View>
+            </View>
+            <UrlInput ref={urlInputRef} onSubmit={() => { void handleImport() }} />
           </View>
         </ConfirmAlert>
       : null
@@ -125,19 +150,49 @@ export default forwardRef<ScriptImportOnlineType, {}>((props, ref) => {
 
 
 const styles = createStyle({
-  reurlContent: {
+  content: {
     flexGrow: 1,
     flexShrink: 1,
     flexDirection: 'column',
+    gap: 16,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  iconBubble: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  headerText: {
+    flexGrow: 1,
+    flexShrink: 1,
+    gap: 4,
+  },
+  title: {
+    fontWeight: '700',
+  },
+  subtitle: {
+    lineHeight: 17,
+  },
+  inputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 48,
+    paddingLeft: 14,
+    borderRadius: BorderRadius.large,
   },
   input: {
     flexGrow: 1,
     flexShrink: 1,
-    minWidth: 290,
-    borderRadius: BorderRadius.small,
-    // paddingTop: 2,
-    // paddingBottom: 2,
+    minWidth: 0,
+    height: 48,
+    backgroundColor: 'transparent',
+    paddingLeft: 8,
   },
 })
-
-
