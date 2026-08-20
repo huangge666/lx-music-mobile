@@ -15,6 +15,7 @@ import ListMusicSearch, { type ListMusicSearchType } from './ListMusicSearch'
 import MusicPositionModal, { type MusicPositionModalType } from './MusicPositionModal'
 import MetadataEditModal, { type MetadataEditType, type MetadataEditProps } from '@/components/MetadataEditModal'
 import MusicToggleModal, { type MusicToggleModalType } from './MusicToggleModal'
+import LocatePlayingBtn from './LocatePlayingBtn'
 
 
 export default () => {
@@ -90,6 +91,10 @@ export default () => {
     listRef.current?.scrollToInfo(info)
     handleExitSearch()
   }, [handleExitSearch])
+  const handleLocatePlaying = useCallback(() => {
+    handleExitSearch()
+    global.app_event.jumpListPosition()
+  }, [handleExitSearch])
   const onLayout = useCallback((e: LayoutChangeEvent) => {
     layoutHeightRef.current = e.nativeEvent.layout.height
   }, [])
@@ -135,7 +140,7 @@ export default () => {
           onExitSearch={handleExitSearch}
         />
       </View>
-      <View style={{ flex: 1 }} onLayout={onLayout}>
+      <View style={styles.listArea} onLayout={onLayout}>
         <List
           ref={listRef}
           onShowMenu={showMenu}
@@ -146,6 +151,9 @@ export default () => {
           ref={listMusicSearchRef}
           onScrollToInfo={handleScrollToInfo}
         />
+        <View style={styles.fabWrap} pointerEvents="box-none">
+          <LocatePlayingBtn onPress={handleLocatePlaying} />
+        </View>
       </View>
       <ListMusicAdd ref={listMusicAddRef} onAdded={hancelExitSelect} />
       <ListMusicMultiAdd ref={listMusicMultiAddRef} onAdded={hancelExitSelect} />
@@ -180,5 +188,15 @@ const styles = createStyle({
   container: {
     flex: 1,
     flexDirection: 'column',
+  },
+  listArea: {
+    flex: 1,
+    position: 'relative',
+  },
+  fabWrap: {
+    position: 'absolute',
+    left: 16,
+    bottom: 16,
+    zIndex: 8,
   },
 })

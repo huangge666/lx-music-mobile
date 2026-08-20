@@ -9,6 +9,7 @@ import { getListPosition, getListPrevSelectId, saveListPosition } from '@/utils/
 import { getListMusics, setActiveList } from '@/core/list'
 import ListItem, { ITEM_HEIGHT } from './ListItem'
 import { createStyle, getRowInfo } from '@/utils/tools'
+import { scaleSizeW } from '@/utils/pixelRatio'
 import { usePlayInfo, usePlayMusicInfo } from '@/store/player/hook'
 import type { Position } from './ListMenu'
 import type { SelectMode } from './MultipleModeBar'
@@ -16,6 +17,12 @@ import { useActiveListId } from '@/store/list/hook'
 import { useSettingValue } from '@/store/setting/hook'
 
 type FlatListType = FlatListProps<LX.Music.MusicInfo>
+
+// 按列表最大序号的位数预留列宽：每位约 10，左右各留 8，至少容纳 2 位
+const getSnWidth = (listLength: number) => {
+  const digits = String(Math.max(listLength, 1)).length
+  return scaleSizeW(Math.max(digits, 2) * 10 + 16)
+}
 
 export interface ListProps {
   onShowMenu: (musicInfo: LX.Music.MusicInfo, index: number, position: Position) => void
@@ -183,6 +190,7 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
   }, [])
 
   const activeIndex = usePlayIndex()
+  const snWidth = useMemo(() => getSnWidth(currentList.length), [currentList.length])
   const handlePlay = (index: number) => {
     void playList(listState.activeListId, index)
   }
@@ -268,6 +276,7 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
       rowInfo={rowInfo.current}
       isShowAlbumName={isShowAlbumName}
       isShowInterval={isShowInterval}
+      snWidth={snWidth}
     />
   )
   const getkey: FlatListType['keyExtractor'] = item => item.id
@@ -292,6 +301,7 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
       keyExtractor={getkey}
       extraData={activeIndex}
       getItemLayout={getItemLayout}
+      contentContainerStyle={styles.listContent}
     />
   )
 })
@@ -303,6 +313,9 @@ const styles = createStyle({
   list: {
     flexGrow: 1,
     flexShrink: 1,
+  },
+  listContent: {
+    paddingBottom: 64,
   },
 })
 

@@ -6,6 +6,25 @@ Project versioning adheres to [Semantic Versioning](http://semver.org/).
 Commit convention is based on [Conventional Commits](http://conventionalcommits.org).
 Change log format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [20260820](https://github.com/lyswhut/lx-music-mobile/compare/v20260818...v20260820) - 2026-08-20
+
+### 新增
+
+- 我的列表左下角新增定位当前播放歌曲的悬浮按钮
+
+### 优化
+
+- 优化我的列表滚动回顶部速度
+- 优化音源在线导入和歌单打开的弹框样式
+
+### 修复
+
+- 修复我的列表歌曲序号在 4 位数时被截断隐藏的问题
+- 修复划掉应用后后台播放服务未随任务停止的问题
+- 修复关闭应用后音乐未立即停止播放的问题
+- 修复多源模式原始平台换源请求
+- 修复换源时原始源音质降级回退，换源搜索包含原始平台
+
 ## [20260817](https://github.com/lyswhut/lx-music-mobile/compare/v1.8.4...v20260817) - 2026-08-17
 
 ### 新增

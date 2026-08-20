@@ -16,12 +16,13 @@ export const ITEM_HEIGHT = scaleSizeH(LIST_ITEM_HEIGHT)
  *
  * 视觉特征：
  * — 播放中：主色播放图标替代序号
+ * — 序号列宽由列表长度决定，避免 4 位数被截断
  * — 歌名 15pt 主色（播放中）/ 默认色
  * — 歌手 12pt 次要色
  * — 圆角选中态
  * — 更多按钮用次要色图标
  */
-export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPress, selectedList, rowInfo, isShowAlbumName, isShowInterval }: {
+export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPress, selectedList, rowInfo, isShowAlbumName, isShowInterval, snWidth }: {
   item: LX.Music.MusicInfo
   index: number
   activeIndex: number
@@ -32,6 +33,7 @@ export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPres
   rowInfo: RowInfo
   isShowAlbumName: boolean
   isShowInterval: boolean
+  snWidth: number
 }) => {
   const theme = useTheme()
 
@@ -51,12 +53,14 @@ export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPres
   return (
     <View style={{ ...styles.listItem, width: rowInfo.rowWidth, height: ITEM_HEIGHT, backgroundColor: isSelected ? theme['c-primary-background-hover'] : 'rgba(0,0,0,0)' }}>
       <TouchableOpacity style={styles.listItemLeft} onPress={() => { onPress(item, index) }} onLongPress={() => { onLongPress(item, index) }} activeOpacity={0.6}>
-        {/* Apple Music 风格 — 播放中显示主色图标，否则显示序号 */}
-        {
-          active
-            ? <Icon style={styles.sn} name="play-outline" size={13} color={theme['c-primary']} />
-            : <Text style={styles.sn} size={15} color={theme['c-font-label']} numberOfLines={1}>{index + 1}</Text>
-        }
+        {/* 序号列不收缩、不截断，宽度随列表位数变化 */}
+        <View style={{ ...styles.sn, width: snWidth }}>
+          {
+            active
+              ? <Icon name="play-outline" size={13} color={theme['c-primary']} />
+              : <Text style={styles.snText} size={12} color={theme['c-font-label']}>{index + 1}</Text>
+          }
+        </View>
         <View style={styles.itemInfo}>
           <Text color={active ? theme['c-primary'] : theme['c-font']} numberOfLines={1}>{item.name}</Text>
           <View style={styles.listItemSingle}>
@@ -80,6 +84,7 @@ export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPres
 }, (prevProps, nextProps) => {
   return !!(prevProps.item === nextProps.item &&
     prevProps.index === nextProps.index &&
+    prevProps.snWidth === nextProps.snWidth &&
     prevProps.isShowAlbumName === nextProps.isShowAlbumName &&
     prevProps.isShowInterval === nextProps.isShowInterval &&
     prevProps.activeIndex != nextProps.index &&
@@ -104,10 +109,14 @@ const styles = createStyle({
     alignItems: 'center',
   },
   sn: {
-    width: 44,
+    flexShrink: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  snText: {
     textAlign: 'center',
-    paddingLeft: 4,
-    paddingRight: 4,
+    fontVariant: ['tabular-nums'],
+    includeFontPadding: false,
   },
   itemInfo: {
     flexGrow: 1,
