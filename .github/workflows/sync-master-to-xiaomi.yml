@@ -32,23 +32,37 @@ jobs:
     name: Merge master into xiaomi
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout xiaomi
-        uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v5
         with:
-          ref: xiaomi
           fetch-depth: 0
           token: ${{ secrets.SYNC_TOKEN || secrets.GITHUB_TOKEN }}
 
+      - name: Check xiaomi branch exists
+        id: xiaomi
+        run: |
+          git fetch origin --prune
+          if git show-ref --verify --quiet refs/remotes/origin/xiaomi; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::远程不存在 xiaomi 分支，已跳过同步。如需小米后屏版，请先创建并推送 xiaomi 分支。"
+          fi
+
       - name: Configure git identity
+        if: steps.xiaomi.outputs.exists == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Merge origin/master into xiaomi
+        if: steps.xiaomi.outputs.exists == 'true'
         run: |
           set -e
-          git fetch origin master
+          git checkout xiaomi
+          git pull --ff-only origin xiaomi
           BEFORE=$(git rev-parse HEAD)
+          git fetch origin master
           if ! git merge --no-edit origin/master; then
             echo "::error::合并 master 出现冲突，请本地解决后再推送（通常是 build.gradle 或 constant.ts，留 xiaomi 那侧的 com.luna.music 即可）"
             git merge --abort || true
@@ -64,11 +78,11 @@ jobs:
           fi
 
       - name: Push to xiaomi
-        if: env.CHANGED == 'true'
+        if: steps.xiaomi.outputs.exists == 'true' && env.CHANGED == 'true'
         run: git push origin xiaomi
 
       - name: Trigger Release (Xiaomi) workflow
-        if: env.CHANGED == 'true' && (github.event_name == 'push' || github.event.inputs.run_release == 'true')
+        if: steps.xiaomi.outputs.exists == 'true' && env.CHANGED == 'true' && (github.event_name == 'push' || github.event.inputs.run_release == 'true')
         env:
           GH_TOKEN: ${{ secrets.SYNC_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
