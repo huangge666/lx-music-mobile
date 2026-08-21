@@ -23,7 +23,6 @@ import { StyleSheet, type StyleProp, type TextStyle } from 'react-native'
 
 const IcoMoon = createIconSetFromIcoMoon(icoMoonConfig)
 
-
 // https://oblador.github.io/react-native-vector-icons/
 
 type IconType = ReturnType<typeof createIconSetFromIcoMoon>
