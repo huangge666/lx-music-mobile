@@ -32,6 +32,8 @@ import java.io.File;
 import java.util.Locale;
 import java.util.Objects;
 
+import cn.toside.music.mobile.AppCloser;
+
 public class UtilsModule extends ReactContextBaseJavaModule {
   private final ReactApplicationContext reactContext;
 
@@ -100,19 +102,13 @@ public class UtilsModule extends ReactContextBaseJavaModule {
 
   @ReactMethod
   public void exitApp() {
-    // https://github.com/wumke/react-native-exit-app/blob/master/android/src/main/java/com/github/wumke/RNExitApp/RNExitAppModule.java
-    // android.os.Process.killProcess(android.os.Process.myPid());
-
-    // https://stackoverflow.com/questions/6330200/how-to-quit-android-application-programmatically
-    Activity currentActivity = reactContext.getCurrentActivity();
     Log.d("Utils", "Exit app...");
-    if (currentActivity == null) {
-      Log.d("Utils", "killProcess");
-      android.os.Process.killProcess(android.os.Process.myPid());
-    } else {
+    Activity currentActivity = reactContext.getCurrentActivity();
+    if (currentActivity != null) {
       currentActivity.finishAndRemoveTask();
-      System.exit(0);
     }
+    // 先停掉 TrackPlayer 前台服务再杀进程，避免关闭后音乐继续播放数秒
+    AppCloser.stopPlaybackAndKill(reactContext.getApplicationContext());
   }
 
   @ReactMethod

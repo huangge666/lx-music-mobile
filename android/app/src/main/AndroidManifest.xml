@@ -91,9 +91,12 @@
         </intent-filter>
       </activity>
 
+      <!-- 任务被移除时同步停止播放服务，避免划掉应用后音乐继续播放 -->
       <service
         android:name="com.guichaguri.trackplayer.service.MusicService"
-        android:stopWithTask="true" />
+        android:exported="true"
+        android:stopWithTask="true"
+        tools:node="merge" />
 
       <!-- Define a FileProvider for API24+ -->
       <!-- note this is the authority name used by other modules like rn-fetch-blob, easy to have conflicts -->

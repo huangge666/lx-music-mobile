@@ -1,6 +1,6 @@
 import { hideDesktopLyric } from './desktopLyric'
 import { exitApp as utilExitApp } from '@/utils/nativeModules/utils'
-import { destroy as destroyPlayer, setPause as pausePlayer } from '@/plugins/player/utils'
+import { setPause as pausePlayer } from '@/plugins/player/utils'
 import { initSetting as initAppSetting } from '@/config/setting'
 import { setLanguage as applyLanguage } from '@/lang/i18n'
 
@@ -55,25 +55,13 @@ export const exitApp = (reason: string) => {
   if (isDestroying) return
   isDestroying = true
 
-  // 立即暂停播放，避免退出过程中音乐继续播放数秒
+  // 先发暂停和隐藏歌词，但不等待 JS 侧 destroy（缓存释放会卡住数秒）
   void pausePlayer().catch(() => {})
+  void hideDesktopLyric().catch(() => {})
+  void hideDesktopLyricView().catch(() => {})
 
-  // 超时保护：清理操作卡住时强制退出，避免长时间延迟
-  const timeout = new Promise<void>((resolve) => {
-    setTimeout(resolve, 2000)
-  })
-
-  void Promise.race([
-    Promise.all([
-      hideDesktopLyric(),
-      destroyPlayer(),
-      hideDesktopLyricView(),
-    ]),
-    timeout,
-  ]).finally(() => {
-    isDestroying = false
-    utilExitApp()
-  })
+  // 原生立刻停止播放服务并结束进程
+  utilExitApp()
 }
 
 export const setFontSize = (size: number) => {
