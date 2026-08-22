@@ -9,6 +9,7 @@ import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
 import { BorderRadius } from '@/theme'
 import { type Source } from '@/store/songlist/state'
+import { parseSonglistInput } from './utils'
 
 interface IdInputType {
   setText: (text: string) => void
@@ -76,7 +77,7 @@ const TipList = ({ text }: { text: string }) => {
 
 
 export interface ModalProps {
-  onOpenId: (id: string) => void
+  onOpenId: (info: { id: string, source: Source }) => void
 }
 export interface ModalType {
   show: (source: Source) => void
@@ -86,6 +87,7 @@ export default forwardRef<ModalType, ModalProps>(({ onOpenId }, ref) => {
   const alertRef = useRef<ConfirmAlertType>(null)
   const inputRef = useRef<IdInputType>(null)
   const [visible, setVisible] = useState(false)
+  const [source, setSource] = useState<Source>('kw')
   const theme = useTheme()
   const t = useI18n()
 
@@ -99,7 +101,8 @@ export default forwardRef<ModalType, ModalProps>(({ onOpenId }, ref) => {
     })
   }
   useImperativeHandle(ref, () => ({
-    show() {
+    show(source) {
+      setSource(source)
       if (visible) handleShow()
       else {
         setVisible(true)
@@ -114,8 +117,10 @@ export default forwardRef<ModalType, ModalProps>(({ onOpenId }, ref) => {
     let id = inputRef.current?.getText() ?? ''
     if (!id.length) return
     if (id.length > 500) id = id.substring(0, 500)
+    // 链接来源优先于页面当前 Tab，纯 ID 等非链接输入仍沿用用户选择的平台。
+    const parsed = parseSonglistInput(id, source)
     alertRef.current?.setVisible(false)
-    onOpenId(id)
+    onOpenId(parsed)
   }
 
   return (
