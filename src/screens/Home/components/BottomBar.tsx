@@ -59,7 +59,7 @@ const BarItem = ({ id, icon }: BarItemProps) => {
 /**
  * Apple Music 风格底部导航栏
  * — 毛玻璃半透明背景
- * — 无顶部边框（使用极细 separator）
+ * — 无顶部边框，与小播放器背景自然衔接
  * — 图标 + 文字垂直排列
  */
 export default memo(() => {
@@ -69,7 +69,6 @@ export default memo(() => {
       styles.container,
       {
         backgroundColor: theme['c-glass-background'],
-        borderTopColor: theme['c-border-background'],
       },
     ]}>
       {NAV_MENUS.map(item => <BarItem key={item.id} id={item.id} icon={item.icon} />)}
@@ -79,7 +78,6 @@ export default memo(() => {
 
 const styles = createStyle({
   container: {
-    borderTopWidth: 0.5,
     flexDirection: 'row',
     paddingHorizontal: 4,
     paddingTop: 6,

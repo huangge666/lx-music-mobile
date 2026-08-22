@@ -29,7 +29,8 @@ export default memo(({ isHome = false }: { isHome?: boolean }) => {
   const playerComponent = useMemo(() => (
     <View style={{
       ...styles.container,
-      backgroundColor: theme['c-glass-background'],
+      // 迷你播放器位于底部组合栏上方，使用更轻的玻璃背景让下方内容保持可见。
+      backgroundColor: theme['c-glass-background'].replace(/0\.80|0\.72/, '0.64'),
       borderColor: theme['c-border-background'],
     }}>
       <View style={styles.left}>
@@ -52,16 +53,14 @@ export default memo(({ isHome = false }: { isHome?: boolean }) => {
 
 const styles = createStyle({
   container: {
-    // 加大左右边距，让卡片在视觉上更聚拢、收窄，避免贴满屏幕两侧
-    marginHorizontal: 28,
-    marginTop: 4,
-    marginBottom: 6,
+    // 播放器本身保留少量外边距，内部则用水平内边距改善触控与视觉呼吸感。
+    width: 'auto',
+    // marginHorizontal: 10,
     paddingVertical: 6,
-    paddingLeft: 6,
-    paddingRight: 4,
-    // 大圆角卡片 — 比药丸形更收敛，圆度适中
-    borderRadius: 16,
-    borderWidth: 0.5,
+    paddingHorizontal: 16,
+    borderTopWidth: 0.5,
+    borderBottomWidth: 0,
+    borderBottom: 'none',
     flexDirection: 'row',
     alignItems: 'center',
   },
