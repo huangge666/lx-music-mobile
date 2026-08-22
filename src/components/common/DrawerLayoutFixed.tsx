@@ -70,16 +70,22 @@ const DrawerLayoutFixed = forwardRef<DrawerLayoutFixedType, Props>(({ visibleNav
     }
   }, [widthPercentage, widthPercentageMax])
 
+  // The native drawer needs its own flex constraint; otherwise it can measure to content height.
   return (
     <View
       onLayout={handleLayout}
-      style={{ width: w, flex: 1 }}
+      // Keep the drawer host above floating playback controls and page menus.
+      // Android uses elevation for native draw order; zIndex also covers RN siblings.
+      style={{ width: w, flex: 1, zIndex: 1000, elevation: 1000 }}
     >
       <DrawerLayoutAndroid
         ref={drawerLayoutRef}
         keyboardDismissMode="on-drag"
         drawerWidth={drawerWidth}
         {...props}
+        style={{ flex: 1, width: '100%' }}
+        drawerElevation={1000}
+        drawerStyle={{ elevation: 1000, zIndex: 1000 }}
       >
         <View style={{ marginRight: w == '100%' ? 0 : -1, flex: 1 }}>
           {children}
