@@ -14,6 +14,13 @@ public final class AppCloser {
   private AppCloser() {}
 
   public static void stopPlaybackAndKill(Context context) {
+    // 先在 TrackPlayer 服务线程同步切断音频输出。直接 kill 进程会跳过
+    // ExoPlayer/offload 的清理，设备音频缓冲可能在应用退出后继续播放。
+    MusicService service = MusicService.instance;
+    if (service != null) {
+      service.silencePlaybackSync();
+    }
+
     try {
       context.stopService(new Intent(context, MusicService.class));
     } catch (Exception e) {
