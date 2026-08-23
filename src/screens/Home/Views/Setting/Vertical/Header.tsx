@@ -28,9 +28,16 @@ export default forwardRef<HeaderType, HeaderProps>(({ onShowNavBar }, ref) => {
   }))
 
   return (
-    <TouchableOpacity onPress={onShowNavBar} style={{ ...styles.currentList, borderBottomColor: theme['c-border-background'] }}>
-      <Icon style={styles.currentListIcon} color={theme['c-button-font']} name="chevron-right" size={12} />
-      <Text numberOfLines={1} size={16} style={styles.currentListText} color={theme['c-button-font']}>{t(`setting_${activeId}`)}</Text>
+    <TouchableOpacity
+      onPress={onShowNavBar}
+      style={{
+        ...styles.currentList,
+        borderBottomColor: theme['c-glass-border'],
+        backgroundColor: theme['c-glass-background'],
+      }}
+    >
+      <Icon style={styles.currentListIcon} color={theme['c-primary']} name="chevron-right" size={12} />
+      <Text numberOfLines={1} size={15} style={styles.currentListText} color={theme['c-font']}>{t(`setting_${activeId}`)}</Text>
     </TouchableOpacity>
   )
 })

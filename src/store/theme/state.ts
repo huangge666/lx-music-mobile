@@ -277,7 +277,11 @@ const state: InitState = {
     'c-content-background': 'rgb(255, 255, 255)',
     'c-border-background': 'rgba(60, 60, 67, 0.10)',
     'c-card-background': 'rgb(242, 242, 247)',
-    'c-glass-background': 'rgba(248, 248, 248, 0.80)',
+    'c-glass-background': 'rgba(255, 255, 255, 0.82)',
+    'c-glass-border': 'rgba(255, 255, 255, 0.70)',
+    'c-glass-highlight': theme['c-primary-alpha-900'],
+    'c-glass-fluid-glow': theme['c-primary-alpha-800'],
+    'c-glass-surface': 'rgba(255, 255, 255, 0.60)',
 
     'bg-image-position': 'center',
     'bg-image-size': 'cover',

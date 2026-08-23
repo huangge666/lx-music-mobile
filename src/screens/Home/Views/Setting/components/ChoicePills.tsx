@@ -31,8 +31,9 @@ function ChoicePills<T extends string>({
       <View style={[
         styles.track,
         {
-          backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(118, 118, 128, 0.12)',
-          borderColor: theme['c-border-background'],
+          backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(118, 118, 128, 0.08)',
+          borderColor: theme['c-glass-border'],
+          borderWidth: 0.5,
         },
       ]}>
         {options.map(item => {
@@ -42,7 +43,13 @@ function ChoicePills<T extends string>({
               key={item.id}
               style={[
                 styles.segment,
-                selected ? { backgroundColor: theme['c-primary-background'] } : null,
+                selected
+                  ? {
+                      backgroundColor: theme['c-primary-background'],
+                      borderWidth: 0.5,
+                      borderColor: theme['c-glass-border'],
+                    }
+                  : null,
               ]}
               activeOpacity={0.7}
               onPress={() => { onChange(item.id) }}
@@ -74,7 +81,9 @@ function ChoicePills<T extends string>({
               {
                 backgroundColor: selected
                   ? theme['c-primary-background']
-                  : (theme.isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(118, 118, 128, 0.10)'),
+                  : (theme.isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(118, 118, 128, 0.08)'),
+                borderWidth: 0.5,
+                borderColor: selected ? theme['c-glass-border'] : theme['c-border-background'],
               },
             ]}
             activeOpacity={0.7}

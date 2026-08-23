@@ -20,8 +20,15 @@ export default ({ icon, color, onPress, onLongPress }: {
 }) => {
   return (
     <TouchableOpacity
-      style={{ ...styles.controlBtn, width: BTN_WIDTH, height: BTN_WIDTH }}
-      activeOpacity={0.55}
+      style={{
+        ...styles.controlBtn,
+        width: BTN_WIDTH,
+        height: BTN_WIDTH,
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        borderWidth: 0.5,
+        borderColor: 'rgba(255, 255, 255, 0.14)',
+      }}
+      activeOpacity={0.65}
       onPress={onPress}
       onLongPress={onLongPress}
     >

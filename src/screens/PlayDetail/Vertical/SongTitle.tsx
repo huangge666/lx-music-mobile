@@ -139,12 +139,14 @@ const styles = createStyle({
     alignItems: 'center',
     gap: MacSpacing.sm,
   },
-  // 标题旁操作 — 无圆形毛玻璃底，只留图标
+  // 标题旁操作 — 水光微圆底
   circleBtn: {
     width: BTN,
     height: BTN,
     borderRadius: BTN / 2,
-    backgroundColor: 'transparent',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 0.5,
+    borderColor: 'rgba(255, 255, 255, 0.14)',
     alignItems: 'center',
     justifyContent: 'center',
   },

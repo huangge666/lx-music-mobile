@@ -14,12 +14,15 @@ export default ({ name }: { name: string }) => {
       settingLayout.iconBubble,
       {
         backgroundColor: theme.isDark
+          ? 'rgba(255, 255, 255, 0.06)'
+          : theme['c-primary-background'],
+        borderColor: theme.isDark
           ? 'rgba(255, 255, 255, 0.08)'
-          : 'rgba(118, 118, 128, 0.12)',
+          : theme['c-glass-border'],
         marginRight: 14,
       },
     ]}>
-      <Icon name={name} size={20} color={theme['c-primary']} />
+      <Icon name={name} size={18} color={theme['c-primary']} />
     </View>
   )
 }

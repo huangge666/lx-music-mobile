@@ -1,52 +1,59 @@
 import { useTheme } from '@/store/theme/hook'
-import { BorderRadius } from '@/theme'
+import { BorderRadius, BorderWidths } from '@/theme'
 import { createStyle } from '@/utils/tools'
 
 /**
- * CyShineMusic 风格设置卡片：大圆角、轻阴影、抬升底
+ * 弥散流体水光玻璃风格 — 设置卡片质感
+ * — 柔润水光半透底
+ * — 细致微光边框与环境色漫反射阴影
  */
 export const useSettingCardStyle = () => {
   const theme = useTheme()
   const isDark = theme.isDark
 
   return {
-    backgroundColor: isDark ? theme['c-card-background'] : theme['c-content-background'],
+    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.045)' : theme['c-content-background'],
+    borderWidth: BorderWidths.hairline,
+    borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : theme['c-glass-border'],
     shadowColor: isDark ? '#000000' : theme['c-primary'],
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: isDark ? 0.38 : 0.12,
-    shadowRadius: 22,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: isDark ? 0.32 : 0.08,
+    shadowRadius: 20,
+    elevation: 4,
   }
 }
 
 export const settingLayout = createStyle({
   card: {
-    borderRadius: 28,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 18,
-    marginBottom: 24,
-    overflow: 'visible',
+    borderRadius: BorderRadius.xlarge,
+    paddingHorizontal: 18,
+    paddingTop: 18,
+    paddingBottom: 16,
+    marginBottom: 20,
+    overflow: 'hidden',
+    position: 'relative',
   },
   cardTitle: {
     paddingHorizontal: 2,
     marginBottom: 12,
-    fontWeight: '600',
-    letterSpacing: 1.4,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
   },
   iconBubble: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
+    borderWidth: 0.5,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    minHeight: 56,
+    paddingVertical: 11,
+    minHeight: 52,
   },
   rowBody: {
     flexGrow: 1,
@@ -57,11 +64,11 @@ export const settingLayout = createStyle({
     fontWeight: '500',
   },
   rowSubtitle: {
-    marginTop: 4,
+    marginTop: 3,
     lineHeight: 16,
   },
   inset: {
-    borderRadius: BorderRadius.large,
+    borderRadius: BorderRadius.normal,
     overflow: 'hidden',
   },
 })

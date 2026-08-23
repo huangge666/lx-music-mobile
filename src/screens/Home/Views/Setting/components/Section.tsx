@@ -22,7 +22,20 @@ export default ({ title, children }: Props) => {
 
   return (
     <View style={[styles.container, settingLayout.card, cardStyle]}>
-      <Text style={settingLayout.cardTitle} size={12} color={theme['c-font-label']}>{title}</Text>
+      {/* 卡片顶部水面微光反射 */}
+      <View
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 1,
+          backgroundColor: theme['c-glass-highlight'],
+          opacity: 0.6,
+        }}
+      />
+      <Text style={settingLayout.cardTitle} size={11} color={theme['c-font-label']}>{title}</Text>
       <View style={styles.content}>
         {children}
       </View>

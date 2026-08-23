@@ -13,12 +13,12 @@ import { useNavActiveId } from '@/store/common/hook'
 
 
 /**
- * 小播放栏（浮动迷你播放器）
+ * 弥散流体水光玻璃 — 浮动迷你播放器
  *
- * 设计原则：
- * — 大圆角药丸形（22pt），柔和、圆润、现代
- * — 紧凑布局：正圆封面 + 标题区 + 进度条/时间 + 控制按钮（圆播放按钮 + 次要色下一首）
- * — 柔和阴影 + 半透明玻璃底，轻拟物浮起感
+ * 核心视觉特征：
+ * — 水润通透底色 (Fluid Translucency)
+ * — 双层水光漫反射光晕 (Diffuse Fluid Glow + Ambient Light)
+ * — 水面流光微反射折射层
  */
 export default memo(({ isHome = false }: { isHome?: boolean }) => {
   const { keyboardShown } = useKeyboard()
@@ -29,10 +29,26 @@ export default memo(({ isHome = false }: { isHome?: boolean }) => {
   const playerComponent = useMemo(() => (
     <View style={{
       ...styles.container,
-      // 迷你播放器位于底部组合栏上方，使用更轻的玻璃背景让下方内容保持可见。
-      backgroundColor: theme['c-glass-background'].replace(/0\.80|0\.72/, '0.64'),
-      borderColor: theme['c-border-background'],
+      backgroundColor: theme['c-glass-background'],
+      borderTopColor: theme['c-glass-border'],
+      borderTopWidth: 0.5,
     }}>
+      {/* 弥散水光环境微光层 */}
+      <View
+        pointerEvents="none"
+        style={{
+          ...styles.fluidGlowBackdrop,
+          backgroundColor: theme['c-glass-fluid-glow'],
+        }}
+      />
+      {/* 顶部水面流光反射波纹 */}
+      <View
+        pointerEvents="none"
+        style={{
+          ...styles.highlightLine,
+          backgroundColor: theme['c-glass-highlight'],
+        }}
+      />
       <View style={styles.left}>
         <Pic isHome={isHome} />
       </View>
@@ -53,16 +69,30 @@ export default memo(({ isHome = false }: { isHome?: boolean }) => {
 
 const styles = createStyle({
   container: {
-    // 播放器本身保留少量外边距，内部则用水平内边距改善触控与视觉呼吸感。
     width: 'auto',
-    // marginHorizontal: 10,
     paddingVertical: 6,
     paddingHorizontal: 16,
-    borderTopWidth: 0.5,
     borderBottomWidth: 0,
-    borderBottom: 'none',
     flexDirection: 'row',
     alignItems: 'center',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  fluidGlowBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    opacity: 0.35,
+  },
+  highlightLine: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 1,
+    opacity: 0.6,
   },
   left: {
     flexGrow: 0,

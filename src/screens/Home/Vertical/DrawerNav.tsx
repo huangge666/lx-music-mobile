@@ -50,7 +50,12 @@ const styles = createStyle({
     paddingRight: 16,
     alignItems: 'center',
     borderRadius: BorderRadius.medium,
-    marginVertical: 1,
+    marginVertical: 2,
+    borderWidth: 0.5,
+    borderColor: 'transparent',
+  },
+  menuItemActive: {
+    borderWidth: 0.5,
   },
   iconContent: {
     width: 28,
@@ -103,7 +108,14 @@ const MenuItem = ({ id, icon, onPress }: {
 
   if (isActive) {
     return (
-      <View style={{ ...styles.menuItem, backgroundColor: theme['c-primary-background-hover'] }}>
+      <View
+        style={{
+          ...styles.menuItem,
+          ...styles.menuItemActive,
+          backgroundColor: theme['c-primary-background-hover'],
+          borderColor: theme['c-glass-border'],
+        }}
+      >
         <View style={styles.iconContent}>
           <Icon name={icon} size={20} color={theme['c-primary']} />
         </View>
@@ -152,8 +164,10 @@ export default memo(() => {
   }
 
 
+  const drawerBg = theme.isDark ? 'rgba(16, 18, 27, 0.98)' : 'rgba(255, 255, 255, 0.98)'
+
   return (
-    <View style={{ ...styles.container, backgroundColor: theme['c-glass-background'] }}>
+    <View style={{ ...styles.container, backgroundColor: drawerBg }}>
       <Header />
       <ScrollView style={styles.menus}>
         <View style={styles.list}>

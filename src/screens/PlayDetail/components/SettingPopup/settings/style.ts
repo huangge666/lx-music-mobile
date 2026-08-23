@@ -1,32 +1,29 @@
 import { createStyle } from '@/utils/tools'
+import { BorderRadius } from '@/theme'
 
 export default createStyle({
   container: {
-    paddingTop: 5,
-    paddingLeft: 15,
-    paddingRight: 15,
-    paddingBottom: 15,
-    alignItems: 'flex-start',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    alignItems: 'stretch',
   },
-  // title: {
-
-  // },
+  titleText: {
+    fontWeight: '600',
+    marginBottom: 8,
+  },
   label: {
-    width: 50,
+    minWidth: 42,
     textAlign: 'center',
+    fontWeight: '600',
+    marginRight: 6,
   },
   content: {
-    flexGrow: 0,
-    flexShrink: 1,
     flexDirection: 'row',
-    flexWrap: 'nowrap',
     alignItems: 'center',
   },
   list: {
-    flexGrow: 0,
-    flexShrink: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingTop: 5,
+    gap: 8,
   },
 })

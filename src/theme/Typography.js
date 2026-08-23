@@ -63,29 +63,34 @@ export const FontSizes = {
 }
 
 export const BorderWidths = {
-  hairline: 0.5,   // Apple 极细分隔线（物理像素级）
-  normal: 0.5,     // 兼容旧引用 — Apple separator 级别
+  hairline: 0.5,   // 极细分隔线/微高光晶体边框（物理像素级）
+  normal: 0.5,     // 兼容旧引用
   thin: 1,
+  crystal: 1,      // 先锋冰晶棱镜边框
   medium: 1.5,
   thick: 2,
 }
 
 /**
- * Apple Music 圆角令牌体系
- * - small: 小元件（Badge、Tag）
- * - medium: 卡片、列表项
- * - large: 大卡片、播放器栏
- * - xlarge: 搜索框、大区域
- * - continuous: 持续圆角（Apple 标志性圆角风格）
- * - round: 胶囊形
+ * 液态冰晶玻璃 / 先锋数字圆角令牌体系
+ * - micro: 微元件 (Tag, Dot)
+ * - small: 小按钮、标签
+ * - medium: 列表项卡片、二级容器
+ * - normal: 标准卡片
+ * - large: 浮动面板、抽屉卡片
+ * - xlarge: 悬浮大胶囊 (Mini Player, 弹窗)
+ * - continuous: 流线曲率连续圆角
+ * - pill / round: 胶囊形
  */
 export const BorderRadius = {
+  micro: 4,
   small: 8,
   medium: 12,
   normal: 14,
   large: 18,
   xlarge: 24,
-  continuous: 22, // Apple continuous corner radius
+  continuous: 22,
+  pill: 999,
   round: 999,
 }
 

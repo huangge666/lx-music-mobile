@@ -53,9 +53,9 @@ export default () => {
 
   return (
     <View style={styles.container}>
-      <Text>{t('play_detail_setting_playback_rate')}</Text>
+      <Text size={13} style={styles.titleText} color={theme['c-font-label']}>{t('play_detail_setting_playback_rate')}</Text>
       <View style={styles.content}>
-        <Text style={styles.label} color={theme['c-font-label']}>{`${((isSliding ? sliderSize : playbackRate) / 100).toFixed(2)}x`}</Text>
+        <Text size={12} style={styles.label} color={theme['c-primary']}>{`${((isSliding ? sliderSize : playbackRate) / 100).toFixed(2)}x`}</Text>
         <Slider
           minimumValue={MIN_VALUE}
           maximumValue={MAX_VALUE}
@@ -66,7 +66,9 @@ export default () => {
           value={playbackRate}
         />
       </View>
-      <ButtonPrimary onPress={handleReset}>{t('play_detail_setting_playback_rate_reset')}</ButtonPrimary>
+      <View style={{ marginTop: 8 }}>
+        <ButtonPrimary onPress={handleReset}>{t('play_detail_setting_playback_rate_reset')}</ButtonPrimary>
+      </View>
     </View>
   )
 }

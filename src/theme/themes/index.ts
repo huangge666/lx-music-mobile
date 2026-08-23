@@ -125,10 +125,27 @@ export const buildActiveThemeColors = (theme: LX.Theme): LX.ActiveTheme => {
       : 'rgba(60, 60, 67, 0.10)',
     // 卡片/分组背景 — Apple secondary system background
     'c-card-background': isDark ? 'rgb(28, 28, 30)' : 'rgb(242, 242, 247)',
-    // 毛玻璃/导航栏背景
+    // 弥散流体水光玻璃质感令牌体系
+    // 基础水光半透底色（更柔润温润的流体通透感）
     'c-glass-background': isDark
-      ? 'rgba(22, 22, 23, 0.72)'
-      : 'rgba(248, 248, 248, 0.80)',
+      ? 'rgba(16, 18, 27, 0.78)'
+      : 'rgba(255, 255, 255, 0.82)',
+    // 水光漫反射/微光边框（带环境光散射感）
+    'c-glass-border': isDark
+      ? 'rgba(255, 255, 255, 0.12)'
+      : 'rgba(255, 255, 255, 0.70)',
+    // 弥散流体高光反射层（水面流光波纹微光）
+    'c-glass-highlight': isDark
+      ? theme.config.themeColors['c-primary-alpha-800']
+      : theme.config.themeColors['c-primary-alpha-900'],
+    // 弥散主色流体光晕（基于环境主色的水光漫反射光晕）
+    'c-glass-fluid-glow': isDark
+      ? theme.config.themeColors['c-primary-alpha-700']
+      : theme.config.themeColors['c-primary-alpha-800'],
+    // 流体水光卡片/浮层表面层
+    'c-glass-surface': isDark
+      ? 'rgba(255, 255, 255, 0.05)'
+      : 'rgba(255, 255, 255, 0.60)',
     'bg-image': bgImg,
   } as const
 }

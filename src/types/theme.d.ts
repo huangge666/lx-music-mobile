@@ -281,6 +281,10 @@ declare global {
       'c-border-background': string
       'c-card-background': string
       'c-glass-background': string
+      'c-glass-border': string
+      'c-glass-highlight': string
+      'c-glass-fluid-glow': string
+      'c-glass-surface': string
       'bg-image'?: ImageSourcePropType
     }
 

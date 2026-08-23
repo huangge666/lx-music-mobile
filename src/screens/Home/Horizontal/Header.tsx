@@ -41,9 +41,22 @@ const LeftHeader = () => {
       height: scaleSizeH(HEADER_HEIGHT) + statusBarHeight,
       paddingTop: statusBarHeight,
       backgroundColor: theme['c-glass-background'],
-      borderBottomColor: theme['c-border-background'],
+      borderBottomColor: theme['c-glass-border'],
       borderBottomWidth: BorderWidths.hairline,
     }}>
+      {/* 水光漫反射柔光层 */}
+      <View
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: theme['c-glass-fluid-glow'],
+          opacity: 0.15,
+        }}
+      />
       {isMylistDetail
         ? <DetailNav titleSize={18} />
         : (
@@ -73,9 +86,22 @@ const RightHeader = () => {
       height: scaleSizeH(HEADER_HEIGHT) + statusBarHeight,
       paddingTop: statusBarHeight,
       backgroundColor: theme['c-glass-background'],
-      borderBottomColor: theme['c-border-background'],
+      borderBottomColor: theme['c-glass-border'],
       borderBottomWidth: BorderWidths.hairline,
     }}>
+      {/* 水光漫反射柔光层 */}
+      <View
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: theme['c-glass-fluid-glow'],
+          opacity: 0.15,
+        }}
+      />
       {isMylistDetail
         ? <DetailNav titleSize={18} />
         : (

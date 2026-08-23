@@ -35,9 +35,9 @@ const Volume = () => {
 
   return (
     <View style={styles.container}>
-      <Text>{t('play_detail_setting_volume')}</Text>
+      <Text size={13} style={styles.titleText} color={theme['c-font-label']}>{t('play_detail_setting_volume')}</Text>
       <View style={styles.content}>
-        <Text style={styles.label} color={theme['c-font-label']}>{isSliding ? sliderSize : volume}</Text>
+        <Text size={12} style={styles.label} color={theme['c-primary']}>{isSliding ? sliderSize : volume}%</Text>
         <Slider
           minimumValue={0}
           maximumValue={100}

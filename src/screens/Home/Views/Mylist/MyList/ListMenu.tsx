@@ -220,6 +220,8 @@ export default forwardRef<ListMenuType, ListMenuProps>(({
   const headerCoverBg = isLove ? theme['c-primary-background'] : theme['c-card-background']
   const headerCoverColor = isLove ? theme['c-primary'] : theme['c-font-label']
 
+  const drawerBg = theme.isDark ? 'rgba(16, 18, 27, 0.98)' : 'rgba(255, 255, 255, 0.98)'
+
   return (
     <Modal
       transparent
@@ -237,13 +239,15 @@ export default forwardRef<ListMenuType, ListMenuProps>(({
           <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]} />
         </TouchableWithoutFeedback>
 
-        {/* 底部沉浸式抽屉容器（覆盖全屏下半部，盖住 tabbar 和小播放器） */}
+        {/* 底部沉浸式抽屉容器（透明度 0.98） */}
         <Animated.View
           style={[
             styles.drawerSheet,
             {
-              backgroundColor: theme['c-content-background'],
+              backgroundColor: drawerBg,
               borderColor: theme['c-border-background'],
+              borderTopColor: theme['c-border-background'],
+              borderTopWidth: BorderWidths.hairline,
               transform: [{ translateY: sheetTranslateY }],
             },
           ]}
@@ -268,7 +272,7 @@ export default forwardRef<ListMenuType, ListMenuProps>(({
                 {currentSelectInfo?.listInfo.name ?? ''}
               </Text>
               <Text size={12} color={theme['c-font-label']} numberOfLines={1}>
-                {isLove ? t('list_name_love') : currentSelectInfo?.listInfo.id === LIST_IDS.DEFAULT ? t('list_name_default') : t('list_more_menu_subtitle', { defaultValue: '歌单更多操作' })}
+                {isLove ? t('list_name_love') : currentSelectInfo?.listInfo.id === LIST_IDS.DEFAULT ? t('list_name_default') : (currentSelectInfo?.listInfo.name ?? '')}
               </Text>
             </View>
             <TouchableOpacity

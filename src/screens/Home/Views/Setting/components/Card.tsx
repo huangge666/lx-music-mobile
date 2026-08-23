@@ -21,8 +21,10 @@ export default ({ children, style }: Props) => {
       styles.card,
       {
         backgroundColor: theme.isDark
-          ? 'rgba(255, 255, 255, 0.06)'
-          : 'rgba(118, 118, 128, 0.08)',
+          ? 'rgba(255, 255, 255, 0.04)'
+          : 'rgba(118, 118, 128, 0.06)',
+        borderWidth: 0.5,
+        borderColor: theme['c-border-background'],
       },
       style,
     ]}>

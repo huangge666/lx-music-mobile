@@ -20,8 +20,8 @@ const headerComponents: Partial<Record<CommonState['navActiveId'], React.ReactNo
 }
 
 /**
- * 左侧式 Header — Apple Music 风格
- * 菜单按钮 + 大标题，毛玻璃半透明背景
+ * 左侧式 Header — 弥散流体水光玻璃风格
+ * 菜单按钮 + 大标题，水润半透质感 + 柔和弥散边缘
  */
 const LeftHeader = () => {
   const theme = useTheme()
@@ -40,10 +40,23 @@ const LeftHeader = () => {
       ...styles.container,
       height: scaleSizeH(HEADER_HEIGHT) + statusBarHeight,
       paddingTop: statusBarHeight,
-      backgroundColor: 'transparent',
-      borderBottomColor: theme['c-border-background'],
+      backgroundColor: theme['c-glass-background'],
+      borderBottomColor: theme['c-glass-border'],
       borderBottomWidth: 0.5,
     }}>
+      {/* 顶栏环境水光漫反射层 */}
+      <View
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: theme['c-glass-fluid-glow'],
+          opacity: 0.15,
+        }}
+      />
       {isMylistDetail
         ? <DetailNav />
         : (
@@ -82,10 +95,23 @@ const RightHeader = () => {
       ...styles.container,
       height: scaleSizeH(HEADER_HEIGHT) + statusBarHeight,
       paddingTop: statusBarHeight,
-      backgroundColor: 'transparent',
-      borderBottomColor: theme['c-border-background'],
+      backgroundColor: theme['c-glass-background'],
+      borderBottomColor: theme['c-glass-border'],
       borderBottomWidth: 0.5,
     }}>
+      {/* 顶栏环境水光漫反射层 */}
+      <View
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: theme['c-glass-fluid-glow'],
+          opacity: 0.15,
+        }}
+      />
       {isMylistDetail
         ? <DetailNav />
         : (

@@ -60,6 +60,8 @@ const TogglePlayBtn = ({ size }: { size: number }) => {
         height: size,
         borderRadius: size / 2,
         backgroundColor: theme['c-primary'],
+        borderWidth: 0.5,
+        borderColor: theme['c-glass-border'],
       }}
       activeOpacity={0.75}
       onPress={togglePlay}

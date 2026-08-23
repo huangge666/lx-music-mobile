@@ -160,20 +160,21 @@ export default forwardRef<PopupType, PopupProps>(({
             width: '100%',
             maxHeight: '78%',
             minHeight: '20%',
-            // backgroundColor: 'white',
-            borderTopLeftRadius: 8,
-            borderTopRightRadius: 8,
+            borderTopLeftRadius: 16,
+            borderTopRightRadius: 16,
+            borderTopWidth: 0.5,
+            borderColor: theme['c-border-background'],
           },
         ] as const
     }
-  }, [position, statusBarHeight])
+  }, [position, statusBarHeight, theme])
 
   return (
-    <Modal onHide={onHide} keyHide={keyHide} bgHide={bgHide} bgColor="rgba(50,50,50,.2)" ref={modalRef}>
+    <Modal onHide={onHide} keyHide={keyHide} bgHide={bgHide} bgColor="rgba(0,0,0,0.5)" ref={modalRef}>
       <View style={{ ...styles.centeredView, ...centeredViewStyle, paddingBottom: keyboardShown ? keyboardHeight : 0 }}>
-        <View style={{ ...styles.modalView, ...modalViewStyle, backgroundColor: theme['c-content-background'] }} onStartShouldSetResponder={() => true}>
-          <View style={styles.header}>
-            <Text size={13} style={styles.title} numberOfLines={1}>{title}</Text>
+        <View style={{ ...styles.modalView, ...modalViewStyle, backgroundColor: theme['c-content-background'], overflow: 'hidden' }} onStartShouldSetResponder={() => true}>
+          <View style={[styles.header, { borderBottomWidth: 0.5, borderBottomColor: theme['c-border-background'] }]}>
+            <Text size={14} style={[styles.title, { fontWeight: '600', color: theme['c-font'] }]} numberOfLines={1}>{title}</Text>
             {closeBtnComponent}
           </View>
           {children}

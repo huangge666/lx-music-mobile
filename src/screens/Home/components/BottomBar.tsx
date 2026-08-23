@@ -57,9 +57,9 @@ const BarItem = ({ id, icon }: BarItemProps) => {
 }
 
 /**
- * Apple Music 风格底部导航栏
- * — 毛玻璃半透明背景
- * — 无顶部边框，与小播放器背景自然衔接
+ * 弥散流体水光底部导航栏
+ * — 柔润通透的水光玻璃背景
+ * — 柔和弥散发光层与水光流体色调衬托
  * — 图标 + 文字垂直排列
  */
 export default memo(() => {
@@ -71,6 +71,19 @@ export default memo(() => {
         backgroundColor: theme['c-glass-background'],
       },
     ]}>
+      {/* 底部弥散流体柔光层 */}
+      <View
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: theme['c-glass-fluid-glow'],
+          opacity: 0.2,
+        }}
+      />
       {NAV_MENUS.map(item => <BarItem key={item.id} id={item.id} icon={item.icon} />)}
     </View>
   )

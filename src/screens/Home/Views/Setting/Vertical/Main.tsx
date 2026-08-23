@@ -22,11 +22,10 @@ type FlatListType = FlatListProps<SettingScreenIds>
 
 const styles = createStyle({
   content: {
-    // Apple Music 风格 — 两侧 16pt 内边距，上下间距
-    paddingLeft: 20,
-    paddingRight: 20,
-    paddingTop: 12,
-    paddingBottom: 80,
+    paddingLeft: 16,
+    paddingRight: 16,
+    paddingTop: 16,
+    paddingBottom: 88,
     flex: 0,
   },
 })

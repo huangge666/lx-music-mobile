@@ -13,7 +13,12 @@ export default memo(({ disabled, onPress, children }: ButtonProps) => {
 
   return (
     <Button
-      style={{ ...styles.button, backgroundColor: theme['c-button-background'] }}
+      style={{
+        ...styles.button,
+        backgroundColor: theme['c-button-background'],
+        borderWidth: 0.5,
+        borderColor: theme['c-glass-border'],
+      }}
       onPress={onPress}
       disabled={disabled}
     >

@@ -29,11 +29,14 @@ const styles = createStyle({
   },
   menu: {
     position: 'absolute',
-    // borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'lightgray',
-    borderRadius: BorderRadius.small,
-    backgroundColor: 'white',
-    elevation: 3,
+    borderWidth: 0.5,
+    borderRadius: BorderRadius.medium,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    overflow: 'hidden',
   },
   menuItem: {
     paddingLeft: 10,
@@ -128,7 +131,15 @@ const Menu = ({
   // console.log(menuStyle)
   // console.log(menuItemStyle)
   return (
-    <View style={{ ...styles.menu, ...menuStyle, backgroundColor: theme['c-content-background'] }} onStartShouldSetResponder={() => true}>
+    <View
+      style={{
+        ...styles.menu,
+        ...menuStyle,
+        backgroundColor: theme['c-content-background'],
+        borderColor: theme['c-border-background'],
+      }}
+      onStartShouldSetResponder={() => true}
+    >
       <Animated.ScrollView keyboardShouldPersistTaps={'always'}>
         {
           menus.map((menu, index) => (
