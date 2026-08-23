@@ -153,6 +153,9 @@ export const assertApiSupport = (source: LX.Source): boolean => {
       if (global.lx.userApiApis[apiId] != null && global.lx.userApiQualityList[apiId]?.[source] != null) return true
     }
   }
+  // 未导入音源时，主源配置为空，qualityList 不会包含平台音质表。
+  // 这不代表内置平台不可用，仍应允许平台自身的换源机制继续尝试。
+  if (!Object.keys(global.lx.userApiApis ?? {}).length) return true
   return false
 }
 
