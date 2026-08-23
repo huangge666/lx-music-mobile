@@ -49,6 +49,15 @@ export const checkUpdate = async() => {
     versionInfo.isUnknown = false
     if (compareVer(versionInfo.version, versionInfo.newVersion.version) != -1) {
       versionInfo.isLatest = true
+      // 远端 version.json 可能滞后，当前已是最新时以本地版本号为准
+      if (versionInfo.newVersion.version !== versionInfo.version) {
+        versionInfo.newVersion = {
+          ...versionInfo.newVersion,
+          version: versionInfo.version,
+        }
+      }
+    } else {
+      versionInfo.isLatest = false
     }
   }
 
