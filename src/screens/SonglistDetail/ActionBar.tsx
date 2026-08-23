@@ -7,6 +7,7 @@ import { createStyle } from '@/utils/tools'
 import { pop } from '@/navigation'
 import { useTheme } from '@/store/theme/hook'
 import commonState from '@/store/common/state'
+import { useMyList } from '@/store/list/hook'
 import { handleCollect, handlePlay } from './listAction'
 import songlistState from '@/store/songlist/state'
 import { useI18n } from '@/lang'
@@ -16,6 +17,9 @@ export default memo(() => {
   const theme = useTheme()
   const t = useI18n()
   const info = useListInfo()
+  const lists = useMyList()
+  const listId = `${info.source}__${info.id}`
+  const isCollected = lists.some(list => 'sourceListId' in list && (list.sourceListId == listId || list.sourceListId == info.id))
 
   const back = () => {
     void pop(commonState.componentIds.songlistDetail!)
@@ -47,7 +51,7 @@ export default memo(() => {
         style={{ ...styles.secondaryBtn, backgroundColor: theme['c-card-background'], borderColor: theme['c-border-background'] }}
       >
         <Icon name="love" color={theme['c-primary']} size={15} />
-        <Text style={styles.secondaryBtnText} color={theme['c-font']}>{t('collect_songlist')}</Text>
+        <Text style={styles.secondaryBtnText} color={theme['c-font']}>{t(isCollected ? 'collected_songlist' : 'collect_songlist')}</Text>
       </TouchableOpacity>
       <TouchableOpacity
         accessibilityLabel={t('back')}

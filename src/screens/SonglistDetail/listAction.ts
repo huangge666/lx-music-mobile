@@ -33,8 +33,8 @@ export const handlePlay = async(id: string, source: Source, list?: LX.Music.Musi
 
 export const handleCollect = async(id: string, source: Source, name: string) => {
   const listId = getListId(id, source)
-
-  const targetList = listState.userList.find(l => l.sourceListId == listId)
+  // Older versions stored only the source playlist id, so keep matching those entries.
+  const targetList = listState.userList.find(l => l.sourceListId == listId || l.sourceListId == id)
   if (targetList) {
     const confirm = await confirmDialog({
       message: global.i18n.t('duplicate_list_tip', { name: targetList.name }),
@@ -52,7 +52,7 @@ export const handleCollect = async(id: string, source: Source, name: string) => 
     id: `${source}_${toMD5(listId)}`,
     list,
     source,
-    sourceListId: id,
+    sourceListId: listId,
   })
   toast(global.i18n.t('collect_success'))
 }
