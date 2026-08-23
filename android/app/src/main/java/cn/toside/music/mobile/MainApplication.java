@@ -1,5 +1,8 @@
 package cn.toside.music.mobile;
 
+import android.content.Context;
+import androidx.multidex.MultiDex;
+
 import com.facebook.react.PackageList;
 import com.facebook.react.flipper.ReactNativeFlipper;
 import com.reactnativenavigation.NavigationApplication;
@@ -57,6 +60,13 @@ public class MainApplication extends NavigationApplication {
   @Override
   public ReactNativeHost getReactNativeHost() {
     return mReactNativeHost;
+  }
+
+  @Override
+  protected void attachBaseContext(Context base) {
+    super.attachBaseContext(base);
+    // Android 7.1 cannot load the secondary dex files without installing multidex first.
+    MultiDex.install(this);
   }
 
   @Override
