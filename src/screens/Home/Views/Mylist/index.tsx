@@ -1,70 +1,62 @@
-import { useEffect, useRef } from 'react'
-import settingState from '@/store/setting/state'
+import { useEffect, useRef, useState } from 'react'
+import { View } from 'react-native'
 import MusicList from './MusicList'
 import MyList from './MyList'
-import { useTheme } from '@/store/theme/hook'
-import DrawerLayoutFixed, { type DrawerLayoutFixedType } from '@/components/common/DrawerLayoutFixed'
-import { COMPONENT_IDS } from '@/config/constant'
-import { scaleSizeW } from '@/utils/pixelRatio'
 import type { InitState as CommonState } from '@/store/common/state'
-
-const MAX_WIDTH = scaleSizeW(400)
+import playerState from '@/store/player/state'
+import { setActiveList } from '@/core/list'
+import { createStyle } from '@/utils/tools'
 
 export default () => {
-  const drawer = useRef<DrawerLayoutFixedType>(null)
-  const theme = useTheme()
-  // const [width, setWidth] = useState(0)
+  const [showPlaylists, setShowPlaylists] = useState(true)
+  const showPlaylistsRef = useRef(showPlaylists)
+  showPlaylistsRef.current = showPlaylists
 
   useEffect(() => {
-    const handleFixDrawer = (id: CommonState['navActiveId']) => {
-      if (id == 'nav_love') drawer.current?.fixWidth()
-    }
+    const listId = playerState.playMusicInfo.listId
+    if (global.lx?.jumpMyListPosition && listId) setActiveList(listId)
+
     const changeVisible = (visible: boolean) => {
-      if (visible) {
-        requestAnimationFrame(() => {
-          drawer.current?.openDrawer()
-        })
+      setShowPlaylists(visible)
+    }
+    const handleNav = (id: CommonState['navActiveId']) => {
+      if (id != 'nav_love') return
+      if (global.lx?.jumpMyListPosition) {
+        const playingListId = playerState.playMusicInfo.listId
+        if (playingListId) setActiveList(playingListId)
+        global.app_event.changeLoveListVisible(false)
       } else {
-        drawer.current?.closeDrawer()
+        global.app_event.changeLoveListVisible(true)
       }
     }
+    const handleJump = () => {
+      const playingListId = playerState.playMusicInfo.listId
+      if (playingListId) setActiveList(playingListId)
+      if (!showPlaylistsRef.current) return
+      if (global.lx) global.lx.jumpMyListPosition = true
+      global.app_event.changeLoveListVisible(false)
+    }
 
-    // setWidth(getWindowSise().width * 0.82)
-
-    global.state_event.on('navActiveIdUpdated', handleFixDrawer)
     global.app_event.on('changeLoveListVisible', changeVisible)
-
-    // 就放旋转屏幕后的宽度没有更新的问题
-    // const changeEvent = onDimensionChange(({ window }) => {
-    //   setWidth(window.width * 0.82)
-    //   drawer.current?.setNativeProps({
-    //     width: window.width,
-    //   })
-    // })
+    global.state_event.on('navActiveIdUpdated', handleNav)
+    global.app_event.on('jumpListPosition', handleJump)
 
     return () => {
-      global.state_event.off('navActiveIdUpdated', handleFixDrawer)
       global.app_event.off('changeLoveListVisible', changeVisible)
-    // changeEvent.remove()
+      global.state_event.off('navActiveIdUpdated', handleNav)
+      global.app_event.off('jumpListPosition', handleJump)
     }
   }, [])
 
-  const navigationView = () => <MyList />
-  // console.log('render drawer content')
-
   return (
-    <DrawerLayoutFixed
-      ref={drawer}
-      visibleNavNames={[COMPONENT_IDS.home]}
-      // drawerWidth={width}
-      widthPercentage={0.82}
-      widthPercentageMax={MAX_WIDTH}
-      drawerPosition={settingState.setting['common.drawerLayoutPosition']}
-      renderNavigationView={navigationView}
-      drawerBackgroundColor={theme['c-content-background']}
-      style={{ elevation: 1 }}
-    >
-      <MusicList />
-    </DrawerLayoutFixed>
+    <View style={styles.container}>
+      {showPlaylists ? <MyList /> : <MusicList />}
+    </View>
   )
 }
+
+const styles = createStyle({
+  container: {
+    flex: 1,
+  },
+})

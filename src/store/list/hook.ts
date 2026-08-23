@@ -1,11 +1,21 @@
 import { useEffect, useState } from 'react'
-import state, { type InitState } from './state'
+import state from './state'
 import { getListMusics } from '@/core/list'
+
+export {
+  useActiveListId,
+  useActiveListName,
+  useMylistPlaylistsVisible,
+  useListFetching,
+  useListMusicCount,
+} from './uiHook'
 
 export const useMyList = () => {
   const [lists, setList] = useState(state.allList)
-  lists[0].name = global.i18n.t('list_name_default')
-  lists[1].name = global.i18n.t('list_name_love')
+  if (global.i18n) {
+    lists[0].name = global.i18n.t('list_name_default')
+    lists[1].name = global.i18n.t('list_name_love')
+  }
 
   useEffect(() => {
     const handleConfigUpdate = (keys: Array<keyof LX.AppSetting>) => {
@@ -26,20 +36,6 @@ export const useMyList = () => {
 
   return lists
 }
-
-export const useActiveListId = () => {
-  const [id, setId] = useState(state.activeListId)
-
-  useEffect(() => {
-    global.state_event.on('mylistToggled', setId)
-    return () => {
-      global.state_event.off('mylistToggled', setId)
-    }
-  }, [])
-
-  return id
-}
-
 
 export const useMusicList = () => {
   const [list, setList] = useState<LX.List.ListMusics>([])
@@ -82,22 +78,4 @@ export const useMusicExistsList = (list: LX.List.MyListInfo, musicInfo: LX.Music
   return isExists
 }
 
-export const useListFetching = (listId: string) => {
-  const [fetching, setFetching] = useState(!!state.fetchingListStatus[listId])
-
-  useEffect(() => {
-    let prevStatus = state.fetchingListStatus[listId]
-    const handleUpdate = (status: InitState['fetchingListStatus']) => {
-      let currentStatus = status[listId]
-      if (currentStatus == null || prevStatus == status[listId]) return
-      setFetching(prevStatus = currentStatus)
-    }
-    global.state_event.on('fetchingListStatusUpdated', handleUpdate)
-    return () => {
-      global.state_event.off('fetchingListStatusUpdated', handleUpdate)
-    }
-  }, [listId])
-
-  return fetching
-}
 

@@ -10,6 +10,8 @@ import { scaleSizeH } from '@/utils/pixelRatio'
 import { HEADER_HEIGHT as _HEADER_HEIGHT } from '@/config/constant'
 import { type InitState as CommonState } from '@/store/common/state'
 import SearchTypeSelector from '@/screens/Home/Views/Search/SearchTypeSelector'
+import DetailNav from '@/screens/Home/Views/Mylist/DetailNav'
+import { useMylistPlaylistsVisible } from '@/store/list/uiHook'
 import { BorderWidths } from '@/theme'
 
 const headerComponents: Partial<Record<CommonState['navActiveId'], React.ReactNode>> = {
@@ -30,6 +32,8 @@ const LeftHeader = () => {
   const id = useNavActiveId()
   const t = useI18n()
   const statusBarHeight = useStatusbarHeight()
+  const playlistsVisible = useMylistPlaylistsVisible()
+  const isMylistDetail = id == 'nav_love' && !playlistsVisible
 
   return (
     <View style={{
@@ -40,11 +44,16 @@ const LeftHeader = () => {
       borderBottomColor: theme['c-border-background'],
       borderBottomWidth: BorderWidths.hairline,
     }}>
-      <View style={styles.left}>
-        {/* Apple Music 风格大标题 — 18pt 粗体 */}
-        <Text style={styles.leftTitle} size={18} color={theme['c-font']}>{t(id)}</Text>
-      </View>
-      {headerComponents[id] ?? null}
+      {isMylistDetail
+        ? <DetailNav titleSize={18} />
+        : (
+            <>
+              <View style={styles.left}>
+                <Text style={styles.leftTitle} size={18} color={theme['c-font']}>{t(id)}</Text>
+              </View>
+              {headerComponents[id] ?? null}
+            </>
+          )}
     </View>
   )
 }
@@ -55,6 +64,8 @@ const RightHeader = () => {
   const t = useI18n()
   const id = useNavActiveId()
   const statusBarHeight = useStatusbarHeight()
+  const playlistsVisible = useMylistPlaylistsVisible()
+  const isMylistDetail = id == 'nav_love' && !playlistsVisible
 
   return (
     <View style={{
@@ -65,10 +76,16 @@ const RightHeader = () => {
       borderBottomColor: theme['c-border-background'],
       borderBottomWidth: BorderWidths.hairline,
     }}>
-      <View style={styles.left}>
-        <Text style={styles.rightTitle} size={18} color={theme['c-font']}>{t(id)}</Text>
-      </View>
-      {headerComponents[id] ?? null}
+      {isMylistDetail
+        ? <DetailNav titleSize={18} />
+        : (
+            <>
+              <View style={styles.left}>
+                <Text style={styles.rightTitle} size={18} color={theme['c-font']}>{t(id)}</Text>
+              </View>
+              {headerComponents[id] ?? null}
+            </>
+          )}
     </View>
   )
 }

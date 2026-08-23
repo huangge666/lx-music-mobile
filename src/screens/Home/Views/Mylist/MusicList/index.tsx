@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 
 import listState from '@/store/list/state'
 import ListMenu, { type ListMenuType, type Position, type SelectInfo } from './ListMenu'
@@ -8,7 +8,6 @@ import ListMusicAdd, { type MusicAddModalType as ListMusicAddType } from '@/comp
 import ListMusicMultiAdd, { type MusicMultiAddModalType as ListAddMultiType } from '@/components/MusicMultiAddModal'
 import { createStyle } from '@/utils/tools'
 import { type LayoutChangeEvent, View } from 'react-native'
-import ActiveList, { type ActiveListType } from './ActiveList'
 import MultipleModeBar, { type SelectMode, type MultipleModeBarType } from './MultipleModeBar'
 import ListSearchBar, { type ListSearchBarType } from './ListSearchBar'
 import ListMusicSearch, { type ListMusicSearchType } from './ListMusicSearch'
@@ -20,7 +19,6 @@ import LocatePlayingBtn from './LocatePlayingBtn'
 
 export default () => {
   // const t = useI18n()
-  const activeListRef = useRef<ActiveListType>(null)
   const listMusicSearchRef = useRef<ListMusicSearchType>(null)
   const listRef = useRef<ListType>(null)
   const multipleModeBarRef = useRef<MultipleModeBarType>(null)
@@ -38,18 +36,11 @@ export default () => {
   // console.log('render index list')
 
   const hancelMultiSelect = useCallback(() => {
-    if (isShowSearchBarModeBar.current) {
-      multipleModeBarRef.current?.setVisibleBar(false)
-    } else activeListRef.current?.setVisibleBar(false)
     isShowMultipleModeBar.current = true
     multipleModeBarRef.current?.show()
     listRef.current?.setIsMultiSelectMode(true)
   }, [])
   const hancelExitSelect = useCallback(() => {
-    if (isShowSearchBarModeBar.current) {
-      multipleModeBarRef.current?.setVisibleBar(true)
-    } else activeListRef.current?.setVisibleBar(true)
-    // console.log('hancelExitSelect', isShowSearchBarModeBar.current)
     multipleModeBarRef.current?.exitSelectMode()
     listRef.current?.setIsMultiSelectMode(false)
     isShowMultipleModeBar.current = false
@@ -57,9 +48,6 @@ export default () => {
   const hancelSwitchSelectMode = useCallback((mode: SelectMode) => {
     multipleModeBarRef.current?.setSwitchMode(mode)
     listRef.current?.setSelectMode(mode)
-  }, [])
-  const hancelScrollToTop = useCallback(() => {
-    listRef.current?.scrollToTop()
   }, [])
 
   const showMenu = useCallback((musicInfo: LX.Music.MusicInfo, index: number, position: Position) => {
@@ -75,17 +63,16 @@ export default () => {
     isShowSearchBarModeBar.current = true
     if (isShowMultipleModeBar.current) {
       multipleModeBarRef.current?.setVisibleBar(false)
-    } else activeListRef.current?.setVisibleBar(false)
+    }
     listSearchBarRef.current?.show()
   }, [])
   const handleExitSearch = useCallback(() => {
     isShowSearchBarModeBar.current = false
     listMusicSearchRef.current?.hide()
     listSearchBarRef.current?.hide()
-    // console.log('handleExitSearch', isShowMultipleModeBar.current)
     if (isShowMultipleModeBar.current) {
       multipleModeBarRef.current?.setVisibleBar(true)
-    } else activeListRef.current?.setVisibleBar(true)
+    }
   }, [])
   const handleScrollToInfo = useCallback((info: LX.Music.MusicInfo) => {
     listRef.current?.scrollToInfo(info)
@@ -98,6 +85,13 @@ export default () => {
   const onLayout = useCallback((e: LayoutChangeEvent) => {
     layoutHeightRef.current = e.nativeEvent.layout.height
   }, [])
+
+  useEffect(() => {
+    global.app_event.on('showMylistSearch', handleShowSearch)
+    return () => {
+      global.app_event.off('showMylistSearch', handleShowSearch)
+    }
+  }, [handleShowSearch])
 
   const handleAddMusic = useCallback((info: SelectInfo) => {
     if (info.selectedList.length) {
@@ -126,21 +120,20 @@ export default () => {
 
   return (
     <View style={styles.container}>
-      <View style={{ zIndex: 2 }}>
-        <ActiveList ref={activeListRef} onShowSearchBar={handleShowSearch} onScrollToTop={hancelScrollToTop} />
-        <MultipleModeBar
-          ref={multipleModeBarRef}
-          onSwitchMode={hancelSwitchSelectMode}
-          onSelectAll={isAll => listRef.current?.selectAll(isAll)}
-          onExitSelectMode={hancelExitSelect}
-        />
-        <ListSearchBar
-          ref={listSearchBarRef}
-          onSearch={keyword => listMusicSearchRef.current?.search(keyword, layoutHeightRef.current)}
-          onExitSearch={handleExitSearch}
-        />
-      </View>
       <View style={styles.listArea} onLayout={onLayout}>
+        <View style={styles.topBar} pointerEvents="box-none">
+          <MultipleModeBar
+            ref={multipleModeBarRef}
+            onSwitchMode={hancelSwitchSelectMode}
+            onSelectAll={isAll => listRef.current?.selectAll(isAll)}
+            onExitSelectMode={hancelExitSelect}
+          />
+          <ListSearchBar
+            ref={listSearchBarRef}
+            onSearch={keyword => listMusicSearchRef.current?.search(keyword, layoutHeightRef.current)}
+            onExitSearch={handleExitSearch}
+          />
+        </View>
         <List
           ref={listRef}
           onShowMenu={showMenu}
@@ -192,6 +185,14 @@ const styles = createStyle({
   listArea: {
     flex: 1,
     position: 'relative',
+  },
+  topBar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    height: 36,
+    zIndex: 2,
   },
   fabWrap: {
     position: 'absolute',

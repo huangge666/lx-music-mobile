@@ -186,6 +186,10 @@ export class AppEvent extends Event {
     this.emit('changeLoveListVisible', visible)
   }
 
+  showMylistSearch() {
+    this.emit('showMylistSearch')
+  }
+
   showSonglistTagList(source: SonglistSource, activeId: string) {
     this.emit('showSonglistTagList', source, activeId)
   }

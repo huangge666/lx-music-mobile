@@ -116,7 +116,7 @@ export default forwardRef<ListSearchBarType, ListSearchBarProps>(({ onSearch, on
 
   const animaStyle = useMemo(() => ({
     ...styles.container,
-    // backgroundColor: theme['c-content-background'],
+    backgroundColor: theme['c-content-background'],
     borderBottomColor: theme['c-border-background'],
     opacity: animFade, // Bind opacity to animated value
     transform: [

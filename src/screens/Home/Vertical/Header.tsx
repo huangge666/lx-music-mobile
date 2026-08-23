@@ -11,6 +11,8 @@ import { scaleSizeH } from '@/utils/pixelRatio'
 import { HEADER_HEIGHT } from '@/config/constant'
 import { type InitState as CommonState } from '@/store/common/state'
 import SearchTypeSelector from '@/screens/Home/Views/Search/SearchTypeSelector'
+import DetailNav from '@/screens/Home/Views/Mylist/DetailNav'
+import { useMylistPlaylistsVisible } from '@/store/list/uiHook'
 
 // Apple Music 各页面对应的大标题文案
 const headerComponents: Partial<Record<CommonState['navActiveId'], React.ReactNode>> = {
@@ -26,6 +28,8 @@ const LeftHeader = () => {
   const id = useNavActiveId()
   const t = useI18n()
   const statusBarHeight = useStatusbarHeight()
+  const playlistsVisible = useMylistPlaylistsVisible()
+  const isMylistDetail = id == 'nav_love' && !playlistsVisible
 
   const openMenu = () => {
     global.app_event.changeMenuVisible(true)
@@ -40,16 +44,21 @@ const LeftHeader = () => {
       borderBottomColor: theme['c-border-background'],
       borderBottomWidth: 0.5,
     }}>
-      <View style={styles.left}>
-        <TouchableOpacity style={styles.menuBtn} onPress={openMenu} activeOpacity={0.6}>
-          <Icon color={theme['c-primary']} name="menu" size={20} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.titleBtn} onPress={openMenu} activeOpacity={0.6}>
-          {/* Apple Music 风格大标题 — 粗体 22pt */}
-          <Text style={styles.title} size={22} color={theme['c-font']}>{t(id)}</Text>
-        </TouchableOpacity>
-      </View>
-      {headerComponents[id] ?? null}
+      {isMylistDetail
+        ? <DetailNav />
+        : (
+            <>
+              <View style={styles.left}>
+                <TouchableOpacity style={styles.menuBtn} onPress={openMenu} activeOpacity={0.6}>
+                  <Icon color={theme['c-primary']} name="menu" size={20} />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.titleBtn} onPress={openMenu} activeOpacity={0.6}>
+                  <Text style={styles.title} size={22} color={theme['c-font']}>{t(id)}</Text>
+                </TouchableOpacity>
+              </View>
+              {headerComponents[id] ?? null}
+            </>
+          )}
     </View>
   )
 }
@@ -62,6 +71,8 @@ const RightHeader = () => {
   const t = useI18n()
   const id = useNavActiveId()
   const statusBarHeight = useStatusbarHeight()
+  const playlistsVisible = useMylistPlaylistsVisible()
+  const isMylistDetail = id == 'nav_love' && !playlistsVisible
 
   const openMenu = () => {
     global.app_event.changeMenuVisible(true)
@@ -75,15 +86,21 @@ const RightHeader = () => {
       borderBottomColor: theme['c-border-background'],
       borderBottomWidth: 0.5,
     }}>
-      <View style={styles.rightLeft}>
-        <TouchableOpacity style={styles.titleBtn} onPress={openMenu} activeOpacity={0.6}>
-          <Text style={styles.titleRight} size={22} color={theme['c-font']}>{t(id)}</Text>
-        </TouchableOpacity>
-      </View>
-      {headerComponents[id] ?? null}
-      <TouchableOpacity style={styles.menuBtn} onPress={openMenu} activeOpacity={0.6}>
-        <Icon color={theme['c-primary']} name="menu" size={20} />
-      </TouchableOpacity>
+      {isMylistDetail
+        ? <DetailNav />
+        : (
+            <>
+              <View style={styles.rightLeft}>
+                <TouchableOpacity style={styles.titleBtn} onPress={openMenu} activeOpacity={0.6}>
+                  <Text style={styles.titleRight} size={22} color={theme['c-font']}>{t(id)}</Text>
+                </TouchableOpacity>
+              </View>
+              {headerComponents[id] ?? null}
+              <TouchableOpacity style={styles.menuBtn} onPress={openMenu} activeOpacity={0.6}>
+                <Icon color={theme['c-primary']} name="menu" size={20} />
+              </TouchableOpacity>
+            </>
+          )}
     </View>
   )
 }

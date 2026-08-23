@@ -4,68 +4,92 @@ import { View, TouchableOpacity, FlatList, type NativeScrollEvent, type NativeSy
 import { Icon } from '@/components/common/Icon'
 
 import { useTheme } from '@/store/theme/hook'
-import { useActiveListId, useListFetching, useMyList } from '@/store/list/hook'
+import { useListFetching, useListMusicCount, useMyList } from '@/store/list/hook'
 import { createStyle } from '@/utils/tools'
-import { LIST_SCROLL_POSITION_KEY } from '@/config/constant'
+import { LIST_IDS, LIST_SCROLL_POSITION_KEY } from '@/config/constant'
 import { getListPosition, saveListPosition } from '@/utils/data'
 import { setActiveList } from '@/core/list'
 import Text from '@/components/common/Text'
 import { type Position } from './ListMenu'
-import { scaleSizeH } from '@/utils/pixelRatio'
+import { scaleSizeH, scaleSizeW } from '@/utils/pixelRatio'
 import Loading from '@/components/common/Loading'
+import { BorderRadius, BorderWidths } from '@/theme'
+import { useI18n } from '@/lang'
 
 type FlatListType = FlatListProps<LX.List.MyListInfo>
 
-const ITEM_HEIGHT = scaleSizeH(40)
+const ITEM_HEIGHT = scaleSizeH(72)
+const COVER_SIZE = scaleSizeW(44)
 
-const ListItem = memo(({ item, index, activeId, onPress, onShowMenu }: {
+const getListIcon = (id: string) => {
+  switch (id) {
+    case LIST_IDS.LOVE:
+      return 'love'
+    case LIST_IDS.DEFAULT:
+      return 'play-outline'
+    default:
+      return 'album'
+  }
+}
+
+const ListItem = memo(({ item, index, onPress, onShowMenu }: {
   onPress: (item: LX.List.MyListInfo) => void
   index: number
-  activeId: string
   item: LX.List.MyListInfo
   onShowMenu: (item: LX.List.MyListInfo, index: number, position: { x: number, y: number, w: number, h: number }) => void
 }) => {
   const theme = useTheme()
+  const t = useI18n()
   const moreButtonRef = useRef<TouchableOpacity>(null)
   const fetching = useListFetching(item.id)
-
-  const active = activeId == item.id
+  const count = useListMusicCount(item.id)
+  const isLove = item.id == LIST_IDS.LOVE
+  const coverBg = isLove ? theme['c-primary-background'] : theme['c-card-background']
+  const coverColor = isLove ? theme['c-primary'] : theme['c-font-label']
 
   const handleShowMenu = () => {
     if (moreButtonRef.current?.measure) {
       moreButtonRef.current.measure((fx, fy, width, height, px, py) => {
-        // console.log(fx, fy, width, height, px, py)
         onShowMenu(item, index, { x: Math.ceil(px), y: Math.ceil(py), w: Math.ceil(width), h: Math.ceil(height) })
       })
     }
   }
 
-  const handlePress = () => {
-    onPress(item)
-  }
-
   return (
-    <View style={{ ...styles.listItem, height: ITEM_HEIGHT }}>
-      {
-        active
-          ? <Icon style={styles.listActiveIcon} name="chevron-right" size={12} color={theme['c-primary-font']} />
-          : null
-      }
-      { fetching ? <Loading color={active ? theme['c-primary-font'] : theme['c-font']} style={styles.loading} /> : null }
-      <TouchableOpacity style={styles.listName} onPress={handlePress}>
-        <Text numberOfLines={1} color={active ? theme['c-primary-font'] : theme['c-font']}>{item.name}</Text>
+    <View style={{
+      ...styles.listItem,
+      height: ITEM_HEIGHT,
+      borderBottomColor: theme['c-border-background'],
+    }}>
+      <TouchableOpacity style={styles.main} onPress={() => { onPress(item) }} activeOpacity={0.6}>
+        <View style={{
+          ...styles.cover,
+          width: COVER_SIZE,
+          height: COVER_SIZE,
+          backgroundColor: coverBg,
+        }}>
+          {
+            fetching
+              ? <Loading color={coverColor} size={16} />
+              : <Icon name={getListIcon(item.id)} size={18} color={coverColor} />
+          }
+        </View>
+        <View style={styles.info}>
+          <Text style={styles.title} size={16} color={theme['c-font']} numberOfLines={1}>{item.name}</Text>
+          <Text size={12} color={theme['c-font-label']} numberOfLines={1}>
+            {count == null ? ' ' : t('list_music_count', { num: count })}
+          </Text>
+        </View>
       </TouchableOpacity>
-      <TouchableOpacity onPress={handleShowMenu} ref={moreButtonRef} style={styles.listMoreBtn}>
-        <Icon name="dots-vertical" color={theme['c-350']} size={12} />
+      <TouchableOpacity onPress={handleShowMenu} ref={moreButtonRef} style={styles.listMoreBtn} activeOpacity={0.6}>
+        <Icon name="dots-vertical" color={theme['c-font-label']} size={16} />
       </TouchableOpacity>
     </View>
   )
 }, (prevProps, nextProps) => {
   return !!(prevProps.item === nextProps.item &&
     prevProps.index === nextProps.index &&
-    prevProps.item.name == nextProps.item.name &&
-    prevProps.activeId != nextProps.item.id &&
-    nextProps.activeId != nextProps.item.id
+    prevProps.item.name == nextProps.item.name
   )
 })
 
@@ -75,14 +99,10 @@ export default ({ onShowMenu }: {
 }) => {
   const flatListRef = useRef<FlatList>(null)
   const allList = useMyList()
-  const activeListId = useActiveListId()
 
   const handleToggleList = (item: LX.List.MyListInfo) => {
-    // setVisiblePanel(false)
+    setActiveList(item.id)
     global.app_event.changeLoveListVisible(false)
-    requestAnimationFrame(() => {
-      setActiveList(item.id)
-    })
   }
 
 
@@ -105,7 +125,6 @@ export default ({ onShowMenu }: {
       key={item.id}
       item={item}
       index={index}
-      activeId={activeListId}
       onPress={handleToggleList}
       onShowMenu={showMenu}
     />
@@ -120,15 +139,14 @@ export default ({ onShowMenu }: {
       ref={flatListRef}
       onScroll={handleScroll}
       style={styles.container}
+      contentContainerStyle={styles.content}
       data={allList}
       maxToRenderPerBatch={9}
-      // updateCellsBatchingPeriod={80}
       windowSize={9}
       removeClippedSubviews={true}
       initialNumToRender={18}
       renderItem={renderItem}
       keyExtractor={getkey}
-      // extraData={activeIndex}
       getItemLayout={getItemLayout}
     />
   )
@@ -137,54 +155,46 @@ export default ({ onShowMenu }: {
 
 const styles = createStyle({
   container: {
-    flexShrink: 1,
-    flexGrow: 0,
+    flex: 1,
   },
-  // listContainer: {
-  //   // borderBottomWidth: BorderWidths.normal2,
-  // },
-
+  content: {
+    paddingTop: 4,
+    paddingBottom: 16,
+  },
   listItem: {
-    height: 'auto',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingRight: 5,
-    paddingLeft: 5,
-    // borderBottomWidth: BorderWidths.normal,
+    paddingLeft: 16,
+    paddingRight: 4,
+    borderBottomWidth: BorderWidths.hairline,
   },
-  listActiveIcon: {
-    // width: 18,
-    marginLeft: 3,
-    // paddingRight: 5,
-    textAlign: 'center',
-  },
-  loading: {
-    marginLeft: 5,
-  },
-  listName: {
+  main: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
     height: '100%',
-    // height: 46,
-    // paddingTop: 12,
-    // paddingBottom: 12,
+  },
+  cover: {
+    borderRadius: BorderRadius.medium,
+    alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  info: {
     flexGrow: 1,
     flexShrink: 1,
-    paddingLeft: 5,
-    // backgroundColor: 'rgba(0,0,0,0.1)',
+    paddingLeft: 12,
+    paddingRight: 8,
+    justifyContent: 'center',
   },
-  // listNameText: {
-  //   // height: 46,
-  //   fontSize: 14,
-  // },
+  title: {
+    fontWeight: '600',
+    marginBottom: 3,
+  },
   listMoreBtn: {
     height: '100%',
-    width: 36,
-    // height: 46,
-    // paddingTop: 12,
-    // paddingBottom: 12,
+    width: 44,
     justifyContent: 'center',
     alignItems: 'center',
-    // backgroundColor: 'rgba(0,0,0,0.1)',
   },
 })
-

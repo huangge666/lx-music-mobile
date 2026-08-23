@@ -176,6 +176,8 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
         waitJumpListPositionRef.current = true
         updateList(playerState.playMusicInfo.listId)
       } else void getListPrevSelectId().then(updateList)
+    } else if (listState.activeListId) {
+      updateList(listState.activeListId)
     } else void getListPrevSelectId().then(updateList)
 
     global.state_event.on('mylistToggled', updateList)
