@@ -15,7 +15,7 @@ import { StyleSheet, type StyleProp, type TextStyle } from 'react-native'
 // import IconFoundation from 'react-native-vector-icons/Foundation'
 // import IconIonicons from 'react-native-vector-icons/Ionicons'
 // import IconMaterialIcons from 'react-native-vector-icons/MaterialIcons'
-// import IconMaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'
+import IconMaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'
 // import IconOcticons from 'react-native-vector-icons/Octicons'
 // import IconZocial from 'react-native-vector-icons/Zocial'
 // import IconSimpleLineIcons from 'react-native-vector-icons/SimpleLineIcons'
@@ -63,7 +63,7 @@ export {
   // IconFoundation,
   // IconIonicons,
   // IconMaterialIcons,
-  // IconMaterialCommunityIcons,
+  IconMaterialCommunityIcons,
   // IconOcticons,
   // IconZocial,
   // IconSimpleLineIcons,

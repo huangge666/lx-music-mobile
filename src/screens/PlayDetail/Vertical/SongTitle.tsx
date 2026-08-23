@@ -1,13 +1,14 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { View, TouchableOpacity } from 'react-native'
 import Text from '@/components/common/Text'
-import { Icon } from '@/components/common/Icon'
+import { Icon, IconMaterialCommunityIcons } from '@/components/common/Icon'
 import { usePlayerMusicInfo } from '@/store/player/hook'
-import { createStyle } from '@/utils/tools'
+import { useTheme } from '@/store/theme/hook'
+import { createStyle, toast } from '@/utils/tools'
+import { scaleSizeW } from '@/utils/pixelRatio'
 import { collectMusic, uncollectMusic } from '@/core/player/player'
-import state from '@/store/list/state'
+import { getListMusicSync } from '@/utils/listManage'
 import { LIST_IDS } from '@/config/constant'
-import playerState from '@/store/player/state'
 import SettingPopup, { type SettingPopupType } from '@/screens/PlayDetail/components/SettingPopup'
 import {
   Immersive,
@@ -15,15 +16,13 @@ import {
   MacIconSize,
   MacSpacing,
   MacTouchSize,
-  MacAccentRed,
 } from '../macOS'
 
 
 const checkIsLove = (musicId: string | null | undefined): boolean => {
   if (!musicId) return false
-  const list = state.allMusicList.get(LIST_IDS.LOVE)
-  if (!list) return false
-  return list.some(m => m.id == musicId)
+  // 真实收藏列表在 listManage.allMusicList；store/list/state.allMusicList 不会写入歌曲数据
+  return getListMusicSync(LIST_IDS.LOVE).some(m => m.id == musicId)
 }
 
 /**
@@ -32,21 +31,27 @@ const checkIsLove = (musicId: string | null | undefined): boolean => {
  * — 右：半透明圆钮 收藏 + 更多
  */
 const SongTitle = () => {
+  const theme = useTheme()
   const musicInfo = usePlayerMusicInfo()
   const popupRef = useRef<SettingPopupType>(null)
-  const [, setLoveVersion] = useState(0)
+  const [isLove, setIsLove] = useState(() => checkIsLove(musicInfo.id))
 
-  const forceUpdate = useCallback(() => {
-    setLoveVersion(v => v + 1)
-  }, [])
+  const syncLoveState = useCallback(() => {
+    setIsLove(checkIsLove(musicInfo.id))
+  }, [musicInfo.id])
+
+  // 歌曲切换或收藏列表从其他入口更新时，以真实列表状态校准按钮。
+  useEffect(() => {
+    syncLoveState()
+  }, [syncLoveState])
 
   useEffect(() => {
     const handleChange = (ids: string[]) => {
       if (!ids.includes(LIST_IDS.LOVE)) return
-      forceUpdate()
+      syncLoveState()
     }
     const handleMylistUpdated = () => {
-      forceUpdate()
+      syncLoveState()
     }
     global.app_event.on('myListMusicUpdate', handleChange)
     global.state_event.on('mylistUpdated', handleMylistUpdated)
@@ -54,15 +59,25 @@ const SongTitle = () => {
       global.app_event.off('myListMusicUpdate', handleChange)
       global.state_event.off('mylistUpdated', handleMylistUpdated)
     }
-  }, [forceUpdate])
-
-  const isLove = checkIsLove(musicInfo.id)
+  }, [syncLoveState])
 
   const handleLove = useCallback(() => {
-    if (!playerState.playMusicInfo.musicInfo) return
-    if (isLove) uncollectMusic()
-    else collectMusic()
-  }, [isLove])
+    if (!musicInfo.id) return
+
+    const nextIsLove = !isLove
+    // 收藏写入是异步操作，先更新视觉状态，确保按下后立即变色。
+    setIsLove(nextIsLove)
+    void (nextIsLove ? collectMusic() : uncollectMusic()).then((success) => {
+      if (!success) {
+        setIsLove(isLove)
+        return
+      }
+      toast(global.i18n.t(nextIsLove ? 'collect_success' : 'list_edit_action_tip_remove_success'))
+    }).catch((err: unknown) => {
+      setIsLove(isLove)
+      toast(err instanceof Error && err.message ? err.message : global.i18n.t('list_edit_action_tip_add_failed'))
+    })
+  }, [isLove, musicInfo.id])
 
   const handleMore = useCallback(() => {
     popupRef.current?.show()
@@ -91,11 +106,19 @@ const SongTitle = () => {
 
       <View style={styles.actions}>
         <TouchableOpacity style={styles.circleBtn} activeOpacity={0.7} onPress={handleLove}>
-          <Icon
-            name="love"
-            color={isLove ? MacAccentRed : Immersive.text}
-            size={MacIconSize.md}
-          />
+          {isLove ? (
+            <IconMaterialCommunityIcons
+              name="heart"
+              color={theme['c-primary']}
+              size={scaleSizeW(MacIconSize.md)}
+            />
+          ) : (
+            <Icon
+              name="love"
+              color={Immersive.text}
+              size={MacIconSize.md}
+            />
+          )}
         </TouchableOpacity>
         <TouchableOpacity style={styles.circleBtn} activeOpacity={0.7} onPress={handleMore}>
           <Icon name="dots-vertical" color={Immersive.text} size={MacIconSize.md} />

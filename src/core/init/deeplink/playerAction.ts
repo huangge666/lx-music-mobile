@@ -20,10 +20,10 @@ export const handlePlayerAction = async(action: PlayerAction) => {
       togglePlay()
       break
     case 'collect':
-      collectMusic()
+      void collectMusic()
       break
     case 'uncollect':
-      uncollectMusic()
+      void uncollectMusic()
       break
     case 'dislike':
       void dislikeMusic()

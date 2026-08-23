@@ -722,25 +722,27 @@ export const togglePlay = () => {
 /**
  * 收藏当前播放的歌曲
  */
-export const collectMusic = () => {
-  if (!playerState.playMusicInfo.musicInfo) return
-  void addListMusics(LIST_IDS.LOVE, [
+export const collectMusic = async(): Promise<boolean> => {
+  if (!playerState.playMusicInfo.musicInfo) return false
+  await addListMusics(LIST_IDS.LOVE, [
     'progress' in playerState.playMusicInfo.musicInfo
       ? playerState.playMusicInfo.musicInfo.metadata.musicInfo
       : playerState.playMusicInfo.musicInfo,
   ], settingState.setting['list.addMusicLocationType'])
+  return true
 }
 
 /**
  * 取消收藏当前播放的歌曲
  */
-export const uncollectMusic = () => {
-  if (!playerState.playMusicInfo.musicInfo) return
-  void removeListMusics(LIST_IDS.LOVE, [
+export const uncollectMusic = async(): Promise<boolean> => {
+  if (!playerState.playMusicInfo.musicInfo) return false
+  await removeListMusics(LIST_IDS.LOVE, [
     'progress' in playerState.playMusicInfo.musicInfo
       ? playerState.playMusicInfo.musicInfo.metadata.musicInfo.id
       : playerState.playMusicInfo.musicInfo.id,
   ])
+  return true
 }
 
 /**

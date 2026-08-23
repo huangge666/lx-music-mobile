@@ -10,7 +10,7 @@ import {
 } from '../../../../macOS'
 import { collectMusic, uncollectMusic } from '@/core/player/player'
 import { usePlayerMusicInfo } from '@/store/player/hook'
-import state from '@/store/list/state'
+import { getListMusicSync } from '@/utils/listManage'
 import { LIST_IDS } from '@/config/constant'
 import playerState from '@/store/player/state'
 
@@ -25,13 +25,12 @@ const BTN_WIDTH = MacTouchSize.medium
 const BTN_ICON_SIZE = MacIconSize.md
 
 /**
- * 从 state.allMusicList 取一次快照，避免每次渲染都计算
+ * 从 listManage 的真实收藏列表判断是否已喜欢
  */
 const checkIsLove = (musicId: string | null | undefined): boolean => {
   if (!musicId) return false
-  const list = state.allMusicList.get(LIST_IDS.LOVE)
-  if (!list) return false
-  return list.some(m => m.id == musicId)
+  // 真实收藏列表在 listManage.allMusicList；store/list/state.allMusicList 不会写入歌曲数据
+  return getListMusicSync(LIST_IDS.LOVE).some(m => m.id == musicId)
 }
 
 const LoveBtn = () => {
@@ -66,8 +65,8 @@ const LoveBtn = () => {
 
   const handlePress = useCallback(() => {
     if (!playerState.playMusicInfo.musicInfo) return
-    if (isLove) uncollectMusic()
-    else collectMusic()
+    if (isLove) void uncollectMusic()
+    else void collectMusic()
   }, [isLove])
 
   return (
