@@ -1,7 +1,7 @@
-import { useMemo, useRef, useImperativeHandle, forwardRef, useState } from 'react'
+import { useRef, useImperativeHandle, forwardRef, useCallback } from 'react'
 import { useI18n } from '@/lang'
-import Menu, { type MenuType, type Position } from '@/components/common/Menu'
 import { hasDislike } from '@/core/dislikeList'
+import ActionSheet, { type ActionSheetItem, type ActionSheetType } from '@/components/common/ActionSheet'
 
 export interface SelectInfo {
   musicInfo: LX.Music.MusicInfoOnline
@@ -9,7 +9,15 @@ export interface SelectInfo {
   index: number
   single: boolean
 }
-const initSelectInfo = {}
+
+export interface Position {
+  w: number
+  h: number
+  x: number
+  y: number
+  menuWidth?: number
+  menuHeight?: number
+}
 
 export interface ListMenuProps {
   onPlay: (selectInfo: SelectInfo) => void
@@ -20,48 +28,50 @@ export interface ListMenuProps {
   onMusicSourceDetail: (selectInfo: SelectInfo) => void
   onDislikeMusic: (selectInfo: SelectInfo) => void
 }
+
 export interface ListMenuType {
-  show: (selectInfo: SelectInfo, position: Position) => void
+  show: (selectInfo: SelectInfo, position?: Position) => void
 }
 
-export type {
-  Position,
+const initSelectInfo = {}
+
+const getMusicSubtitle = (musicInfo: LX.Music.MusicInfoOnline) => {
+  const albumName = musicInfo.meta.albumName
+  return albumName ? `${musicInfo.singer} · ${albumName}` : musicInfo.singer
 }
 
-export default forwardRef<ListMenuType, ListMenuProps>((props: ListMenuProps, ref) => {
+export default forwardRef<ListMenuType, ListMenuProps>((props, ref) => {
   const t = useI18n()
-  const [visible, setVisible] = useState(false)
-  const menuRef = useRef<MenuType>(null)
+  const actionSheetRef = useRef<ActionSheetType>(null)
   const selectInfoRef = useRef<SelectInfo>(initSelectInfo as SelectInfo)
-  const [isDislikeMusic, setDislikeMusic] = useState(false)
+
+  const buildMenuItems = useCallback((musicInfo: LX.Music.MusicInfoOnline): ActionSheetItem[] => {
+    return [
+      { action: 'play', label: t('play'), icon: 'play' },
+      { action: 'playLater', label: t('play_later'), icon: 'nextMusic' },
+      { action: 'download', label: t('nav_download'), icon: 'download-2' },
+      { action: 'add', label: t('add_to'), icon: 'add-music' },
+      { action: 'copyName', label: t('copy_name'), icon: 'share' },
+      { action: 'musicSourceDetail', label: t('music_source_detail'), icon: 'album' },
+      { action: 'dislike', label: t('dislike'), disabled: hasDislike(musicInfo), icon: 'eraser' },
+    ]
+  }, [t])
 
   useImperativeHandle(ref, () => ({
-    show(selectInfo, position) {
+    show(selectInfo) {
       selectInfoRef.current = selectInfo
-      setDislikeMusic(hasDislike(selectInfo.musicInfo))
-      if (visible) menuRef.current?.show(position)
-      else {
-        setVisible(true)
-        requestAnimationFrame(() => {
-          menuRef.current?.show(position)
-        })
-      }
+      actionSheetRef.current?.show({
+        header: {
+          title: selectInfo.musicInfo.name,
+          subtitle: getMusicSubtitle(selectInfo.musicInfo),
+          icon: 'play-outline',
+        },
+        items: buildMenuItems(selectInfo.musicInfo),
+      })
     },
-  }))
+  }), [buildMenuItems])
 
-  const menus = useMemo(() => {
-    return [
-      { action: 'play', label: t('play') },
-      { action: 'playLater', label: t('play_later') },
-      { action: 'download', label: t('nav_download') },
-      { action: 'add', label: t('add_to') },
-      { action: 'copyName', label: t('copy_name') },
-      { action: 'musicSourceDetail', label: t('music_source_detail') },
-      { action: 'dislike', label: t('dislike'), disabled: isDislikeMusic },
-    ] as const
-  }, [t, isDislikeMusic])
-
-  const handleMenuPress = ({ action }: typeof menus[number]) => {
+  const handleMenuPress = useCallback((action: string) => {
     const selectInfo = selectInfoRef.current
     switch (action) {
       case 'play':
@@ -81,7 +91,6 @@ export default forwardRef<ListMenuType, ListMenuProps>((props: ListMenuProps, re
         break
       case 'musicSourceDetail':
         props.onMusicSourceDetail(selectInfo)
-        // setVIsibleMusicPosition(true)
         break
       case 'dislike':
         props.onDislikeMusic(selectInfo)
@@ -89,11 +98,7 @@ export default forwardRef<ListMenuType, ListMenuProps>((props: ListMenuProps, re
       default:
         break
     }
-  }
+  }, [props])
 
-  return (
-    visible
-      ? <Menu ref={menuRef} menus={menus} onPress={handleMenuPress} />
-      : null
-  )
+  return <ActionSheet ref={actionSheetRef} onPress={handleMenuPress} />
 })

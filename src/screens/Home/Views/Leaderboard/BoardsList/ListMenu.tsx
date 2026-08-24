@@ -1,54 +1,57 @@
-import { useMemo, useRef, useImperativeHandle, forwardRef, useState } from 'react'
+import { useRef, useImperativeHandle, forwardRef, useCallback } from 'react'
 import { useI18n } from '@/lang'
-import Menu, { type MenuType, type Position } from '@/components/common/Menu'
+import ActionSheet, { type ActionSheetType } from '@/components/common/ActionSheet'
 
 export interface SelectInfo {
   listId: string
   name: string
   index: number
 }
-const initSelectInfo = {}
+
+export interface Position {
+  w: number
+  h: number
+  x: number
+  y: number
+  menuWidth?: number
+  menuHeight?: number
+}
 
 export interface ListMenuProps {
   onPlay: (selectInfo: SelectInfo) => void
   onCollect: (selectInfo: SelectInfo) => void
   onHideMenu: () => void
 }
+
 export interface ListMenuType {
-  show: (selectInfo: SelectInfo, position: Position) => void
+  show: (selectInfo: SelectInfo, position?: Position) => void
 }
 
-export type {
-  Position,
-}
+const initSelectInfo = {}
 
 export default forwardRef<ListMenuType, ListMenuProps>((props, ref) => {
   const t = useI18n()
-  const [visible, setVisible] = useState(false)
-  const menuRef = useRef<MenuType>(null)
+  const actionSheetRef = useRef<ActionSheetType>(null)
   const selectInfoRef = useRef<SelectInfo>(initSelectInfo as SelectInfo)
 
   useImperativeHandle(ref, () => ({
-    show(selectInfo, position) {
+    show(selectInfo) {
       selectInfoRef.current = selectInfo
-      if (visible) menuRef.current?.show(position)
-      else {
-        setVisible(true)
-        requestAnimationFrame(() => {
-          menuRef.current?.show(position)
-        })
-      }
+      actionSheetRef.current?.show({
+        header: {
+          title: selectInfo.name,
+          subtitle: t('nav_top'),
+          icon: 'leaderboard',
+        },
+        items: [
+          { action: 'play', label: t('play'), icon: 'play' },
+          { action: 'collect', label: t('collect'), icon: 'love' },
+        ],
+      })
     },
-  }))
+  }), [t])
 
-  const menus = useMemo(() => {
-    return [
-      { action: 'play', label: t('play') },
-      { action: 'collect', label: t('collect') },
-    ] as const
-  }, [t])
-
-  const handleMenuPress = ({ action }: typeof menus[number]) => {
+  const handleMenuPress = useCallback((action: string) => {
     const selectInfo = selectInfoRef.current
     switch (action) {
       case 'play':
@@ -60,12 +63,7 @@ export default forwardRef<ListMenuType, ListMenuProps>((props, ref) => {
       default:
         break
     }
-  }
+  }, [props])
 
-  return (
-    visible
-      ? <Menu ref={menuRef} menus={menus} onPress={handleMenuPress} onHide={props.onHideMenu} />
-      : null
-  )
+  return <ActionSheet ref={actionSheetRef} onPress={handleMenuPress} onHide={props.onHideMenu} />
 })
-
