@@ -43,6 +43,7 @@ export default forwardRef<OnlineListType, OnlineListProps>(({
     setList(list, isAppend = false, showSource = false) {
       listRef.current?.setList(list, isAppend, showSource)
       multipleModeBarRef.current?.setIsSelectAll(false)
+      multipleModeBarRef.current?.setSelectedCount(0)
     },
     setStatus(val) {
       listRef.current?.setStatus(val)
@@ -60,6 +61,20 @@ export default forwardRef<OnlineListType, OnlineListProps>(({
   const hancelExitSelect = () => {
     multipleModeBarRef.current?.exitSelectMode()
     listRef.current?.setIsMultiSelectMode(false)
+  }
+  const syncSelectBar = (isAll: boolean) => {
+    multipleModeBarRef.current?.setIsSelectAll(isAll)
+    multipleModeBarRef.current?.setSelectedCount(listRef.current?.getSelectedList().length ?? 0)
+  }
+  const handlePlayLaterSelected = () => {
+    const selectedList = listRef.current?.getSelectedList() ?? []
+    if (!selectedList.length) return
+    handlePlayLater(selectedList[0], selectedList, hancelExitSelect)
+  }
+  const handleAddSelected = () => {
+    const selectedList = listRef.current?.getSelectedList() ?? []
+    if (!selectedList.length) return
+    listMusicMultiAddRef.current?.show({ selectedList, listId: '', isMove: false })
   }
 
   const showMenu = (musicInfo: LX.Music.MusicInfoOnline, index: number, position: Position) => {
@@ -85,7 +100,7 @@ export default forwardRef<OnlineListType, OnlineListProps>(({
           ref={listRef}
           onShowMenu={showMenu}
           onMuiltSelectMode={hancelMultiSelect}
-          onSelectAll={isAll => multipleModeBarRef.current?.setIsSelectAll(isAll)}
+          onSelectAll={syncSelectBar}
           onRefresh={onRefresh}
           onLoadMore={onLoadMore}
           onPlayList={onPlayList}
@@ -97,8 +112,13 @@ export default forwardRef<OnlineListType, OnlineListProps>(({
         <MultipleModeBar
           ref={multipleModeBarRef}
           onSwitchMode={hancelSwitchSelectMode}
-          onSelectAll={isAll => listRef.current?.selectAll(isAll)}
+          onSelectAll={isAll => {
+            listRef.current?.selectAll(isAll)
+            multipleModeBarRef.current?.setSelectedCount(listRef.current?.getSelectedList().length ?? 0)
+          }}
           onExitSelectMode={hancelExitSelect}
+          onPlayLater={handlePlayLaterSelected}
+          onAdd={handleAddSelected}
         />
       </View>
       <ListMusicAdd ref={listMusicAddRef} onAdded={() => { hancelExitSelect() }} />
@@ -123,12 +143,6 @@ const styles = createStyle({
   container: {
     flex: 1,
     overflow: 'hidden',
-  },
-  list: {
-    flex: 1,
-  },
-  exitMultipleModeBtn: {
-    height: 40,
   },
 })
 

@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useHorizontalMode } from '@/utils/hooks'
 import PageContent from '@/components/PageContent'
+import { MultipleModeBarHost } from '@/components/common/MultipleModeBar'
 import { setComponentId } from '@/core/common'
 import { COMPONENT_IDS } from '@/config/constant'
 import Vertical from './Vertical'
@@ -28,11 +29,13 @@ export default ({ componentId }: Props) => {
 
   return (
     <PageContent>
-      {
-        isHorizontalMode
-          ? <Horizontal />
-          : <Vertical />
-      }
+      <MultipleModeBarHost>
+        {
+          isHorizontalMode
+            ? <Horizontal />
+            : <Vertical />
+        }
+      </MultipleModeBarHost>
     </PageContent>
   )
 }

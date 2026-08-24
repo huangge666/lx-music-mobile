@@ -30,24 +30,24 @@ export default () => {
   const listMenuRef = useRef<ListMenuType>(null)
   const musicToggleModalRef = useRef<MusicToggleModalType>(null)
   const layoutHeightRef = useRef<number>(0)
-  const isShowMultipleModeBar = useRef(false)
-  const isShowSearchBarModeBar = useRef(false)
   const selectedInfoRef = useRef<SelectInfo>()
   // console.log('render index list')
 
   const hancelMultiSelect = useCallback(() => {
-    isShowMultipleModeBar.current = true
     multipleModeBarRef.current?.show()
     listRef.current?.setIsMultiSelectMode(true)
   }, [])
   const hancelExitSelect = useCallback(() => {
     multipleModeBarRef.current?.exitSelectMode()
     listRef.current?.setIsMultiSelectMode(false)
-    isShowMultipleModeBar.current = false
   }, [])
   const hancelSwitchSelectMode = useCallback((mode: SelectMode) => {
     multipleModeBarRef.current?.setSwitchMode(mode)
     listRef.current?.setSelectMode(mode)
+  }, [])
+  const syncSelectBar = useCallback((isAll: boolean) => {
+    multipleModeBarRef.current?.setIsSelectAll(isAll)
+    multipleModeBarRef.current?.setSelectedCount(listRef.current?.getSelectedList().length ?? 0)
   }, [])
 
   const showMenu = useCallback((musicInfo: LX.Music.MusicInfo, index: number, position: Position) => {
@@ -60,19 +60,11 @@ export default () => {
     }, position)
   }, [])
   const handleShowSearch = useCallback(() => {
-    isShowSearchBarModeBar.current = true
-    if (isShowMultipleModeBar.current) {
-      multipleModeBarRef.current?.setVisibleBar(false)
-    }
     listSearchBarRef.current?.show()
   }, [])
   const handleExitSearch = useCallback(() => {
-    isShowSearchBarModeBar.current = false
     listMusicSearchRef.current?.hide()
     listSearchBarRef.current?.hide()
-    if (isShowMultipleModeBar.current) {
-      multipleModeBarRef.current?.setVisibleBar(true)
-    }
   }, [])
   const handleScrollToInfo = useCallback((info: LX.Music.MusicInfo) => {
     listRef.current?.scrollToInfo(info)
@@ -93,6 +85,26 @@ export default () => {
     }
   }, [handleShowSearch])
 
+  const handlePlayLaterSelected = useCallback(() => {
+    const selectedList = listRef.current?.getSelectedList() ?? []
+    if (!selectedList.length) return
+    handlePlayLater(listState.activeListId, selectedList[0], selectedList, hancelExitSelect)
+  }, [hancelExitSelect])
+  const handleAddSelected = useCallback(() => {
+    const selectedList = listRef.current?.getSelectedList() ?? []
+    if (!selectedList.length) return
+    listMusicMultiAddRef.current?.show({ selectedList, listId: listState.activeListId, isMove: false })
+  }, [])
+  const handleMoveSelected = useCallback(() => {
+    const selectedList = listRef.current?.getSelectedList() ?? []
+    if (!selectedList.length) return
+    listMusicMultiAddRef.current?.show({ selectedList, listId: listState.activeListId, isMove: true })
+  }, [])
+  const handleRemoveSelected = useCallback(() => {
+    const selectedList = listRef.current?.getSelectedList() ?? []
+    if (!selectedList.length) return
+    handleRemove(listState.activeListId, selectedList[0], selectedList, hancelExitSelect)
+  }, [hancelExitSelect])
   const handleAddMusic = useCallback((info: SelectInfo) => {
     if (info.selectedList.length) {
       listMusicMultiAddRef.current?.show({ selectedList: info.selectedList, listId: info.listId, isMove: false })
@@ -122,23 +134,30 @@ export default () => {
     <View style={styles.container}>
       <View style={styles.listArea} onLayout={onLayout}>
         <View style={styles.topBar} pointerEvents="box-none">
-          <MultipleModeBar
-            ref={multipleModeBarRef}
-            onSwitchMode={hancelSwitchSelectMode}
-            onSelectAll={isAll => listRef.current?.selectAll(isAll)}
-            onExitSelectMode={hancelExitSelect}
-          />
           <ListSearchBar
             ref={listSearchBarRef}
             onSearch={keyword => listMusicSearchRef.current?.search(keyword, layoutHeightRef.current)}
             onExitSearch={handleExitSearch}
           />
         </View>
+        <MultipleModeBar
+          ref={multipleModeBarRef}
+          onSwitchMode={hancelSwitchSelectMode}
+          onSelectAll={isAll => {
+            listRef.current?.selectAll(isAll)
+            multipleModeBarRef.current?.setSelectedCount(listRef.current?.getSelectedList().length ?? 0)
+          }}
+          onExitSelectMode={hancelExitSelect}
+          onPlayLater={handlePlayLaterSelected}
+          onAdd={handleAddSelected}
+          onMove={handleMoveSelected}
+          onRemove={handleRemoveSelected}
+        />
         <List
           ref={listRef}
           onShowMenu={showMenu}
           onMuiltSelectMode={hancelMultiSelect}
-          onSelectAll={isAll => multipleModeBarRef.current?.setIsSelectAll(isAll)}
+          onSelectAll={syncSelectBar}
         />
         <ListMusicSearch
           ref={listMusicSearchRef}

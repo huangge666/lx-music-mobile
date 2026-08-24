@@ -111,6 +111,7 @@
   "list_rename_title": "重命名列表",
   "list_select_all": "全选",
   "list_select_cancel": "取消",
+  "list_select_count": "已选 {num} 首",
   "list_select_local_file": "添加本地歌曲",
   "list_select_local_file_desc": "选择本地歌曲文件夹",
   "list_select_local_file_empty_tip": "没有在当前文件夹中发现歌曲",

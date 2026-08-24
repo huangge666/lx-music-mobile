@@ -92,12 +92,7 @@ const List = forwardRef<ListType, ListProps>(({
       selectModeRef.current = mode
     },
     selectAll(isAll) {
-      let list: LX.Music.MusicInfoOnline[]
-      if (isAll) {
-        list = [...currentList]
-      } else {
-        list = []
-      }
+      const list = isAll ? [...currentList] : []
       selectedListRef.current = list
       setSelectedList(list)
     },
@@ -114,10 +109,9 @@ const List = forwardRef<ListType, ListProps>(({
 
 
   const handleUpdateSelectedList = (newList: LX.Music.MusicInfoOnline[]) => {
-    if (selectedListRef.current.length && newList.length == currentList.length) onSelectAll(true)
-    else if (selectedListRef.current.length == currentList.length) onSelectAll(false)
     selectedListRef.current = newList
     setSelectedList(newList)
+    onSelectAll(newList.length > 0 && newList.length == currentList.length)
   }
   const handleSelect = (item: LX.Music.MusicInfoOnline, pressIndex: number) => {
     let newList: LX.Music.MusicInfoOnline[]
@@ -279,9 +273,6 @@ const Footer = ({ label, onLoadMore }: {
 }
 
 const styles = createStyle({
-  container: {
-    flex: 1,
-  },
   list: {
     flexGrow: 1,
     flexShrink: 1,

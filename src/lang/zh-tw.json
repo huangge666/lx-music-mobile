@@ -111,6 +111,7 @@
   "list_rename_title": "重新命名清單",
   "list_select_all": "全選",
   "list_select_cancel": "取消",
+  "list_select_count": "已選 {num} 首",
   "list_select_local_file": "添加本機歌曲",
   "list_select_local_file_desc": "選取本機歌曲資料夾",
   "list_select_local_file_empty_tip": "沒有在目前資料夾中發現歌曲",

@@ -12,7 +12,7 @@ import { createStyle, getRowInfo } from '@/utils/tools'
 import { scaleSizeW } from '@/utils/pixelRatio'
 import { usePlayInfo, usePlayMusicInfo } from '@/store/player/hook'
 import type { Position } from './ListMenu'
-import type { SelectMode } from './MultipleModeBar'
+import { MULTI_SELECT_BAR_HEIGHT, type SelectMode } from './MultipleModeBar'
 import { useActiveListId } from '@/store/list/hook'
 import { useSettingValue } from '@/store/setting/hook'
 
@@ -63,6 +63,7 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
   const prevSelectIndexRef = useRef(-1)
   const [selectedList, setSelectedList] = useState<LX.List.ListMusics>([])
   const selectedListRef = useRef<LX.List.ListMusics>([])
+  const [visibleMultiSelect, setVisibleMultiSelect] = useState(false)
   const currentListIdRef = useRef('')
   const waitJumpListPositionRef = useRef(false)
   const rowInfo = useRef(getRowInfo())
@@ -77,17 +78,13 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
         prevSelectIndexRef.current = -1
         handleUpdateSelectedList([])
       }
+      setVisibleMultiSelect(isMultiSelectMode)
     },
     setSelectMode(mode) {
       selectModeRef.current = mode
     },
     selectAll(isAll) {
-      let list: LX.List.ListMusics
-      if (isAll) {
-        list = [...currentList]
-      } else {
-        list = []
-      }
+      const list = isAll ? [...currentList] : []
       selectedListRef.current = list
       setSelectedList(list)
     },
@@ -198,10 +195,9 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
   }
 
   const handleUpdateSelectedList = (newList: LX.List.ListMusics) => {
-    if (selectedListRef.current.length && newList.length == currentList.length) onSelectAll(true)
-    else if (selectedListRef.current.length == currentList.length) onSelectAll(false)
     selectedListRef.current = newList
     setSelectedList(newList)
+    onSelectAll(newList.length > 0 && newList.length == currentList.length)
   }
   const handleSelect = (item: LX.Music.MusicInfo, pressIndex: number) => {
     let newList: LX.List.ListMusics
@@ -303,21 +299,15 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
       keyExtractor={getkey}
       extraData={activeIndex}
       getItemLayout={getItemLayout}
-      contentContainerStyle={styles.listContent}
+      contentContainerStyle={{ paddingBottom: visibleMultiSelect ? 64 + MULTI_SELECT_BAR_HEIGHT : 64 }}
     />
   )
 })
 
 const styles = createStyle({
-  container: {
-    flex: 1,
-  },
   list: {
     flexGrow: 1,
     flexShrink: 1,
-  },
-  listContent: {
-    paddingBottom: 64,
   },
 })
 

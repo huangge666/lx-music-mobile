@@ -111,6 +111,7 @@
   "list_rename_title": "Rename List",
   "list_select_all": "Select All",
   "list_select_cancel": "Cancel",
+  "list_select_count": "Selected {num}",
   "list_select_local_file": "Add Local Songs",
   "list_select_local_file_desc": "Choose local song folder",
   "list_select_local_file_empty_tip": "No songs found in current folder",
