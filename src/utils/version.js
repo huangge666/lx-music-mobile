@@ -1,4 +1,5 @@
 import { httpGet } from '@/utils/request'
+import { compareVer } from '@/utils'
 import { name } from '../../package.json'
 import { downloadFile, stopDownload, temporaryDirectoryPath } from '@/utils/fs'
 import { getSupportedAbis, installApk } from '@/utils/nativeModules/utils'
@@ -17,23 +18,21 @@ const abis = [
 ]
 
 const address = [
-  // jsdelivr 均显式锁定 @master 分支：不带分支时 CDN 会自行解析引用，
-  // 可能命中旧 tag 或长期缓存的内容，导致发版后长时间检测不到新版本
+  // GitHub 直连优先：jsDelivr 对 gh 文件按路径长期缓存，?t= 无法刷新，
+  // 发版后可能长时间仍返回旧 version.json
+  [`https://raw.githubusercontent.com/${FORK_OWNER}/${FORK_REPO}/master/publish/version.json`, 'direct'],
   [`https://cdn.jsdelivr.net/gh/${FORK_OWNER}/${FORK_REPO}@master/publish/version.json`, 'direct'],
   [`https://fastly.jsdelivr.net/gh/${FORK_OWNER}/${FORK_REPO}@master/publish/version.json`, 'direct'],
   [`https://gcore.jsdelivr.net/gh/${FORK_OWNER}/${FORK_REPO}@master/publish/version.json`, 'direct'],
-  [`https://raw.githubusercontent.com/${FORK_OWNER}/${FORK_REPO}/master/publish/version.json`, 'direct'],
 ]
 
 
-// 单个地址最多尝试 2 次（首次 + 1 次重试）即切换下一个源：
-// 原先同一地址重试 3 次、每次超时 10 秒，首个不可达地址会阻塞
-// 半分钟以上才开始轮询其他源，表现为“无法检测到更新”
+// 单个地址最多尝试 2 次（首次 + 1 次重试）；各源并行请求，互不阻塞
 const MAX_RETRY_PER_URL = 1
 
 const request = async(url, retryNum = 0) => {
   return new Promise((resolve, reject) => {
-    // 追加时间戳参数绕过 CDN 缓存，确保拿到最新的 version.json
+    // GitHub raw 带时间戳可减少中间代理缓存；jsDelivr 按路径缓存，查询参数无效
     const bustUrl = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now()
     httpGet(bustUrl, {
       timeout: 10000,
@@ -63,24 +62,44 @@ const getNpmPkgInfo = async(url) => {
   })
 }
 
-export const getVersionInfo = async(index = 0) => {
-  const [url, source] = address[index]
-  let promise
+const fetchVersion = (url, source) => {
   switch (source) {
     case 'direct':
-      promise = getDirectInfo(url)
-      break
+      return getDirectInfo(url)
     case 'npm':
-      promise = getNpmPkgInfo(url)
-      break
+      return getNpmPkgInfo(url)
+    default:
+      return Promise.reject(new Error('unknown source'))
+  }
+}
+
+// 并行请求各源，取版本号最高的结果。GitHub 直连成功则立即返回，
+// 避免 jsDelivr 旧缓存先 200 把真正的新版本挡掉。
+export const getVersionInfo = () => new Promise((resolve, reject) => {
+  let pending = address.length
+  let best = null
+  let lastErr = null
+  let finished = false
+
+  const complete = () => {
+    if (finished) return
+    finished = true
+    if (best) resolve(best)
+    else reject(lastErr || new Error('failed'))
   }
 
-  return promise.catch(async(err) => {
-    index++
-    if (index >= address.length) throw err
-    return getVersionInfo(index)
-  })
-}
+  for (const [url, source] of address) {
+    fetchVersion(url, source).then(info => {
+      if (!best || compareVer(best.version, info.version) < 0) best = info
+      pending--
+      if (url.includes('raw.githubusercontent.com') || pending === 0) complete()
+    }).catch(err => {
+      lastErr = err
+      pending--
+      if (pending === 0) complete()
+    })
+  }
+})
 
 const getTargetAbi = async() => {
   const supportedAbis = await getSupportedAbis()

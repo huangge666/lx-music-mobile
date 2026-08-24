@@ -7,12 +7,14 @@ export * from './common'
 
 // https://stackoverflow.com/a/53387532
 export function compareVer(currentVer: string, targetVer: string): -1 | 0 | 1 {
-  // treat non-numerical characters as lower version
+  // YYYYMMDD_N：下划线是同日构建号，按点分比较，使 20260824_2 > 20260824
+  const normalize = (ver: string) => ('' + ver).replace(/_/g, '.')
+  // treat other non-numerical characters as lower version
   // replacing them with a negative number based on charcode of each character
   const fix = (s: string) => `.${s.toLowerCase().charCodeAt(0) - 2147483647}.`
 
-  const currentVerArr: Array<string | number> = ('' + currentVer).replace(/[^0-9.]/g, fix).split('.')
-  const targetVerArr: Array<string | number> = ('' + targetVer).replace(/[^0-9.]/g, fix).split('.')
+  const currentVerArr: Array<string | number> = normalize(currentVer).replace(/[^0-9.]/g, fix).split('.')
+  const targetVerArr: Array<string | number> = normalize(targetVer).replace(/[^0-9.]/g, fix).split('.')
   let c = Math.max(currentVerArr.length, targetVerArr.length)
   for (let i = 0; i < c; i++) {
     // convert to integer the most efficient way
