@@ -29,24 +29,17 @@ export default memo(({ isHome = false }: { isHome?: boolean }) => {
   const playerComponent = useMemo(() => (
     <View style={{
       ...styles.container,
+      // 与 TabBar 共用同一套玻璃底色，避免底部组合栏出现色差
       backgroundColor: theme['c-glass-background'],
       borderTopColor: theme['c-glass-border'],
       borderTopWidth: 0.5,
     }}>
-      {/* 弥散水光环境微光层 */}
+      {/* 柔光层透明度与 TabBar 保持一致 */}
       <View
         pointerEvents="none"
         style={{
           ...styles.fluidGlowBackdrop,
           backgroundColor: theme['c-glass-fluid-glow'],
-        }}
-      />
-      {/* 顶部水面流光反射波纹 */}
-      <View
-        pointerEvents="none"
-        style={{
-          ...styles.highlightLine,
-          backgroundColor: theme['c-glass-highlight'],
         }}
       />
       <View style={styles.left}>
@@ -84,15 +77,7 @@ const styles = createStyle({
     left: 0,
     right: 0,
     bottom: 0,
-    opacity: 0.35,
-  },
-  highlightLine: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 1,
-    opacity: 0.6,
+    opacity: 0.2,
   },
   left: {
     flexGrow: 0,
