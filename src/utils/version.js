@@ -17,20 +17,29 @@ const abis = [
 ]
 
 const address = [
+  // jsdelivr 均显式锁定 @master 分支：不带分支时 CDN 会自行解析引用，
+  // 可能命中旧 tag 或长期缓存的内容，导致发版后长时间检测不到新版本
+  [`https://cdn.jsdelivr.net/gh/${FORK_OWNER}/${FORK_REPO}@master/publish/version.json`, 'direct'],
+  [`https://fastly.jsdelivr.net/gh/${FORK_OWNER}/${FORK_REPO}@master/publish/version.json`, 'direct'],
+  [`https://gcore.jsdelivr.net/gh/${FORK_OWNER}/${FORK_REPO}@master/publish/version.json`, 'direct'],
   [`https://raw.githubusercontent.com/${FORK_OWNER}/${FORK_REPO}/master/publish/version.json`, 'direct'],
-  [`https://cdn.jsdelivr.net/gh/${FORK_OWNER}/${FORK_REPO}/publish/version.json`, 'direct'],
-  [`https://fastly.jsdelivr.net/gh/${FORK_OWNER}/${FORK_REPO}/publish/version.json`, 'direct'],
-  [`https://gcore.jsdelivr.net/gh/${FORK_OWNER}/${FORK_REPO}/publish/version.json`, 'direct'],
 ]
 
 
+// 单个地址最多尝试 2 次（首次 + 1 次重试）即切换下一个源：
+// 原先同一地址重试 3 次、每次超时 10 秒，首个不可达地址会阻塞
+// 半分钟以上才开始轮询其他源，表现为“无法检测到更新”
+const MAX_RETRY_PER_URL = 1
+
 const request = async(url, retryNum = 0) => {
   return new Promise((resolve, reject) => {
-    httpGet(url, {
+    // 追加时间戳参数绕过 CDN 缓存，确保拿到最新的 version.json
+    const bustUrl = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now()
+    httpGet(bustUrl, {
       timeout: 10000,
     }, (err, resp, body) => {
       if (err || resp.statusCode != 200) {
-        ++retryNum >= 3
+        ++retryNum > MAX_RETRY_PER_URL
           ? reject(err || new Error(resp.statusMessage || resp.statusCode))
           : request(url, retryNum).then(resolve).catch(reject)
       } else resolve(body)

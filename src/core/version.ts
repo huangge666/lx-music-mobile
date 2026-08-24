@@ -44,6 +44,9 @@ export const checkUpdate = async() => {
   if (versionInfo.newVersion.version == '0.0.0') {
     versionInfo.isUnknown = true
     versionInfo.status = 'error'
+    // 检测失败时必须重置 isLatest，避免残留上一次成功检查的
+    // “已是最新”状态，导致设置页与更新弹窗判断错误
+    versionInfo.isLatest = false
   } else {
     versionInfo.status = 'idle'
     versionInfo.isUnknown = false
