@@ -135,29 +135,16 @@ export default forwardRef<DialogType, DialogProps>(({
           style={{
             ...styles.modalView,
             height,
-            backgroundColor: theme['c-glass-background'],
+            backgroundColor: theme['c-content-background'],
             borderWidth: 0.5,
-            borderColor: theme['c-glass-border'],
+            borderColor: theme['c-border-background'],
             overflow: 'hidden',
           }}
           onStartShouldSetResponder={() => true}
         >
-          {/* 弹窗弥散水光光晕背景 */}
-          <View
-            pointerEvents="none"
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: theme['c-glass-fluid-glow'],
-              opacity: 0.12,
-            }}
-          />
           {hasTitle
             ? (
-                <View style={{ ...styles.header, backgroundColor: theme['c-glass-surface'], borderBottomWidth: 0.5, borderBottomColor: theme['c-border-background'] }}>
+                <View style={{ ...styles.header, backgroundColor: theme['c-content-background'], borderBottomWidth: 0.5, borderBottomColor: theme['c-border-background'] }}>
                   <Text style={styles.title} size={16} color={theme['c-font']} numberOfLines={1}>{title}</Text>
                 </View>
               )
