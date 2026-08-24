@@ -238,26 +238,17 @@ export const getOnlineOtherSourcePicByLocal = async(musicInfo: LX.Music.MusicInf
 }
 
 export const TRY_QUALITYS_LIST = ['flac24bit', 'flac', '320k'] as const
-type TryQualityType = typeof TRY_QUALITYS_LIST[number]
-export const getPlayQuality = (highQuality: LX.Quality, musicInfo: LX.Music.MusicInfoOnline): LX.Quality => {
-  let type: LX.Quality = '128k'
-  if (TRY_QUALITYS_LIST.includes(highQuality as TryQualityType)) {
-    let list = global.lx.qualityList[musicInfo.source]
-
-    let t = TRY_QUALITYS_LIST
-      .slice(TRY_QUALITYS_LIST.indexOf(highQuality as TryQualityType))
-      .find(q => musicInfo.meta._qualitys[q] && list?.includes(q))
-
-    if (t) type = t
-  }
-  return type
-}
-
 /**
  * 逐级降低音质的完整列表（从高到低）
  * 用于换源时逐级尝试，确保不会因为单一音质不可用就跳过整个源
  */
 const QUALITY_FALLBACK_LIST: LX.Quality[] = ['flac24bit', 'flac', 'ape', 'wav', '320k', '192k', '128k']
+export const getPlayQuality = (highQuality: LX.Quality, musicInfo: LX.Music.MusicInfoOnline): LX.Quality => {
+  const list = global.lx.qualityList[musicInfo.source]
+  const startIdx = QUALITY_FALLBACK_LIST.indexOf(highQuality)
+  if (startIdx < 0) return '128k'
+  return QUALITY_FALLBACK_LIST.slice(startIdx).find(q => musicInfo.meta._qualitys[q] && (!list || list.includes(q))) ?? '128k'
+}
 
 /**
  * 获取指定音质及其以下的可用降级音质列表

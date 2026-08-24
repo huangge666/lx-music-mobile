@@ -74,21 +74,32 @@ const diffCurrentMusicInfo = (curMusicInfo: LX.Music.MusicInfo | LX.Download.Lis
   return createGettingUrlId(curMusicInfo) != global.lx.gettingUrlId || curMusicInfo.id != playerState.playMusicInfo.musicInfo?.id || playerState.isPlay
 }
 
-const getCurrentMusicQuality = (musicInfo: LX.Music.MusicInfo | LX.Download.ListItem): LX.Quality | null => {
+/**
+ * 当前这次取链是否已失效。
+ * 刷新当前歌曲 URL（音质切换 / 错误重试）时忽略 isPlay，否则播放中拿到的新地址会被当成过期请求丢掉。
+ */
+const isMusicUrlRequestInvalid = (musicInfo: LX.Music.MusicInfo | LX.Download.ListItem, isRefresh = false): boolean => {
+  if (global.lx.isPlayedStop) return true
+  if (createGettingUrlId(musicInfo) != global.lx.gettingUrlId) return true
+  if (musicInfo.id != playerState.playMusicInfo.musicInfo?.id) return true
+  return isRefresh ? false : playerState.isPlay
+}
+
+const getCurrentMusicQuality = (musicInfo: LX.Music.MusicInfo | LX.Download.ListItem, quality?: LX.Quality): LX.Quality | null => {
   if ('progress' in musicInfo) return musicInfo.metadata.quality
   if (musicInfo.source == 'local') return null
-  return getPlayQuality(settingState.setting['player.playQuality'], musicInfo)
+  return getPlayQuality(quality ?? settingState.setting['player.playQuality'], musicInfo)
 }
 
 let cancelDelayRetry: (() => void) | null = null
-const delayRetry = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListItem, isRefresh = false): Promise<string | null> => {
+const delayRetry = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListItem, isRefresh = false, quality?: LX.Quality): Promise<string | null> => {
   // if (cancelDelayRetry) cancelDelayRetry()
   return new Promise<string | null>((resolve, reject) => {
     const time = getRandom(2, 6)
     setStatusText(global.i18n.t('player__getting_url_delay_retry', { time }))
     // 使用 BackgroundTimer 确保后台播放时重试仍然生效
     const tiemout = BackgroundTimer.setTimeout(() => {
-      getMusicPlayUrl(musicInfo, isRefresh, true).then((result) => {
+      getMusicPlayUrl(musicInfo, isRefresh, true, quality).then((result) => {
         cancelDelayRetry = null
         resolve(result)
       }).catch(async(err: any) => {
@@ -115,7 +126,7 @@ const delayRetry = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListItem, i
 /** 单个用户源请求的超时时间（毫秒） */
 const USER_API_REQUEST_TIMEOUT = 15_000
 
-const tryOtherUserApiHandlers = async(musicInfo: LX.Music.MusicInfoOnline): Promise<string | null> => {
+const tryOtherUserApiHandlers = async(musicInfo: LX.Music.MusicInfoOnline, quality?: LX.Quality): Promise<string | null> => {
   const activeList = getActiveApiSources()
   const userApiIds = activeList.filter(id => /^user_api/.test(id))
   if (userApiIds.length < 1) return null
@@ -126,7 +137,7 @@ const tryOtherUserApiHandlers = async(musicInfo: LX.Music.MusicInfoOnline): Prom
     if (!handlers?.getMusicUrl) continue
     const getMusicUrlHandler = handlers.getMusicUrl
     try {
-      const targetQuality = getPlayQuality(settingState.setting['player.playQuality'], musicInfo)
+      const targetQuality = getPlayQuality(quality ?? settingState.setting['player.playQuality'], musicInfo)
       const sourceMusicInfo = toOldMusicInfo(musicInfo) as LX.Music.MusicInfo
       // 为每个用户源请求添加超时保护，防止某个源挂起阻塞后续尝试
       const result = await new Promise<{ url: string }>((resolve, reject) => {
@@ -152,7 +163,7 @@ const tryOtherUserApiHandlers = async(musicInfo: LX.Music.MusicInfoOnline): Prom
   return null
 }
 
-const getMusicPlayUrl = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListItem, isRefresh = false, isRetryed = false): Promise<string | null> => {
+const getMusicPlayUrl = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListItem, isRefresh = false, isRetryed = false, quality?: LX.Quality): Promise<string | null> => {
   // this.musicInfo.url = await getMusicPlayUrl(targetSong, type)
   setStatusText(global.i18n.t('player__getting_url'))
   addLoadTimeout()
@@ -161,19 +172,21 @@ const getMusicPlayUrl = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListIt
   let toggleMusicInfo = ('progress' in musicInfo ? musicInfo.metadata.musicInfo : musicInfo).meta.toggleMusicInfo
 
   // 中止检查：当用户切歌或停止播放时，终止正在进行的换源操作
-  const isAborted = () => global.lx.isPlayedStop || diffCurrentMusicInfo(musicInfo)
+  const isAborted = () => isMusicUrlRequestInvalid(musicInfo, isRefresh)
 
   return (toggleMusicInfo ? getMusicUrl({
     musicInfo: toggleMusicInfo,
     isRefresh,
+    quality,
     allowToggleSource: false,
   }) : Promise.reject(new Error('not found'))).catch(async() => {
     return getMusicUrl({
       musicInfo,
       isRefresh,
+      quality,
       isAborted,
       onToggleSource(mInfo) {
-        if (diffCurrentMusicInfo(musicInfo)) return
+        if (isMusicUrlRequestInvalid(musicInfo, isRefresh)) return
         // 显示当前正在尝试的音源名称，让用户知道换源进度
         if (mInfo) {
           // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
@@ -185,16 +198,15 @@ const getMusicPlayUrl = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListIt
       },
     })
   }).then(url => {
-    if (global.lx.isPlayedStop || diffCurrentMusicInfo(musicInfo)) return null
+    if (isMusicUrlRequestInvalid(musicInfo, isRefresh)) return null
 
     return url
   }).catch(async err => {
     // console.log('err', err.message)
-    if (global.lx.isPlayedStop ||
-      diffCurrentMusicInfo(musicInfo) ||
+    if (isMusicUrlRequestInvalid(musicInfo, isRefresh) ||
       err.message == requestMsg.cancelRequest) return null
 
-    if (err.message == requestMsg.tooManyRequests) return delayRetry(musicInfo, isRefresh)
+    if (err.message == requestMsg.tooManyRequests) return delayRetry(musicInfo, isRefresh, quality)
 
     // 多选源支持：在进入内部重试之前，先尝试其它已成功初始化的用户源。
     // 仅对普通在线歌曲（非 download item）生效。
@@ -202,16 +214,16 @@ const getMusicPlayUrl = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListIt
     if (!isRetryed && !('progress' in musicInfo)) {
       const onlineInfo = musicInfo as LX.Music.MusicInfoOnline
       setStatusText(global.i18n.t('toggle_source_try'))
-      const otherUrl = await tryOtherUserApiHandlers(onlineInfo)
+      const otherUrl = await tryOtherUserApiHandlers(onlineInfo, quality)
       if (otherUrl) {
-        if (global.lx.isPlayedStop || diffCurrentMusicInfo(musicInfo)) return null
+        if (isMusicUrlRequestInvalid(musicInfo, isRefresh)) return null
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         setStatusText(global.i18n.t('toggle_source_success', { source: global.i18n.t(`source_real_${onlineInfo.source}` as any) }))
         return otherUrl
       }
     }
 
-    if (!isRetryed) return getMusicPlayUrl(musicInfo, isRefresh, true)
+    if (!isRetryed) return getMusicPlayUrl(musicInfo, isRefresh, true, quality)
 
     throw err
   })
@@ -221,15 +233,19 @@ export const setMusicUrl = (
   musicInfo: LX.Music.MusicInfo | LX.Download.ListItem,
   isRefresh?: boolean,
   // 可选的结果回调，供音质切换等场景向用户反馈成功/失败
-  callbacks?: { onSuccess?: () => void, onError?: (err: any) => void },
+  callbacks?: { quality?: LX.Quality, onSuccess?: () => void, onError?: (err: any) => void },
 ) => {
   // addLoadTimeout()
-  if (!diffCurrentMusicInfo(musicInfo)) return
+  // 刷新当前歌曲时允许覆盖进行中的取链（音质切换），避免被 isPlay / 同曲取链去重直接丢掉
+  if (!isRefresh && !diffCurrentMusicInfo(musicInfo)) return
   if (cancelDelayRetry) cancelDelayRetry()
   global.lx.gettingUrlId = createGettingUrlId(musicInfo)
-  void getMusicPlayUrl(musicInfo, isRefresh).then((url) => {
-    if (!url) return
-    setMusicInfo({ quality: getCurrentMusicQuality(musicInfo) })
+  void getMusicPlayUrl(musicInfo, isRefresh, false, callbacks?.quality).then((url) => {
+    if (!url) {
+      callbacks?.onError?.(new Error('aborted'))
+      return
+    }
+    setMusicInfo({ quality: getCurrentMusicQuality(musicInfo, callbacks?.quality) })
     setResource(musicInfo, url, playerState.progress.nowPlayTime)
     callbacks?.onSuccess?.()
   }).catch((err: any) => {

@@ -79,7 +79,7 @@ const QualitySwitchPopup = forwardRef<QualitySwitchPopupType>((_, ref) => {
   const [visible, setVisible] = useState(false)
   // 正在切换中的音质（用于行内 loading 动画与禁用其它选项），null 表示空闲
   const [switchingQuality, setSwitchingQuality] = useState<LX.Quality | null>(null)
-  // 切换超时定时器：5s 内未收到结果则按超时失败处理，避免一直转圈
+  // 切换超时定时器：超时未收到结果则按失败处理，避免一直转圈
   const switchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const popupRef = useRef<PopupType>(null)
   const playerMusicInfo = usePlayerMusicInfo()
@@ -106,7 +106,7 @@ const QualitySwitchPopup = forwardRef<QualitySwitchPopupType>((_, ref) => {
 
   // 当前实际生效的音质，用于标记选中项：
   // 优先使用播放器取到链接后记录的真实音质（playerState.musicInfo.quality），
-  // 尚未取得时按官方 getPlayQuality 规则推算（仅尝试 flac24bit/flac/320k，其余回落 128k）
+  // 尚未取得时按 getPlayQuality 从当前默认音质逐级回落推算
   const currentQuality = useMemo(() => {
     const musicInfo = playerState.playMusicInfo.musicInfo
     if (!musicInfo) return null
@@ -117,7 +117,7 @@ const QualitySwitchPopup = forwardRef<QualitySwitchPopupType>((_, ref) => {
 
   const qualitys = useMemo(() => {
     return visible ? getAvailableQualitys(playerState.playMusicInfo.musicInfo) : []
-  }, [visible])
+  }, [visible, playerMusicInfo.id])
 
   const handleChange = (quality: LX.Quality) => {
     // 切换进行中忽略其它点击，避免并发取链接
@@ -131,14 +131,21 @@ const QualitySwitchPopup = forwardRef<QualitySwitchPopupType>((_, ref) => {
       toast(t('quality_switch_failed_unsupported', { quality: getLabel(quality) }), 'long')
       return
     }
+    if (quality === currentQuality) {
+      popupRef.current?.setVisible(false)
+      return
+    }
     // 保持弹窗打开以便展示行内切换动画，结束后再关闭
     // 写入全局默认播放音质，后续歌曲按此音质播放
     void updateSetting({ 'player.playQuality': quality })
-    // 显示行内切换动画，并启动 5s 超时保护（取链接流程可能长时间无响应或静默失败）
+    // 显示行内切换动画，并启动超时保护（取链接流程可能长时间无响应或静默失败）
     setSwitchingQuality(quality)
     if (switchTimerRef.current) clearTimeout(switchTimerRef.current)
+    let settled = false
     // 统一的结束处理：清理定时器、复位状态并关闭弹窗
     const finishSwitch = () => {
+      if (settled) return
+      settled = true
       if (switchTimerRef.current) {
         clearTimeout(switchTimerRef.current)
         switchTimerRef.current = null
@@ -147,21 +154,21 @@ const QualitySwitchPopup = forwardRef<QualitySwitchPopupType>((_, ref) => {
       popupRef.current?.setVisible(false)
     }
     switchTimerRef.current = setTimeout(() => {
-      // onSuccess/onError 已先到时定时器会被清空置 null，避免重复提示
-      if (!switchTimerRef.current) return
-      switchTimerRef.current = null
-      setSwitchingQuality(null)
-      popupRef.current?.setVisible(false)
+      if (settled) return
+      finishSwitch()
       toast(t('quality_switch_failed_timeout'), 'long')
-    }, 5000)
+    }, 20000)
     // 当前歌曲立即以新音质重新获取播放地址，并反馈切换结果
     setMusicUrl(musicInfo, true, {
+      quality,
       onSuccess: () => {
         finishSwitch()
         toast(t('quality_switch_success', { quality: getLabel(quality) }))
       },
       onError: (err: any) => {
         finishSwitch()
+        // 切歌/停止导致的中止不提示失败
+        if (/aborted/i.test(String(err?.message ?? ''))) return
         // 按失败原因给出针对性提示
         toast(t(getFailReasonKey(err)), 'long')
       },
