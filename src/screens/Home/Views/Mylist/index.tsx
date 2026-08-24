@@ -1,16 +1,26 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { View } from 'react-native'
 import MusicList from './MusicList'
 import MyList from './MyList'
 import type { InitState as CommonState } from '@/store/common/state'
+import commonState from '@/store/common/state'
 import playerState from '@/store/player/state'
 import { setActiveList } from '@/core/list'
 import { createStyle } from '@/utils/tools'
+import { useBackHandler } from '@/utils/hooks/useBackHandler'
 
 export default () => {
   const [showPlaylists, setShowPlaylists] = useState(true)
   const showPlaylistsRef = useRef(showPlaylists)
   showPlaylistsRef.current = showPlaylists
+
+  // 硬件返回键：在“我的”页的歌单详情时先返回上一级歌单列表，而不是退出应用
+  useBackHandler(useCallback(() => {
+    if (commonState.navActiveId != 'nav_love') return false
+    if (showPlaylistsRef.current) return false
+    global.app_event.changeLoveListVisible(true)
+    return true
+  }, []))
 
   useEffect(() => {
     const listId = playerState.playMusicInfo.listId
