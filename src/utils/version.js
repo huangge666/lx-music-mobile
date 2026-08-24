@@ -93,34 +93,50 @@ let downloadJobId = null
 const noop = (total, download) => {}
 let apkSavePath
 
+// GitHub Releases 下载加速代理：国内直连 github.com 下载 APK 较慢或超时，
+// 优先通过 gh-proxy 加速下载，失败时回退直连地址
+const GH_PROXY_PREFIX = 'https://v4.gh-proxy.org/'
+
 export const downloadNewVersion = async(version, onDownload = noop) => {
   const abi = await getTargetAbi()
-  const url = `https://github.com/${FORK_OWNER}/${FORK_REPO}/releases/download/v${version}/${FORK_REPO}-v${version}-${abi}.apk`
+  const directUrl = `https://github.com/${FORK_OWNER}/${FORK_REPO}/releases/download/v${version}/${FORK_REPO}-v${version}-${abi}.apk`
+  // 加速代理的格式为：https://v4.gh-proxy.org/<原始 GitHub 地址>
+  const urls = [GH_PROXY_PREFIX + directUrl, directUrl]
   let savePath = temporaryDirectoryPath + '/lx-music-mobile.apk'
 
   if (downloadJobId) stopDownload(downloadJobId)
 
-  const { jobId, promise } = downloadFile(url, savePath, {
-    progressInterval: 500,
-    connectionTimeout: 20000,
-    readTimeout: 30000,
-    begin({ statusCode, contentLength }) {
-      onDownload(contentLength, 0)
-      // switch (statusCode) {
-      //   case 200:
-      //   case 206:
-      //     break
-      //   default:
-      //     onDownload(null, contentLength, 0)
-      //     break
-      // }
-    },
-    progress({ contentLength, bytesWritten }) {
-      onDownload(contentLength, bytesWritten)
-    },
-  })
-  downloadJobId = jobId
-  return promise.then(() => {
+  // 依次尝试各下载地址（加速源优先，直连兜底），任一成功即返回
+  const tryDownload = (urlIndex = 0) => {
+    if (urlIndex >= urls.length) return Promise.reject(new Error('all download url failed'))
+    const { jobId, promise } = downloadFile(urls[urlIndex], savePath, {
+      progressInterval: 500,
+      connectionTimeout: 20000,
+      readTimeout: 30000,
+      begin({ statusCode, contentLength }) {
+        onDownload(contentLength, 0)
+        // switch (statusCode) {
+        //   case 200:
+        //   case 206:
+        //     break
+        //   default:
+        //     onDownload(null, contentLength, 0)
+        //     break
+        // }
+      },
+      progress({ contentLength, bytesWritten }) {
+        onDownload(contentLength, bytesWritten)
+      },
+    })
+    downloadJobId = jobId
+    return promise.catch(err => {
+      // 当前地址失败（超时/不可达），切换到下一个下载地址重试
+      if (urlIndex + 1 >= urls.length) throw err
+      return tryDownload(urlIndex + 1)
+    })
+  }
+
+  return tryDownload().then(() => {
     apkSavePath = savePath
     return updateApp()
   })
