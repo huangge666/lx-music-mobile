@@ -4,7 +4,9 @@ import { pop } from '@/navigation'
 import StatusBar from '@/components/common/StatusBar'
 import commonState from '@/store/common/state'
 import { useStatusbarHeight } from '@/store/common/hook'
+import { usePlayerMusicInfo } from '@/store/player/hook'
 import { Icon } from '@/components/common/Icon'
+import Image from '@/components/common/Image'
 import { scaleSizeH, scaleSizeW } from '@/utils/pixelRatio'
 import { HEADER_HEIGHT as _HEADER_HEIGHT, NAV_SHEAR_NATIVE_IDS } from '@/config/constant'
 import { Immersive, MacSpacing } from '../../macOS'
@@ -15,11 +17,15 @@ const CIRCLE = scaleSizeW(38)
 
 /**
  * 沉浸式顶栏
- * — 仅左侧圆形返回（下拉关闭）
- * — 无中间指示条、无右侧设置入口
+ * — 左侧圆形返回（关闭播放详情）
+ * — 歌词态右侧显示封面缩略图，点击回到封面
  */
-export default memo(() => {
+export default memo(({ showLyric, onBackToCover }: {
+  showLyric?: boolean
+  onBackToCover?: () => void
+}) => {
   const statusBarHeight = useStatusbarHeight()
+  const musicInfo = usePlayerMusicInfo()
 
   useEffect(() => {
     RNStatusBar.setBarStyle('light-content')
@@ -41,8 +47,20 @@ export default memo(() => {
             <Icon name="chevron-left" color={Immersive.text} size={18} />
           </View>
         </TouchableOpacity>
-        {/* 占位，保持左侧按钮不贴边即可 */}
         <View style={styles.spacer} />
+        {showLyric
+          ? (
+              <TouchableOpacity
+                style={[styles.circleBtn, styles.coverBtn]}
+                onPress={onBackToCover}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="返回封面"
+              >
+                <Image url={musicInfo.pic} style={styles.coverThumb} />
+              </TouchableOpacity>
+            )
+          : null}
       </View>
     </View>
   )
@@ -71,5 +89,14 @@ const styles = StyleSheet.create({
   },
   spacer: {
     flex: 1,
+  },
+  coverBtn: {
+    overflow: 'hidden',
+    padding: 0,
+  },
+  coverThumb: {
+    width: CIRCLE,
+    height: CIRCLE,
+    borderRadius: CIRCLE / 2,
   },
 })

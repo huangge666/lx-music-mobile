@@ -189,9 +189,9 @@ export function pushPlayDetailScreen(componentId: string, skipAnimation = false)
             },
             pop: {
               content: {
-                translationX: {
+                translationY: {
                   from: 0,
-                  to: windowSizeTools.getSize().width,
+                  to: windowSizeTools.getSize().height,
                   duration: 300,
                 },
               },

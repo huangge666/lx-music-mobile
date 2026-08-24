@@ -16,14 +16,14 @@ import { createStyle } from '@/utils/tools'
  * 高端沉浸式播放详情页（竖屏 / Apple Music 风格）
  *
  *  ┌──────────────────────────────────┐
- *  │  ∨                                │  仅返回
+ *  │  ∨                          [封面] │  歌词态右侧封面可点回
  *  │         [ 大圆角封面 ]            │  点击 → 歌词页
  *  │  歌名                    ♡  ⋮    │
  *  │  进度 / 切歌 / 功能栏             │
  *  └──────────────────────────────────┘
  */
 export default memo(({ componentId }: { componentId: string }) => {
-  // false=封面，true=歌词；点击封面进入歌词，歌词顶条点回封面
+  // false=封面，true=歌词；点击封面进入歌词，顶栏封面缩略图 / 歌词顶栏点回封面
   const [showLyric, setShowLyric] = useState(false)
 
   const openLyric = useCallback(() => {
@@ -66,7 +66,7 @@ export default memo(({ componentId }: { componentId: string }) => {
   return (
     <View style={styles.root}>
       <AlbumBackground />
-      <Header />
+      <Header showLyric={showLyric} onBackToCover={closeLyric} />
       <View style={styles.container}>
         {/* 上半：封面 或 歌词（点击封面进入歌词） */}
         <View style={styles.topSection}>

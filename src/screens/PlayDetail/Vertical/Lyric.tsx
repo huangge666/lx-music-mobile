@@ -1,5 +1,5 @@
 import { memo, useMemo, useEffect, useRef, useCallback } from 'react'
-import { View, FlatList, type FlatListProps, type LayoutChangeEvent, type NativeSyntheticEvent, type NativeScrollEvent } from 'react-native'
+import { View, FlatList, TouchableOpacity, type FlatListProps, type LayoutChangeEvent, type NativeSyntheticEvent, type NativeScrollEvent } from 'react-native'
 // import { useLayout } from '@/utils/hooks'
 import { type Line, useLrcPlay, useLrcSet } from '@/plugins/lyric'
 import { createStyle } from '@/utils/tools'
@@ -12,6 +12,7 @@ import { scrollTo } from '@/utils/scroll'
 import PlayLine, { type PlayLineType } from '../components/PlayLine'
 import {
   MacSpacing,
+  MacTouchSize,
   Immersive,
 } from '../macOS'
 // import { screenkeepAwake } from '@/utils/nativeModules/utils'
@@ -317,12 +318,18 @@ export default ({ onPress }: { onPress?: () => void }) => {
 
   return (
     <View style={styles.lyricCard}>
-      {/* 点击空白处可回到封面（不拦截列表滚动） */}
+      {/* 顶部整条热区回到封面，避免原先 5pt 细条难以点中 */}
       {onPress
         ? (
-            <View style={styles.tapBack} pointerEvents="box-none">
-              <View style={styles.tapBackHit} onTouchEnd={onPress} />
-            </View>
+            <TouchableOpacity
+              style={styles.tapBack}
+              onPress={onPress}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="返回封面"
+            >
+              <View style={styles.tapBackHit} />
+            </TouchableOpacity>
           )
         : null}
       <FlatList
@@ -363,16 +370,16 @@ const styles = createStyle({
     left: 0,
     right: 0,
     top: 0,
-    height: 28,
+    height: MacTouchSize.medium,
     zIndex: 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
   tapBackHit: {
-    width: 48,
+    width: 56,
     height: 5,
     borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.45)',
+    backgroundColor: 'rgba(255,255,255,0.55)',
   },
   container: {
     flex: 1,
