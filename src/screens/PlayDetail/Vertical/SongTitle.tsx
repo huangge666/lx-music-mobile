@@ -9,7 +9,7 @@ import { scaleSizeW } from '@/utils/pixelRatio'
 import { collectMusic, uncollectMusic } from '@/core/player/player'
 import { getListMusicSync } from '@/utils/listManage'
 import { LIST_IDS } from '@/config/constant'
-import SettingPopup, { type SettingPopupType } from '@/screens/PlayDetail/components/SettingPopup'
+import MoreMenu, { type MoreMenuType } from './MoreMenu'
 import {
   Immersive,
   MacFontSize,
@@ -28,12 +28,12 @@ const checkIsLove = (musicId: string | null | undefined): boolean => {
 /**
  * Apple Music 风格标题行
  * — 左：粗体歌名 + 浅色歌手
- * — 右：半透明圆钮 收藏 + 更多
+ * — 右：半透明圆钮 收藏 + 更多（歌曲操作抽屉）
  */
 const SongTitle = () => {
   const theme = useTheme()
   const musicInfo = usePlayerMusicInfo()
-  const popupRef = useRef<SettingPopupType>(null)
+  const moreMenuRef = useRef<MoreMenuType>(null)
   const [isLove, setIsLove] = useState(() => checkIsLove(musicInfo.id))
 
   const syncLoveState = useCallback(() => {
@@ -80,7 +80,7 @@ const SongTitle = () => {
   }, [isLove, musicInfo.id])
 
   const handleMore = useCallback(() => {
-    popupRef.current?.show()
+    moreMenuRef.current?.show()
   }, [])
 
   return (
@@ -125,7 +125,7 @@ const SongTitle = () => {
         </TouchableOpacity>
       </View>
 
-      <SettingPopup ref={popupRef} direction="vertical" />
+      <MoreMenu ref={moreMenuRef} />
     </View>
   )
 }
