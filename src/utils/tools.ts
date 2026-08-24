@@ -11,6 +11,7 @@ import { scaleSizeH, scaleSizeW, setSpText } from './pixelRatio'
 import { toOldMusicInfo } from './index'
 import { stringMd5 } from 'react-native-quick-md5'
 import { windowSizeTools } from '@/utils/windowSizeTools'
+import settingState from '@/store/setting/state'
 
 
 // https://stackoverflow.com/a/47349998
@@ -146,16 +147,12 @@ export const assertApiSupport = (source: LX.Source): boolean => {
   if (source == 'local') return true
   // 检查主源的音质列表
   if (global.lx.qualityList[source] != null) return true
-  // 多选源模式：检查所有已初始化的用户 API 的音质列表
-  // 确保备用源支持的平台不会被跳过
-  if (global.lx.userApiQualityList) {
-    for (const apiId of Object.keys(global.lx.userApiQualityList)) {
-      if (global.lx.userApiApis[apiId] != null && global.lx.userApiQualityList[apiId]?.[source] != null) return true
-    }
+  // 只认当前启用的用户源。已导入但未启用、或已停用的源不能当成可播放。
+  const activeList = (settingState.setting['common.apiSourceList'] ?? []).filter((id: string) => /^user_api/.test(id))
+  const ids = activeList.length ? activeList : [settingState.setting['common.apiSource']].filter(Boolean)
+  for (const apiId of ids) {
+    if (global.lx.userApiApis[apiId] != null && global.lx.userApiQualityList[apiId]?.[source] != null) return true
   }
-  // 未导入音源时，主源配置为空，qualityList 不会包含平台音质表。
-  // 这不代表内置平台不可用，仍应允许平台自身的换源机制继续尝试。
-  if (!Object.keys(global.lx.userApiApis ?? {}).length) return true
   return false
 }
 

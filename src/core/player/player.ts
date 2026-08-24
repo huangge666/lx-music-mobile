@@ -207,6 +207,7 @@ const getMusicPlayUrl = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListIt
       err.message == requestMsg.cancelRequest) return null
 
     if (err.message == requestMsg.tooManyRequests) return delayRetry(musicInfo, isRefresh, quality)
+    if (err.message == 'no api source' || err.message == 'source init failed') throw err
 
     // 多选源支持：在进入内部重试之前，先尝试其它已成功初始化的用户源。
     // 仅对普通在线歌曲（非 download item）生效。
@@ -250,6 +251,13 @@ export const setMusicUrl = (
     callbacks?.onSuccess?.()
   }).catch((err: any) => {
     console.log(err)
+    if (err?.message == 'no api source') {
+      // 未启用音源时每首歌都会失败，不能自动切歌把整个列表扫一遍
+      setStatusText(global.i18n.t('player__no_api_source'))
+      global.app_event.error()
+      callbacks?.onError?.(err)
+      return
+    }
     // 所有换源尝试均失败，显示明确的失败提示并自动切歌
     setStatusText(global.i18n.t('player__source_all_failed'))
     global.app_event.error()

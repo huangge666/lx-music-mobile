@@ -226,6 +226,7 @@
   "player__loading": "音乐加载中...",
   "player__refresh_url": "URL 过期，正在刷新 URL...",
   "player__source_all_failed": "所有音源均无法播放，即将切换下一首",
+  "player__no_api_source": "未启用音源，无法播放。请先在设置中启用音源",
   "player_cache_migrating": "歌曲缓存迁移中，请稍等 ⌛️",
   "quality_high_quality": "HQ",
   "quality_lossless": "SQ",

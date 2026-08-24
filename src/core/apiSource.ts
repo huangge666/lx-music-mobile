@@ -34,6 +34,23 @@ export const getActiveApiSources = () => {
 }
 
 /**
+ * 当前是否存在可用于在线取链的音源。
+ * 未启用任何源时不应进入全平台换源，否则会把“没有音源”误报成“所有音源均无法播放”。
+ */
+export const hasPlayableApiSource = () => {
+  const activeList = getActiveApiSources()
+  if (!activeList.length) return false
+  for (const id of activeList) {
+    if (isUserApi(id)) {
+      if (global.lx.userApiApis[id] != null) return true
+      continue
+    }
+    if (musicSdk.supportQuality?.[id] != null) return true
+  }
+  return false
+}
+
+/**
  * Native 层一次只能装载一个脚本，故所有用户源必须串行初始化。
  * 每个源都拥有独立 Promise，初始化回调据此准确归属到对应的源。
  */

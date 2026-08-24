@@ -65,7 +65,7 @@ const useQualityLabel = () => {
 const getFailReasonKey = (err: any): string => {
   const msg = String(err?.message ?? '')
   if (/timeout/i.test(msg)) return 'quality_switch_failed_timeout'
-  if (/source init failed|aborted|toggle source/i.test(msg)) return 'quality_switch_failed_api'
+  if (/source init failed|no api source|aborted|toggle source/i.test(msg)) return 'quality_switch_failed_api'
   return 'quality_switch_failed_api'
 }
 

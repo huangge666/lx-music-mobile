@@ -11,7 +11,7 @@ import settingState from '@/store/setting/state'
 import { requestMsg } from '@/utils/message'
 import BackgroundTimer from 'react-native-background-timer'
 import { apis } from '@/utils/musicSdk/api-source'
-import { getActiveApiSources, isUserApiReady, getUserApiHandlers } from '@/core/apiSource'
+import { getActiveApiSources, isUserApiReady, getUserApiHandlers, hasPlayableApiSource } from '@/core/apiSource'
 
 
 const getOtherSourcePromises = new Map()
@@ -348,6 +348,7 @@ export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggl
   isFromCache: boolean
 }> => {
   if (!await global.lx.apiInitPromise[0]) throw new Error('source init failed')
+  if (!hasPlayableApiSource()) throw new Error('no api source')
 
   // 检查是否已中止（用户切歌、停止播放等场景）
   if (isAborted?.()) throw new Error('toggle source aborted')
@@ -440,6 +441,7 @@ export const handleGetOnlineMusicUrl = async({ musicInfo, quality, onToggleSourc
   isFromCache: boolean
 }> => {
   if (!await global.lx.apiInitPromise[0]) throw new Error('source init failed')
+  if (!hasPlayableApiSource()) throw new Error('no api source')
   // console.log(musicInfo.source)
   const targetQuality = quality ?? getPlayQuality(settingState.setting['player.playQuality'], musicInfo)
 
