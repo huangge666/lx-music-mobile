@@ -217,7 +217,12 @@ const getMusicPlayUrl = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListIt
   })
 }
 
-export const setMusicUrl = (musicInfo: LX.Music.MusicInfo | LX.Download.ListItem, isRefresh?: boolean) => {
+export const setMusicUrl = (
+  musicInfo: LX.Music.MusicInfo | LX.Download.ListItem,
+  isRefresh?: boolean,
+  // 可选的结果回调，供音质切换等场景向用户反馈成功/失败
+  callbacks?: { onSuccess?: () => void, onError?: (err: any) => void },
+) => {
   // addLoadTimeout()
   if (!diffCurrentMusicInfo(musicInfo)) return
   if (cancelDelayRetry) cancelDelayRetry()
@@ -226,12 +231,14 @@ export const setMusicUrl = (musicInfo: LX.Music.MusicInfo | LX.Download.ListItem
     if (!url) return
     setMusicInfo({ quality: getCurrentMusicQuality(musicInfo) })
     setResource(musicInfo, url, playerState.progress.nowPlayTime)
+    callbacks?.onSuccess?.()
   }).catch((err: any) => {
     console.log(err)
     // 所有换源尝试均失败，显示明确的失败提示并自动切歌
     setStatusText(global.i18n.t('player__source_all_failed'))
     global.app_event.error()
     addDelayNextTimeout()
+    callbacks?.onError?.(err)
   }).finally(() => {
     if (musicInfo === playerState.playMusicInfo.musicInfo) {
       global.lx.gettingUrlId = ''

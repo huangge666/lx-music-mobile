@@ -8,6 +8,9 @@ import { formatPlayTime2 } from '@/utils'
 import Text from '@/components/common/Text'
 import { useBufferProgress } from '@/plugins/player'
 import { useI18n } from '@/lang'
+import { TouchableOpacity } from 'react-native'
+import QualitySwitchPopup, { type QualitySwitchPopupType } from '../../../components/QualitySwitchPopup'
+import { useRef } from 'react'
 import {
   Immersive,
   MacSpacing,
@@ -63,6 +66,8 @@ export default () => {
   const buffered = useBufferProgress()
   const statusText = useStatusText()
   const t = useI18n()
+  // 音质切换弹窗引用
+  const qualityPopupRef = useRef<QualitySwitchPopupType>(null)
 
   // 歌曲是否已加载成功（有总时长说明音频已就绪）
   const isLoaded = maxPlayTime > 0
@@ -121,15 +126,24 @@ export default () => {
         <View style={styles.status}>
           {qLabel
             ? (
-                <Text color={Immersive.textSecondary} size={MacFontSize.caption} style={styles.quality}>
-                  {qLabel}
-                </Text>
+                // 点击音质标签打开音质切换弹窗
+                <TouchableOpacity
+                  style={styles.qualityBtn}
+                  onPress={() => { qualityPopupRef.current?.show() }}
+                  activeOpacity={0.7}
+                >
+                  <Text color={Immersive.textSecondary} size={MacFontSize.caption} style={styles.quality}>
+                    {qLabel}
+                  </Text>
+                </TouchableOpacity>
               )
             : null}
         </View>
 
         <PlayTimeRemain remainStr={remainStr} />
       </View>
+
+      <QualitySwitchPopup ref={qualityPopupRef} />
     </View>
   )
 }
@@ -157,6 +171,14 @@ const styles = createStyle({
     flexShrink: 1,
     paddingHorizontal: MacSpacing.sm,
     alignItems: 'center',
+  },
+  // 音质点击区域，扩大热区便于触控
+  qualityBtn: {
+    minWidth: 44,
+    minHeight: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: MacSpacing.xs,
   },
   // 音质仅文字，无胶囊底
   quality: {

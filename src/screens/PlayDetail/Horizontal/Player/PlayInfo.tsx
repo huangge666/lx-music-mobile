@@ -1,5 +1,5 @@
-import { memo } from 'react'
-import { View } from 'react-native'
+import { memo, useRef } from 'react'
+import { TouchableOpacity, View } from 'react-native'
 
 import Progress from '@/components/player/Progress'
 import Status from './Status'
@@ -10,6 +10,7 @@ import Text from '@/components/common/Text'
 import { useBufferProgress } from '@/plugins/player'
 import Badge from '@/components/common/Badge'
 import { MacSpacing, MacFontSize } from '../../macOS'
+import QualitySwitchPopup, { type QualitySwitchPopupType } from '../../components/QualitySwitchPopup'
 
 
 /**
@@ -43,6 +44,8 @@ export default () => {
   const playerMusicInfo = usePlayerMusicInfo()
   const { maxPlayTimeStr, nowPlayTimeStr, progress, maxPlayTime } = useProgress()
   const buffered = useBufferProgress()
+  // 音质切换弹窗引用
+  const qualityPopupRef = useRef<QualitySwitchPopupType>(null)
 
   return (
     <View style={styles.container}>
@@ -59,7 +62,14 @@ export default () => {
         <View style={styles.timeRow}>
           {playerMusicInfo.quality
             ? (
-                <Badge type="tertiary">{playerMusicInfo.quality}</Badge>
+                // 点击音质标签打开音质切换弹窗
+                <TouchableOpacity
+                  style={styles.qualityBtn}
+                  onPress={() => { qualityPopupRef.current?.show() }}
+                  activeOpacity={0.7}
+                >
+                  <Badge type="tertiary">{playerMusicInfo.quality}</Badge>
+                </TouchableOpacity>
               )
             : null}
           <PlayTimeCurrent timeStr={nowPlayTimeStr} />
@@ -67,6 +77,8 @@ export default () => {
           <PlayTimeMax timeStr={maxPlayTimeStr} />
         </View>
       </View>
+
+      <QualitySwitchPopup ref={qualityPopupRef} />
     </View>
   )
 }
@@ -107,6 +119,13 @@ const styles = createStyle({
     flexShrink: 0,
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  // 音质点击区域，扩大热区便于触控
+  qualityBtn: {
+    minWidth: 40,
+    minHeight: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   timeText: {
     fontVariant: ['tabular-nums'],
