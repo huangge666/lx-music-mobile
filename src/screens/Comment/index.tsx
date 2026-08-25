@@ -13,29 +13,9 @@ import { COMPONENT_IDS } from '@/config/constant'
 import { setComponentId } from '@/core/common'
 import PageContent from '@/components/PageContent'
 import playerState from '@/store/player/state'
-import { scaleSizeH } from '@/utils/pixelRatio'
-import { BorderWidths } from '@/theme'
+import ChoicePills from '@/screens/Home/Views/Setting/components/ChoicePills'
 
 type ActiveId = 'hot' | 'new'
-
-const BAR_HEIGHT = scaleSizeH(34)
-
-const HeaderItem = ({ id, label, isActive, onPress }: {
-  id: ActiveId
-  label: string
-  isActive: boolean
-  onPress: (id: ActiveId) => void
-}) => {
-  const theme = useTheme()
-  // console.log(theme)
-  const components = useMemo(() => (
-    <TouchableOpacity style={styles.tabBtn} onPress={() => { !isActive && onPress(id) }}>
-      <Text color={isActive ? theme['c-primary-font-active'] : theme['c-font']}>{label}</Text>
-    </TouchableOpacity>
-  ), [isActive, theme, label, onPress, id])
-
-  return components
-}
 
 const HotCommentPage = memo(({ activeId, musicInfo, onUpdateTotal }: {
   activeId: ActiveId
@@ -96,7 +76,7 @@ export default memo(({ componentId }: {
     return [
       { id: TABS[0], label: t('comment_tab_hot', { total: total.hot ? `(${total.hot})` : '' }) },
       { id: TABS[1], label: t('comment_tab_new', { total: total.new ? `(${total.new})` : '' }) },
-    ] as const
+    ]
   }, [total, t])
 
   const toggleTab = useCallback((id: ActiveId) => {
@@ -130,20 +110,28 @@ export default memo(({ componentId }: {
   const commentComponent = useMemo(() => {
     return (
       <View style={styles.container}>
-        <View style={{ ...styles.tabHeader, borderBottomColor: theme['c-border-background'], height: BAR_HEIGHT }}>
-          <View style={styles.left}>
-            {tabs.map(({ id, label }) => <HeaderItem id={id} label={label} key={id} isActive={activeId == id} onPress={toggleTab} />)}
+        <View style={{
+          ...styles.tabHeader,
+          backgroundColor: theme['c-glass-background'],
+        }}>
+          <View style={styles.tabs}>
+            <ChoicePills value={activeId} options={tabs} onChange={toggleTab} />
           </View>
-          <View>
-            <TouchableOpacity onPress={refreshComment} style={{ ...styles.btn, width: BAR_HEIGHT }}>
-              <Icon name="available_updates" size={20} color={theme['c-600']} />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            onPress={refreshComment}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            style={{
+              ...styles.refreshBtn,
+              backgroundColor: theme['c-primary-background'],
+            }}
+          >
+            <Icon name="available_updates" size={18} color={theme['c-primary']} />
+          </TouchableOpacity>
         </View>
         <PagerView
           ref={pagerViewRef}
           onPageSelected={onPageSelected}
-          // onPageScrollStateChanged={onPageScrollStateChanged}
           style={styles.pagerView}
         >
           <View collapsable={false} style={styles.pageStyle}>
@@ -186,29 +174,21 @@ const styles = createStyle({
   },
   tabHeader: {
     flexDirection: 'row',
-    // paddingLeft: 10,
-    paddingRight: 10,
-    // justifyContent: 'center',
-    borderBottomWidth: BorderWidths.normal,
+    alignItems: 'center',
+    paddingLeft: 12,
+    paddingRight: 12,
+    paddingVertical: 8,
   },
-  left: {
+  tabs: {
     flex: 1,
-    flexDirection: 'row',
-    paddingLeft: 5,
   },
-  tabBtn: {
-    // flex: 1,
-    paddingLeft: 10,
-    paddingRight: 10,
+  refreshBtn: {
+    width: 40,
+    height: 40,
+    marginLeft: 10,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    height: '100%',
-  },
-  btn: {
-    // flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100%',
   },
   pagerView: {
     flex: 1,
