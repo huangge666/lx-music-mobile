@@ -1,4 +1,4 @@
-import { View } from 'react-native'
+import { View, type ViewStyle } from 'react-native'
 
 import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
@@ -12,16 +12,23 @@ import { settingLayout, useSettingCardStyle } from './style'
  * — 子项作为卡片内的行，不再各自套一层底板
  */
 interface Props {
-  title: string
+  title?: string
+  style?: ViewStyle
   children: React.ReactNode | React.ReactNode[]
 }
 
-export default ({ title, children }: Props) => {
+export default ({ title, style, children }: Props) => {
   const theme = useTheme()
   const cardStyle = useSettingCardStyle()
 
   return (
-    <View style={[styles.container, settingLayout.card, cardStyle]}>
+    <View style={[
+      styles.container,
+      settingLayout.card,
+      cardStyle,
+      title ? null : styles.cardNoTitle,
+      style,
+    ]}>
       {/* 卡片顶部水面微光反射 */}
       <View
         pointerEvents="none"
@@ -35,7 +42,9 @@ export default ({ title, children }: Props) => {
           opacity: 0.6,
         }}
       />
-      <Text style={settingLayout.cardTitle} size={11} color={theme['c-font-label']}>{title}</Text>
+      {title
+        ? <Text style={settingLayout.cardTitle} size={11} color={theme['c-font-label']}>{title}</Text>
+        : null}
       <View style={styles.content}>
         {children}
       </View>
@@ -46,6 +55,10 @@ export default ({ title, children }: Props) => {
 
 const styles = createStyle({
   container: {},
+  cardNoTitle: {
+    paddingTop: 6,
+    paddingBottom: 6,
+  },
   content: {
     gap: 0,
   },

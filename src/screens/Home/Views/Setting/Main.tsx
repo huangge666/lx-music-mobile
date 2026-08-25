@@ -28,6 +28,60 @@ export const SETTING_SCREENS = [
 
 export type SettingScreenIds = typeof SETTING_SCREENS[number]
 
+export const SETTING_NAV_GROUPS = [
+  {
+    titleKey: 'setting_nav_group_general',
+    items: ['basic', 'source'],
+  },
+  {
+    titleKey: 'setting_nav_group_playback',
+    items: ['player', 'lyric_desktop'],
+  },
+  {
+    titleKey: 'setting_nav_group_browse',
+    items: ['search', 'list'],
+  },
+  {
+    titleKey: 'setting_nav_group_data',
+    items: ['sync', 'backup'],
+  },
+  {
+    titleKey: 'setting_nav_group_more',
+    items: ['other', 'version', 'about'],
+  },
+] as const
+
+export const SETTING_NAV_ICONS: Record<SettingScreenIds, string> = {
+  basic: 'setting',
+  source: 'album',
+  player: 'play-outline',
+  lyric_desktop: 'lyric-on',
+  search: 'search-2',
+  list: 'add_folder',
+  sync: 'share',
+  backup: 'sd-card',
+  other: 'help',
+  version: 'available_updates',
+  about: 'logo',
+}
+
+export const SettingScreen = ({ id }: { id: SettingScreenIds }) => {
+  switch (id) {
+    case 'source': return <Source />
+    case 'player': return <Player />
+    case 'lyric_desktop': return <LyricDesktop />
+    case 'search': return <Search />
+    case 'list': return <List />
+    case 'sync': return <Sync />
+    case 'backup': return <Backup />
+    case 'other': return <Other />
+    case 'version': return <Version />
+    case 'about': return <About />
+    case 'basic':
+    default: return <Basic />
+  }
+}
+
 // interface MainProps {
 //   onUpdateActiveId: (id: string) => void
 // }
@@ -48,22 +102,7 @@ const Main = forwardRef<MainType, {}>((props, ref) => {
     },
   }))
 
-  const component = useMemo(() => {
-    switch (id) {
-      case 'source': return <Source />
-      case 'player': return <Player />
-      case 'lyric_desktop': return <LyricDesktop />
-      case 'search': return <Search />
-      case 'list': return <List />
-      case 'sync': return <Sync />
-      case 'backup': return <Backup />
-      case 'other': return <Other />
-      case 'version': return <Version />
-      case 'about': return <About />
-      case 'basic':
-      default: return <Basic />
-    }
-  }, [id])
+  const component = useMemo(() => <SettingScreen id={id} />, [id])
 
   return component
 })

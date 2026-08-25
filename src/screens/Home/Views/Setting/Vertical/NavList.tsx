@@ -1,121 +1,142 @@
-import { memo, useCallback, useState } from 'react'
-import { View, TouchableOpacity, ScrollView } from 'react-native'
+import { memo } from 'react'
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native'
 
+import { Icon } from '@/components/common/Icon'
+import Text from '@/components/common/Text'
+import { useI18n } from '@/lang'
+import { useBgPic } from '@/store/common/hook'
 import { useTheme } from '@/store/theme/hook'
 import { createStyle } from '@/utils/tools'
-import Text from '@/components/common/Text'
-import { SETTING_SCREENS, type SettingScreenIds } from '../Main'
-import { useI18n } from '@/lang'
-import { BorderRadius } from '@/theme'
+import Section from '../components/Section'
+import SettingIcon from '../components/SettingIcon'
+import { settingLayout } from '../components/style'
+import {
+  SETTING_NAV_GROUPS,
+  SETTING_NAV_ICONS,
+  type SettingScreenIds,
+} from '../Main'
 
-
-/**
- * Apple Music 风格设置页分段导航
- *
- * 视觉特征：
- * — 水平滚动标签
- * — 选中态：主色文字 + 底部短下划线
- * — 默认态：次要色文字
- * — 无边框、无背景色（极简）
- */
-const ListItem = memo(({ id, activeId, onPress }: {
-  onPress: (item: SettingScreenIds) => void
-  activeId: string
+const NavRow = memo(({
+  id,
+  showDivider,
+  onPress,
+}: {
   id: SettingScreenIds
+  showDivider: boolean
+  onPress: (id: SettingScreenIds) => void
 }) => {
   const theme = useTheme()
   const t = useI18n()
 
-  const active = activeId == id
-
-  const handlePress = () => {
-    onPress(id)
-  }
-
   return (
-    <TouchableOpacity style={styles.listItem} onPress={handlePress} activeOpacity={0.6}>
-      <Text
-        numberOfLines={1}
-        size={15}
-        color={active ? theme['c-primary'] : theme['c-font-label']}
-        style={active ? styles.textActive : styles.text}
+    <View>
+      <TouchableOpacity
+        onPress={() => { onPress(id) }}
+        activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel={t(`setting_${id}`)}
+        style={settingLayout.row}
       >
-        {t(`setting_${id}`)}
-      </Text>
-      {/* Apple Music 风格选中指示器 — 短下划线 */}
-      {active ? <View style={{ ...styles.indicator, backgroundColor: theme['c-primary'] }} /> : null}
-    </TouchableOpacity>
-  )
-}, (prevProps, nextProps) => {
-  return !!(prevProps.id === nextProps.id &&
-    prevProps.activeId != nextProps.id &&
-    nextProps.activeId != nextProps.id
+        <SettingIcon name={SETTING_NAV_ICONS[id]} />
+        <View style={settingLayout.rowBody}>
+          <Text size={16} style={settingLayout.rowTitle} numberOfLines={1}>
+            {t(`setting_${id}`)}
+          </Text>
+          {id == 'source'
+            ? (
+                <Text size={12} color={theme['c-font-label']} style={settingLayout.rowSubtitle} numberOfLines={1}>
+                  {t('setting_source_desc')}
+                </Text>
+              )
+            : null}
+        </View>
+        <View style={[styles.chevron, { backgroundColor: theme['c-primary-background'] }]}>
+          <Icon name="chevron-right" size={16} color={theme['c-primary']} />
+        </View>
+      </TouchableOpacity>
+      {showDivider
+        ? (
+            <View
+              style={[
+                styles.divider,
+                { backgroundColor: theme['c-border-background'] },
+              ]}
+            />
+          )
+        : null}
+    </View>
   )
 })
-
 
 export default ({ onChangeId }: {
   onChangeId: (id: SettingScreenIds) => void
 }) => {
-  const [activeId, setActiveId] = useState(global.lx.settingActiveId)
   const theme = useTheme()
-
-  const handleChangeId = useCallback((id: SettingScreenIds) => {
-    onChangeId(id)
-    setActiveId(id)
-    global.lx.settingActiveId = id
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  const t = useI18n()
+  const hasDynamicBg = useBgPic() != null
 
   return (
     <ScrollView
-      horizontal
-      style={{ ...styles.container, borderBottomColor: theme['c-border-background'] }}
-      contentContainerStyle={styles.contentContainer}
-      keyboardShouldPersistTaps={'always'}
-      showsHorizontalScrollIndicator={false}
+      keyboardShouldPersistTaps="always"
+      showsVerticalScrollIndicator={false}
+      style={{
+        flex: 1,
+        backgroundColor: hasDynamicBg ? 'transparent' : theme['c-card-background'],
+      }}
+      contentContainerStyle={styles.content}
     >
-      {
-        SETTING_SCREENS.map(id => <ListItem key={id} id={id} activeId={activeId} onPress={handleChangeId} />)
-      }
+      {SETTING_NAV_GROUPS.map((group) => (
+        <View key={group.titleKey}>
+          <Text
+            size={13}
+            color={theme['c-font-label']}
+            style={styles.groupTitle}
+          >
+            {t(group.titleKey)}
+          </Text>
+          <Section style={styles.groupCard}>
+            {group.items.map((id, index) => (
+              <NavRow
+                key={id}
+                id={id}
+                showDivider={index < group.items.length - 1}
+                onPress={onChangeId}
+              />
+            ))}
+          </Section>
+        </View>
+      ))}
     </ScrollView>
   )
 }
 
-
 const styles = createStyle({
-  container: {
-    height: 44,
-    flexGrow: 0,
-    flexShrink: 0,
-    borderBottomWidth: 0.5,
+  content: {
+    paddingLeft: 16,
+    paddingRight: 16,
+    paddingTop: 8,
+    paddingBottom: 88,
   },
-  contentContainer: {
-    flexDirection: 'row',
-    flexWrap: 'nowrap',
-    paddingHorizontal: 12,
-    alignItems: 'center',
+  groupTitle: {
+    paddingHorizontal: 18,
+    paddingTop: 10,
+    paddingBottom: 8,
+    fontWeight: '600',
+    letterSpacing: 0.3,
   },
-  listItem: {
-    height: 44,
-    paddingLeft: 14,
-    paddingRight: 14,
+  groupCard: {
+    marginBottom: 10,
+  },
+  chevron: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
-  text: {
-    fontWeight: '400',
-  },
-  textActive: {
-    fontWeight: '600',
-  },
-  // Apple Music 风格选中下划线 — 主色、短宽、圆角
-  indicator: {
-    position: 'absolute',
-    bottom: 0,
-    width: 24,
-    height: 3,
-    borderRadius: BorderRadius.small,
-    backgroundColor: undefined, // 动态设置在组件内
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    marginLeft: 52,
   },
 })
