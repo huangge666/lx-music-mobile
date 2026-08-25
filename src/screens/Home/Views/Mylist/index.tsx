@@ -14,8 +14,10 @@ export default () => {
   const showPlaylistsRef = useRef(showPlaylists)
   showPlaylistsRef.current = showPlaylists
 
-  // 硬件返回键：在“我的”页的歌单详情时先返回上一级歌单列表，而不是退出应用
+  // 硬件返回键：在“我的”页的歌单详情时先返回上一级歌单列表，而不是退出应用。
+  // 播放详情等已入栈页面优先处理返回（与设置页一致：仅 home 在栈上时才拦截）。
   useBackHandler(useCallback(() => {
+    if (Object.keys(commonState.componentIds).length != 1) return false
     if (commonState.navActiveId != 'nav_love') return false
     if (showPlaylistsRef.current) return false
     global.app_event.changeLoveListVisible(true)
