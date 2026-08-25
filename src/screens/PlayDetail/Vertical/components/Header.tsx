@@ -5,8 +5,9 @@ import StatusBar from '@/components/common/StatusBar'
 import commonState from '@/store/common/state'
 import { useStatusbarHeight } from '@/store/common/hook'
 import { usePlayerMusicInfo } from '@/store/player/hook'
-import { Icon } from '@/components/common/Icon'
+import { IconMaterialCommunityIcons } from '@/components/common/Icon'
 import Image from '@/components/common/Image'
+import { useI18n } from '@/lang'
 import { scaleSizeH, scaleSizeW } from '@/utils/pixelRatio'
 import { HEADER_HEIGHT as _HEADER_HEIGHT, NAV_SHEAR_NATIVE_IDS } from '@/config/constant'
 import { Immersive, MacSpacing } from '../../macOS'
@@ -17,13 +18,14 @@ const CIRCLE = scaleSizeW(38)
 
 /**
  * 沉浸式顶栏
- * — 左侧圆形返回（关闭播放详情）
+ * — 左侧圆形下拉关闭（关闭播放详情）
  * — 歌词态右侧显示封面缩略图，点击回到封面
  */
 export default memo(({ showLyric, onBackToCover }: {
   showLyric?: boolean
   onBackToCover?: () => void
 }) => {
+  const t = useI18n()
   const statusBarHeight = useStatusbarHeight()
   const musicInfo = usePlayerMusicInfo()
 
@@ -42,10 +44,18 @@ export default memo(({ showLyric, onBackToCover }: {
     >
       <StatusBar />
       <View style={styles.container}>
-        <TouchableOpacity style={styles.circleBtn} onPress={back} activeOpacity={0.7}>
-          <View style={styles.chevronDown}>
-            <Icon name="chevron-left" color={Immersive.text} size={18} />
-          </View>
+        <TouchableOpacity
+          style={styles.circleBtn}
+          onPress={back}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={t('close')}
+        >
+          <IconMaterialCommunityIcons
+            name="chevron-down"
+            color={Immersive.text}
+            size={scaleSizeW(22)}
+          />
         </TouchableOpacity>
         <View style={styles.spacer} />
         {showLyric
@@ -83,9 +93,6 @@ const styles = StyleSheet.create({
     borderColor: Immersive.glassBorder,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  chevronDown: {
-    transform: [{ rotate: '-90deg' }],
   },
   spacer: {
     flex: 1,

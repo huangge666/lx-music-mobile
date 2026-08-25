@@ -1,11 +1,11 @@
 import { useRef, useImperativeHandle, forwardRef, useState, useCallback, memo, useEffect } from 'react'
 import Text from '@/components/common/Text'
 import { createStyle } from '@/utils/tools'
-import Dialog, { type DialogType } from '@/components/common/Dialog'
+import Popup, { type PopupType } from '@/components/common/Popup'
 import { FlatList, ScrollView, TouchableOpacity, View, type FlatListProps as _FlatListProps } from 'react-native'
-import { scaleSizeH } from '@/utils/pixelRatio'
+import { scaleSizeH, scaleSizeW } from '@/utils/pixelRatio'
 import { useTheme } from '@/store/theme/hook'
-import { Icon } from '@/components/common/Icon'
+import { Icon, IconMaterialCommunityIcons } from '@/components/common/Icon'
 import { useHorizontalMode, useUnmounted } from '@/utils/hooks'
 import { useI18n } from '@/lang'
 import Button from '@/components/common/Button'
@@ -13,7 +13,7 @@ import { useSourceListI18n } from '@/components/SourceSelector'
 import { searchMusic } from '@/utils/musicSdk'
 import { toNewMusicInfo } from '@/utils'
 import { handleShowMusicSourceDetail, handleToggleSource } from './listAction'
-import { BorderRadius, BorderWidths } from '@/theme'
+import { BorderRadius } from '@/theme'
 import playerState from '@/store/player/state'
 import { LIST_IDS } from '@/config/constant'
 import { addTempPlayList } from '@/core/player/tempPlayList'
@@ -33,19 +33,40 @@ const Tabs = <T extends LX.OnlineSource>({ list, source, onChangeSource }: {
   const scrollViewRef = useRef<ScrollView>(null)
 
   return (
-    <ScrollView ref={scrollViewRef} style={styles.tabContainer} keyboardShouldPersistTaps={'always'} horizontal>
+    <ScrollView
+      ref={scrollViewRef}
+      style={styles.tabContainer}
+      contentContainerStyle={styles.tabContent}
+      keyboardShouldPersistTaps="always"
+      horizontal
+      showsHorizontalScrollIndicator={false}
+    >
       {
-        list_t.map(s => (
-          <TouchableOpacity
-            style={{ ...styles.tabButton, borderBottomColor: source == s.action ? theme['c-primary-background-active'] : 'transparent' }}
-            onPress={() => {
-              onChangeSource(s.action as T)
-            }}
-            key={s.action}
-          >
-            <Text style={styles.tabButtonText} color={source == s.action ? theme['c-primary-font-active'] : theme['c-font']}>{s.label}</Text>
-          </TouchableOpacity>
-        ))
+        list_t.map(s => {
+          const active = source == s.action
+          return (
+            <TouchableOpacity
+              key={s.action}
+              activeOpacity={0.76}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: active }}
+              onPress={() => { onChangeSource(s.action as T) }}
+              style={{
+                ...styles.tabButton,
+                backgroundColor: active ? theme['c-primary-background'] : theme['c-card-background'],
+                borderColor: active ? theme['c-primary-alpha-700'] : theme['c-border-background'],
+              }}
+            >
+              <Text
+                size={13}
+                style={styles.tabButtonText}
+                color={active ? theme['c-primary-font'] : theme['c-font-label']}
+              >
+                {s.label}
+              </Text>
+            </TouchableOpacity>
+          )
+        })
       }
     </ScrollView>
   )
@@ -190,7 +211,7 @@ const SourceDetail = ({ info, onConfirm, toggleSource }: { info: LX.Music.MusicI
       {
         toggleSource ? (
           <>
-            <Text>→</Text>
+            <Icon name="chevron-right" size={14} color={theme['c-font-label']} />
             <View style={styles.detailInfo}>
               <View style={styles.detailInfoName}>
                 <Text style={styles.detailInfoNameText} color={theme['c-font']} size={13} numberOfLines={2}>
@@ -249,7 +270,7 @@ const SourceDetail = ({ info, onConfirm, toggleSource }: { info: LX.Music.MusicI
         {
           toggleSource ? (
             <>
-              <Text>↓</Text>
+              <IconMaterialCommunityIcons name="chevron-down" size={scaleSizeW(16)} color={theme['c-font-label']} />
               <View style={styles.detailInfo}>
                 <View style={styles.detailInfoName}>
                   <Text style={styles.detailInfoNameText} color={theme['c-font']} size={14} numberOfLines={2}>
@@ -301,8 +322,9 @@ const Modal = forwardRef<ModalType, {}>((props, ref) => {
     error: boolean
   }>({ sourceInfo: [], lists: {}, loading: false, error: false })
   const [source, setSource] = useState<LX.OnlineSource | ''>('')
-  const dialogRef = useRef<DialogType>(null)
+  const popupRef = useRef<PopupType>(null)
   const isUnmountedRef = useUnmounted()
+  const t = useI18n()
   const [toggleSource, setToggleSource] = useState<LX.Music.MusicInfoOnline | null>(null)
 
   const handlePlay = useCallback((musicInfo: LX.Music.MusicInfoOnline) => {
@@ -339,18 +361,22 @@ const Modal = forwardRef<ModalType, {}>((props, ref) => {
       setSource('')
       loadData(info)
       requestAnimationFrame(() => {
-        dialogRef.current?.setVisible(true)
+        popupRef.current?.setVisible(true)
       })
     },
   }))
 
   const confirmToggleSource = useCallback(async(musicInfo: LX.Music.MusicInfoOnline) => {
     const isClose = await handleToggleSource(infoRef.current.listId, infoRef.current.musicInfo, musicInfo)
-    if (isClose) dialogRef.current?.setVisible(false)
+    if (isClose) popupRef.current?.setVisible(false)
   }, [])
 
   return (
-    <Dialog ref={dialogRef}>
+    <Popup
+      ref={popupRef}
+      title={t('toggle_source')}
+      subtitle={infoRef.current.musicInfo?.name}
+    >
       <View style={styles.container}>
         {
           sourceInfo.sourceInfo.length
@@ -370,7 +396,7 @@ const Modal = forwardRef<ModalType, {}>((props, ref) => {
         }
         <SourceDetail info={infoRef.current.musicInfo} onConfirm={confirmToggleSource} toggleSource={toggleSource} />
       </View>
-    </Dialog>
+    </Popup>
   )
 })
 
@@ -410,35 +436,34 @@ const styles = createStyle({
   container: {
     flexGrow: 1,
     flexShrink: 1,
-    width: 600,
-    maxWidth: '100%',
+    minHeight: 360,
   },
   tabContainer: {
     flexGrow: 0,
     flexShrink: 0,
-    // paddingLeft: 5,
-    // paddingRight: 5,
-    paddingVertical: 6,
+  },
+  tabContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 6,
   },
   tabButton: {
-    // height: 38,
-    // lineHeight: 38,
+    height: 30,
+    paddingHorizontal: 12,
+    borderRadius: 4,
+    borderWidth: 0.5,
+    alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 6,
-    // width: 80,
-    // backgroundColor: 'rgba(0,0,0,0.1)',
-    borderBottomWidth: BorderWidths.normal,
   },
   tabButtonText: {
-    // height: 38,
-    // lineHeight: 38,
-    textAlign: 'center',
-    paddingHorizontal: 2,
-    paddingVertical: 5,
+    fontWeight: '600',
   },
   list: {
     flexGrow: 1,
     flexShrink: 1,
+    minHeight: 180,
   },
   listItem: {
     flexDirection: 'row',
