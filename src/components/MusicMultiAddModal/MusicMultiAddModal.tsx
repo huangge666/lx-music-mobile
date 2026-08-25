@@ -1,8 +1,7 @@
 import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
-import Dialog, { type DialogType } from '@/components/common/Dialog'
+import Popup, { type PopupType } from '@/components/common/Popup'
 import { toast } from '@/utils/tools'
-import Title from './Title'
-import List from './List'
+import List from '../MusicAddModal/List'
 import { useI18n } from '@/lang'
 import { addListMusics, moveListMusics } from '@/core/list'
 import settingState from '@/store/setting/state'
@@ -17,11 +16,6 @@ const initSelectInfo = { selectedList: [], listId: '', isMove: false }
 
 export interface MusicMultiAddModalProps {
   onAdded?: () => void
-  // onRename: (listInfo: LX.List.UserListInfo) => void
-  // onImport: (listInfo: LX.List.MyListInfo, index: number) => void
-  // onExport: (listInfo: LX.List.MyListInfo, index: number) => void
-  // onSync: (listInfo: LX.List.UserListInfo) => void
-  // onRemove: (listInfo: LX.List.UserListInfo) => void
 }
 export interface MusicMultiAddModalType {
   show: (info: SelectInfo) => void
@@ -29,15 +23,15 @@ export interface MusicMultiAddModalType {
 
 export default forwardRef<MusicMultiAddModalType, MusicMultiAddModalProps>(({ onAdded }, ref) => {
   const t = useI18n()
-  const dialogRef = useRef<DialogType>(null)
+  const popupRef = useRef<PopupType>(null)
   const [selectInfo, setSelectInfo] = useState<SelectInfo>(initSelectInfo)
 
   useImperativeHandle(ref, () => ({
-    show(selectInfo) {
-      setSelectInfo(selectInfo)
+    show(info) {
+      setSelectInfo(info)
 
       requestAnimationFrame(() => {
-        dialogRef.current?.setVisible(true)
+        popupRef.current?.setVisible(true)
       })
     },
   }))
@@ -49,7 +43,7 @@ export default forwardRef<MusicMultiAddModalType, MusicMultiAddModalProps>(({ on
   }
 
   const handleSelect = (listInfo: LX.List.MyListInfo) => {
-    dialogRef.current?.setVisible(false)
+    popupRef.current?.setVisible(false)
     if (selectInfo.isMove) {
       void moveListMusics(selectInfo.listId, listInfo.id,
         [...selectInfo.selectedList],
@@ -73,17 +67,15 @@ export default forwardRef<MusicMultiAddModalType, MusicMultiAddModalProps>(({ on
     }
   }
 
+  const title = `${t(selectInfo.isMove ? 'list_multi_add_title_first_move' : 'list_multi_add_title_first_add')}${selectInfo.selectedList.length}${t('list_multi_add_title_last')}`
+
   return (
-    <Dialog ref={dialogRef} onHide={handleHide}>
+    <Popup ref={popupRef} title={title} onHide={handleHide}>
       {
         selectInfo.selectedList.length
-          ? (<>
-              <Title selectedList={selectInfo.selectedList} isMove={selectInfo.isMove} />
-              <List listId={selectInfo.listId} onPress={handleSelect} />
-            </>)
+          ? <List excludeListId={selectInfo.listId} onPress={handleSelect} />
           : null
       }
-    </Dialog>
+    </Popup>
   )
 })
-

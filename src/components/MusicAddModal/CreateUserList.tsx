@@ -6,6 +6,7 @@ import { useI18n } from '@/lang'
 import { createUserList } from '@/core/list'
 import listState from '@/store/list/state'
 import { BorderRadius } from '@/theme'
+import { useTheme } from '@/store/theme/hook'
 
 export default ({ isEdit, onHide }: {
   isEdit: boolean
@@ -14,6 +15,7 @@ export default ({ isEdit, onHide }: {
   const [text, setText] = useState('')
   const inputRef = useRef<InputType>(null)
   const t = useI18n()
+  const theme = useTheme()
 
   useEffect(() => {
     if (isEdit) {
@@ -35,7 +37,7 @@ export default ({ isEdit, onHide }: {
 
   return isEdit
     ? (
-      <View style={styles.imputContainer}>
+      <View style={[styles.imputContainer, { backgroundColor: theme['c-card-background'] }]}>
         <Input
           placeholder={t('list_create_input_placeholder')}
           value={text}
@@ -43,7 +45,7 @@ export default ({ isEdit, onHide }: {
           ref={inputRef}
           onBlur={handleSubmitEditing}
           onSubmitEditing={handleSubmitEditing}
-          style={styles.input}
+          style={{ ...styles.input, backgroundColor: theme['c-primary-input-background'] }}
         />
       </View>
       )
@@ -57,14 +59,14 @@ const styles = createStyle({
     left: 0,
     width: '100%',
     height: '100%',
-    paddingBottom: 10,
-    // backgroundColor: 'rgba(0,0,0,0.2)',
+    paddingHorizontal: 14,
+    justifyContent: 'center',
   },
   input: {
     flex: 1,
     fontSize: 14,
     borderRadius: BorderRadius.small,
     textAlign: 'center',
-    height: '100%',
+    height: 36,
   },
 })

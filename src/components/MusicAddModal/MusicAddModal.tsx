@@ -1,7 +1,6 @@
 import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
-import Dialog, { type DialogType } from '@/components/common/Dialog'
+import Popup, { type PopupType } from '@/components/common/Popup'
 import { toast } from '@/utils/tools'
-import Title from './Title'
 import List from './List'
 import { useI18n } from '@/lang'
 import { addListMusics, moveListMusics } from '@/core/list'
@@ -17,11 +16,6 @@ const initSelectInfo = {}
 
 export interface MusicAddModalProps {
   onAdded?: () => void
-  // onRename: (listInfo: LX.List.UserListInfo) => void
-  // onImport: (listInfo: LX.List.MyListInfo, index: number) => void
-  // onExport: (listInfo: LX.List.MyListInfo, index: number) => void
-  // onSync: (listInfo: LX.List.UserListInfo) => void
-  // onRemove: (listInfo: LX.List.UserListInfo) => void
 }
 export interface MusicAddModalType {
   show: (info: SelectInfo) => void
@@ -29,15 +23,15 @@ export interface MusicAddModalType {
 
 export default forwardRef<MusicAddModalType, MusicAddModalProps>(({ onAdded }, ref) => {
   const t = useI18n()
-  const dialogRef = useRef<DialogType>(null)
+  const popupRef = useRef<PopupType>(null)
   const [selectInfo, setSelectInfo] = useState<SelectInfo>(initSelectInfo as SelectInfo)
 
   useImperativeHandle(ref, () => ({
-    show(selectInfo) {
-      setSelectInfo(selectInfo)
+    show(info) {
+      setSelectInfo(info)
 
       requestAnimationFrame(() => {
-        dialogRef.current?.setVisible(true)
+        popupRef.current?.setVisible(true)
       })
     },
   }))
@@ -49,7 +43,7 @@ export default forwardRef<MusicAddModalType, MusicAddModalProps>(({ onAdded }, r
   }
 
   const handleSelect = (listInfo: LX.List.MyListInfo) => {
-    dialogRef.current?.setVisible(false)
+    popupRef.current?.setVisible(false)
     if (selectInfo.isMove) {
       void moveListMusics(selectInfo.listId, listInfo.id,
         [selectInfo.musicInfo!],
@@ -73,17 +67,20 @@ export default forwardRef<MusicAddModalType, MusicAddModalProps>(({ onAdded }, r
     }
   }
 
+  const title = t(selectInfo.isMove ? 'list_add_title_first_move' : 'list_add_title_first_add') + t('list_add_title_last')
+
   return (
-    <Dialog ref={dialogRef} onHide={handleHide}>
+    <Popup
+      ref={popupRef}
+      title={title}
+      subtitle={selectInfo.musicInfo?.name}
+      onHide={handleHide}
+    >
       {
         selectInfo.musicInfo
-          ? (<>
-              <Title musicInfo={selectInfo.musicInfo} isMove={selectInfo.isMove} />
-              <List musicInfo={selectInfo.musicInfo} onPress={handleSelect} />
-            </>)
+          ? <List musicInfo={selectInfo.musicInfo} onPress={handleSelect} />
           : null
       }
-    </Dialog>
+    </Popup>
   )
 })
-

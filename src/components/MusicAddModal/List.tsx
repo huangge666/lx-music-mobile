@@ -1,45 +1,95 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { ScrollView, TouchableOpacity, View } from 'react-native'
 
 import Text from '@/components/common/Text'
-import { useMyList } from '@/store/list/hook'
-import ListItem, { styles as listStyles } from './ListItem'
+import { Icon } from '@/components/common/Icon'
+import { useMyList, useMusicExistsList } from '@/store/list/hook'
 import CreateUserList from './CreateUserList'
-import { useWindowSize } from '@/utils/hooks'
 import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
-import { createStyle } from '@/utils/tools'
-import { scaleSizeW } from '@/utils/pixelRatio'
+import { createStyle, toast } from '@/utils/tools'
+import { BorderRadius, BorderWidths } from '@/theme'
+import { LIST_IDS } from '@/config/constant'
 
-const styles = createStyle({
-  list: {
-    paddingLeft: 15,
-    paddingRight: 2,
-    paddingBottom: 5,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    // backgroundColor: 'rgba(0,0,0,0.2)'
-    // justifyContent: 'center',
-  },
-})
-const MIN_WIDTH = scaleSizeW(150)
-const PADDING = styles.list.paddingLeft + styles.list.paddingRight
+const getPlaylistIcon = (id?: string) => {
+  switch (id) {
+    case LIST_IDS.LOVE:
+      return 'love'
+    case LIST_IDS.DEFAULT:
+      return 'play-outline'
+    default:
+      return 'album'
+  }
+}
 
-
-const EditListItem = ({ itemWidth }: {
-  itemWidth: number
+const RowContent = ({
+  listInfo,
+  disabled,
+  onPress,
+}: {
+  listInfo: LX.List.MyListInfo
+  disabled?: boolean
+  onPress: () => void
 }) => {
+  const theme = useTheme()
+
+  return (
+    <TouchableOpacity
+      style={[styles.row, disabled && styles.rowDisabled]}
+      activeOpacity={disabled ? 1 : 0.6}
+      onPress={onPress}
+    >
+      <View style={[styles.iconBox, { backgroundColor: theme['c-primary-background'] }]}>
+        <Icon name={getPlaylistIcon(listInfo.id)} size={16} color={theme['c-primary']} />
+      </View>
+      <Text style={styles.rowText} size={15} color={theme['c-font']} numberOfLines={1}>
+        {listInfo.name}
+      </Text>
+      <Icon name="chevron-right" size={12} color={theme['c-font-label']} style={styles.chevron} />
+    </TouchableOpacity>
+  )
+}
+
+const ExistsRow = ({
+  listInfo,
+  musicInfo,
+  onPress,
+}: {
+  listInfo: LX.List.MyListInfo
+  musicInfo: LX.Music.MusicInfo
+  onPress: (listInfo: LX.List.MyListInfo) => void
+}) => {
+  const isExists = useMusicExistsList(listInfo, musicInfo)
+
+  const handlePress = () => {
+    if (isExists) {
+      toast(global.i18n.t('list_add_tip_exists'))
+      return
+    }
+    onPress(listInfo)
+  }
+
+  return <RowContent listInfo={listInfo} disabled={isExists} onPress={handlePress} />
+}
+
+const CreateRow = () => {
   const [isEdit, setEdit] = useState(false)
   const theme = useTheme()
   const t = useI18n()
 
   return (
-    <View style={{ ...listStyles.listItem, width: itemWidth }}>
+    <View style={styles.row}>
       <TouchableOpacity
-        style={{ ...listStyles.button, borderColor: theme['c-primary-alpha-300'], borderStyle: 'dashed' }}
+        style={styles.createBtn}
+        activeOpacity={0.6}
         onPress={() => { setEdit(true) }}
       >
-        <Text style={{ opacity: isEdit ? 0 : 1 }} numberOfLines={1} size={14} color={theme['c-button-font']}>{t('list_create')}</Text>
+        <View style={[styles.iconBox, { backgroundColor: theme['c-primary-background'] }]}>
+          <Icon name="add_folder" size={16} color={theme['c-primary']} />
+        </View>
+        <Text style={[styles.rowText, { opacity: isEdit ? 0 : 1 }]} size={15} color={theme['c-font']} numberOfLines={1}>
+          {t('list_create')}
+        </Text>
       </TouchableOpacity>
       {
         isEdit
@@ -50,25 +100,85 @@ const EditListItem = ({ itemWidth }: {
   )
 }
 
-export default ({ musicInfo, onPress }: {
-  musicInfo: LX.Music.MusicInfo
+export default ({ musicInfo, excludeListId, onPress }: {
+  musicInfo?: LX.Music.MusicInfo
+  excludeListId?: string
   onPress: (listInfo: LX.List.MyListInfo) => void
 }) => {
-  const windowSize = useWindowSize()
-  const allList = useMyList()
-  const itemWidth = useMemo(() => {
-    let w = Math.floor(windowSize.width * 0.9 - PADDING)
-    let n = Math.floor(w / MIN_WIDTH)
-    if (n > 10) n = 10
-    return Math.floor((w - 1) / n)
-  }, [windowSize])
+  const theme = useTheme()
+  const allList = useMyList().filter(l => l.id != excludeListId)
 
   return (
-    <ScrollView style={{ flexGrow: 0 }}>
-      <View style={styles.list} onStartShouldSetResponder={() => true}>
-        { allList.map(info => <ListItem key={info.id} listInfo={info} musicInfo={musicInfo} onPress={onPress} width={itemWidth} />) }
-        <EditListItem itemWidth={itemWidth} />
+    <ScrollView
+      style={styles.scroll}
+      contentContainerStyle={styles.scrollContent}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={[styles.group, { backgroundColor: theme['c-card-background'] }]} onStartShouldSetResponder={() => true}>
+        {allList.map((info) => (
+          <View
+            key={info.id}
+            style={[styles.rowWrap, { borderBottomColor: theme['c-border-background'] }]}
+          >
+            {
+              musicInfo
+                ? <ExistsRow listInfo={info} musicInfo={musicInfo} onPress={onPress} />
+                : <RowContent listInfo={info} onPress={() => { onPress(info) }} />
+            }
+          </View>
+        ))}
+        <CreateRow />
       </View>
     </ScrollView>
   )
 }
+
+const styles = createStyle({
+  scroll: {
+    flexGrow: 0,
+    flexShrink: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 10,
+  },
+  group: {
+    borderRadius: BorderRadius.large,
+    overflow: 'hidden',
+  },
+  rowWrap: {
+    borderBottomWidth: BorderWidths.hairline,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 52,
+    paddingHorizontal: 14,
+  },
+  rowDisabled: {
+    opacity: 0.4,
+  },
+  createBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: '100%',
+  },
+  iconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: BorderRadius.small,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+  rowText: {
+    flex: 1,
+    fontWeight: '500',
+  },
+  chevron: {
+    opacity: 0.6,
+  },
+})
