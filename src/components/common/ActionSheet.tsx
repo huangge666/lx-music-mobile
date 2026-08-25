@@ -22,6 +22,7 @@ export interface ActionSheetItem {
   icon: string
   disabled?: boolean
   danger?: boolean
+  selected?: boolean
 }
 
 export interface ActionSheetHeader {
@@ -193,7 +194,9 @@ export default forwardRef<ActionSheetType, ActionSheetProps>(({ onPress, onHide 
                   ? DANGER_COLOR
                   : item.disabled
                     ? theme['c-font-label']
-                    : theme['c-font']
+                    : item.selected
+                      ? theme['c-primary-font']
+                      : theme['c-font']
                 const iconColor = item.danger
                   ? DANGER_COLOR
                   : item.disabled
@@ -234,9 +237,9 @@ export default forwardRef<ActionSheetType, ActionSheetProps>(({ onPress, onHide 
                       {item.label}
                     </Text>
                     <Icon
-                      name="chevron-right"
-                      size={12}
-                      color={theme['c-font-label']}
+                      name={item.selected ? 'checkbox-marked' : 'chevron-right'}
+                      size={item.selected ? 16 : 12}
+                      color={item.selected ? theme['c-primary'] : theme['c-font-label']}
                       style={[styles.chevron, item.disabled && { opacity: 0.3 }]}
                     />
                   </TouchableOpacity>
