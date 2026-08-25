@@ -6,6 +6,18 @@ Project versioning adheres to [Semantic Versioning](http://semver.org/).
 Commit convention is based on [Conventional Commits](http://conventionalcommits.org).
 Change log format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [20260825](https://github.com/huangge666/lx-music-mobile/compare/v1.8.4...v20260825) - 2026-08-25
+
+### 优化
+
+- 底部导航栏内容底边距按平台差异化适配，Android 上避免 Tab 文案贴近手势条
+- 播放详情竖屏关闭按钮改用下拉箭头图标，与下拉关闭语义一致
+- 歌曲换源弹窗改为底部抽屉样式，音源切换改为一组选中态 chip 标签
+- 评论页头部与标签栏样式优化
+
+### 修复
+
+- 移除未注册、未使用的 Toast 残留组件并清理对应注释代码
 ## [20260820](https://github.com/lyswhut/lx-music-mobile/compare/v20260818...v20260820) - 2026-08-20
 
 ### 新增
