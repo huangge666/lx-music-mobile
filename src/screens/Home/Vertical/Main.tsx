@@ -161,7 +161,6 @@ const MylistPage = () => {
 }
 const DownloadPage = () => {
   const [visible, setVisible] = useState(commonState.navActiveId == 'nav_download')
-  const component = useMemo(() => <Download />, [])
   useEffect(() => {
     const handleNavIdUpdate = (id: CommonState['navActiveId']) => {
       if (id == 'nav_download') {
@@ -171,12 +170,12 @@ const DownloadPage = () => {
       }
     }
     global.state_event.on('navActiveIdUpdated', handleNavIdUpdate)
-
+	
     return () => {
       global.state_event.off('navActiveIdUpdated', handleNavIdUpdate)
     }
   }, [])
-  return visible ? component : null
+  return visible ? <Download /> : null
 }
 const SettingPage = () => {
   const [visible, setVisible] = useState(commonState.navActiveId == 'nav_setting')

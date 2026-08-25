@@ -26,13 +26,19 @@ const IcoMoon = createIconSetFromIcoMoon(icoMoonConfig)
 // https://oblador.github.io/react-native-vector-icons/
 
 type IconType = ReturnType<typeof createIconSetFromIcoMoon>
+type IconName = ComponentProps<IconType>['name']
+
+// 字体集没有独立的 music glyph，历史用法统一落到已有图标
+const ICON_NAME_ALIASES: Record<string, IconName> = {
+  music: 'add-music',
+}
 
 interface IconProps extends Omit<ComponentProps<IconType>, 'style'> {
   style?: StyleProp<TextStyle>
   rawSize?: number
 }
 
-export const Icon = memo(({ size = 15, rawSize, color, style, ...props }: IconProps) => {
+export const Icon = memo(({ size = 15, rawSize, color, style, name, ...props }: IconProps) => {
   const theme = useTheme()
   const textShadow = useTextShadow()
   const newStyle = textShadow ? StyleSheet.compose({
@@ -40,6 +46,7 @@ export const Icon = memo(({ size = 15, rawSize, color, style, ...props }: IconPr
     textShadowOffset: { width: 0.2, height: 0.2 },
     textShadowRadius: 2,
   }, style) : style
+  const iconName = (typeof name === 'string' && ICON_NAME_ALIASES[name]) || name
   return (
     <IcoMoon
       size={rawSize ?? scaleSizeW(size)}
@@ -47,6 +54,7 @@ export const Icon = memo(({ size = 15, rawSize, color, style, ...props }: IconPr
       // @ts-expect-error
       style={newStyle}
       {...props}
+      name={iconName}
     />
   )
 })
