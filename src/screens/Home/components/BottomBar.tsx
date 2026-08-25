@@ -7,7 +7,10 @@ import { useNavActiveId } from '@/store/common/hook'
 import { useTheme } from '@/store/theme/hook'
 import { Icon } from '@/components/common/Icon'
 import Text from '@/components/common/Text'
-import { createStyle } from '@/utils/tools'
+import { createStyle, isAndroid } from '@/utils/tools'
+
+/** 底栏内容底边距。iOS 另有系统 Home Indicator；Android 需在栏内留出贴底安全距离。 */
+const TAB_BAR_PADDING_BOTTOM = isAndroid ? 16 : 8
 
 interface BarItemProps {
   id: typeof NAV_MENUS[number]['id']
@@ -94,8 +97,7 @@ const styles = createStyle({
     flexDirection: 'row',
     paddingHorizontal: 4,
     paddingTop: 6,
-    // iOS safe area 底部间距由系统自动处理
-    paddingBottom: 2,
+    paddingBottom: TAB_BAR_PADDING_BOTTOM,
     justifyContent: 'space-between',
     alignItems: 'center',
   },
