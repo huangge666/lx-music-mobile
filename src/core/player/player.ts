@@ -24,6 +24,7 @@ import { getPlayQuality } from '@/core/music/utils'
 import { requestMsg } from '@/utils/message'
 import { getRandom } from '@/utils/common'
 import { filterList } from './utils'
+import { pickShuffledNextIndex } from './shuffleQueue'
 import BackgroundTimer from 'react-native-background-timer'
 import { checkIgnoringBatteryOptimization, checkNotificationPermission, debounceBackgroundTimer } from '@/utils/tools'
 import { LIST_IDS } from '@/config/constant'
@@ -492,7 +493,7 @@ export const getNextPlayMusicInfo = async(): Promise<LX.Player.PlayMusicInfo | n
       nextIndex = playerIndex === filteredList.length - 1 ? 0 : playerIndex + 1
       break
     case 'random':
-      nextIndex = getRandom(0, filteredList.length)
+      nextIndex = pickShuffledNextIndex(currentListId, filteredList)
       break
     case 'list':
       nextIndex = playerIndex === filteredList.length - 1 ? -1 : playerIndex + 1
@@ -602,7 +603,7 @@ export const playNext = async(isAutoToggle = false): Promise<void> => {
       nextIndex = playerIndex === filteredList.length - 1 ? 0 : playerIndex + 1
       break
     case 'random':
-      nextIndex = getRandom(0, filteredList.length)
+      nextIndex = pickShuffledNextIndex(currentListId, filteredList)
       break
     case 'list':
       nextIndex = playerIndex === filteredList.length - 1 ? -1 : playerIndex + 1

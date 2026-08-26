@@ -1,6 +1,7 @@
 import { createStyle } from '@/utils/tools'
 import { View } from 'react-native'
 import PlayModeBtn from './PlayModeBtn'
+import QueueBtn from './QueueBtn'
 import MusicAddBtn from './MusicAddBtn'
 import TimeoutExitBtn from './TimeoutExitBtn'
 import { useTheme } from '@/store/theme/hook'
@@ -11,9 +12,7 @@ import { MacRadius, MacSpacing, MacShadow, getMacGlassBackground, getMacGlassBor
  * macOS 风格侧边工具栏
  *
  * 左侧浮起一个紧凑的毛玻璃胶囊：
- *  ⌖   ← 定时关闭
- *  ♡   ← 收藏
- *  ⟲   ← 播放模式
+ *  定时关闭 / 收藏 / 播放模式 / 当前播放列表
  *
  * 圆角 22pt，纵向排列，每个按钮 36pt 触控
  */
@@ -33,6 +32,7 @@ export default () => {
       <TimeoutExitBtn />
       <MusicAddBtn />
       <PlayModeBtn />
+      <QueueBtn />
     </View>
   )
 }

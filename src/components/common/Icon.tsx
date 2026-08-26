@@ -3,7 +3,8 @@ import icoMoonConfig from '@/resources/fonts/selection.json'
 import { scaleSizeW } from '@/utils/pixelRatio'
 import { memo, type ComponentProps } from 'react'
 import { useTextShadow, useTheme } from '@/store/theme/hook'
-import { StyleSheet, type StyleProp, type TextStyle } from 'react-native'
+import { StyleSheet, type StyleProp, type TextStyle, type ViewStyle } from 'react-native'
+import PlaylistIcon from './icons/PlaylistIcon'
 
 // import IconAntDesign from 'react-native-vector-icons/AntDesign'
 // import IconEntypo from 'react-native-vector-icons/Entypo'
@@ -47,10 +48,18 @@ export const Icon = memo(({ size = 15, rawSize, color, style, name, ...props }: 
     textShadowRadius: 2,
   }, style) : style
   const iconName = (typeof name === 'string' && ICON_NAME_ALIASES[name]) || name
+  const iconSize = rawSize ?? scaleSizeW(size)
+  const iconColor = color ?? theme['c-font']
+
+  // playlist 来自 24gf-playlist.svg，用矢量绘制避免依赖原生字体热更新
+  if (iconName === 'playlist') {
+    return <PlaylistIcon size={iconSize} color={String(iconColor)} style={newStyle as StyleProp<ViewStyle>} />
+  }
+
   return (
     <IcoMoon
-      size={rawSize ?? scaleSizeW(size)}
-      color={color ?? theme['c-font']}
+      size={iconSize}
+      color={iconColor}
       // @ts-expect-error
       style={newStyle}
       {...props}

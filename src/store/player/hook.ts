@@ -54,6 +54,38 @@ export const useStatusText = () => {
   return value
 }
 
+export const usePlayedList = () => {
+  const [value, update] = useState(state.playedList)
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      update([...state.playedList])
+    }
+    global.state_event.on('playPlayedListChanged', handleUpdate)
+    return () => {
+      global.state_event.off('playPlayedListChanged', handleUpdate)
+    }
+  }, [])
+
+  return value
+}
+
+export const useTempPlayList = () => {
+  const [value, update] = useState(state.tempPlayList)
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      update([...state.tempPlayList])
+    }
+    global.state_event.on('playTempPlayListChanged', handleUpdate)
+    return () => {
+      global.state_event.off('playTempPlayListChanged', handleUpdate)
+    }
+  }, [])
+
+  return value
+}
+
 export const useIsPlay = () => {
   const [value, update] = useState(state.isPlay)
 

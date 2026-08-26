@@ -2,6 +2,7 @@ import { memo } from 'react'
 import { View } from 'react-native'
 import { createStyle } from '@/utils/tools'
 import PlayModeBtn from './PlayModeBtn'
+import QueueBtn from './QueueBtn'
 import DownloadBtn from './DownloadBtn'
 import CommentBtn from './CommentBtn'
 import { MacSpacing } from '../../../../macOS'
@@ -12,6 +13,7 @@ import { MacSpacing } from '../../../../macOS'
  * 1. 播放顺序（列表循环 / 顺序 / 随机 / 单曲循环 / 单曲）
  * 2. 下载
  * 3. 评论
+ * 4. 当前播放列表
  */
 const ActionBar = () => {
   return (
@@ -19,6 +21,7 @@ const ActionBar = () => {
       <PlayModeBtn />
       <DownloadBtn />
       <CommentBtn />
+      <QueueBtn />
     </View>
   )
 }
