@@ -37,12 +37,21 @@ export default () => {
     return true
   }, [activeId]))
 
-  if (!activeId) return <NavList onChangeId={openScreen} />
-
+  // 分组列表始终挂载（仅通过 display:none 隐藏），
+  // 避免进入子页时卸载导致返回后滚动位置重置到顶部
   return (
     <View style={styles.container}>
-      <Header id={activeId} onBack={closeScreen} />
-      <Main id={activeId} />
+      <View style={[styles.page, activeId ? styles.hidden : null]}>
+        <NavList onChangeId={openScreen} />
+      </View>
+      {activeId
+        ? (
+            <View style={styles.page}>
+              <Header id={activeId} onBack={closeScreen} />
+              <Main id={activeId} />
+            </View>
+          )
+        : null}
     </View>
   )
 }
@@ -50,5 +59,12 @@ export default () => {
 const styles = createStyle({
   container: {
     flex: 1,
+  },
+  page: {
+    flex: 1,
+  },
+  hidden: {
+    // 隐藏但保持挂载，ScrollView 的滚动偏移得以保留
+    display: 'none',
   },
 })
