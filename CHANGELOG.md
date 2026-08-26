@@ -6,6 +6,17 @@ Project versioning adheres to [Semantic Versioning](http://semver.org/).
 Commit convention is based on [Conventional Commits](http://conventionalcommits.org).
 Change log format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [20260826](https://github.com/huangge666/lx-music-mobile/compare/v20260825...v20260826) - 2026-08-26
+
+### 新增
+
+- 播放详情页新增「正在播放队列」弹窗，展示当前播放列表并支持快速切歌
+- 新增稳定随机播放队列，当前播放与下一首保持一致，切歌后不再重复抽到已播歌曲
+
+### 修复
+
+- 修复播放列表图标字体缺失导致的图标不显示问题，并移除下载页面的 useMemo 闭包陷阱
+
 ## [20260825](https://github.com/huangge666/lx-music-mobile/compare/v1.8.4...v20260825) - 2026-08-25
 
 ### 优化
