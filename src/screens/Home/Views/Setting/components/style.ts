@@ -49,6 +49,10 @@ export const settingLayout = createStyle({
     flexShrink: 0,
     borderWidth: 0.5,
   },
+  // NavRow 按压弹簧缩放作用在外层包装上，避免与瓷贴自身布局样式冲突
+  iconBubbleWrapper: {
+    flexShrink: 0,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
