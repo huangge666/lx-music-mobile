@@ -32,8 +32,8 @@ export default memo(({ musicInfo }: {
       style={{
         height: HEADER_HEIGHT + statusBarHeight,
         paddingTop: statusBarHeight,
-        backgroundColor: theme['c-glass-background'],
-        borderBottomColor: theme['c-glass-border'],
+        backgroundColor: theme['c-content-background'],
+        borderBottomColor: theme['c-border-background'],
         borderBottomWidth: BorderWidths.hairline,
       }}
     >

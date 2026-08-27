@@ -12,7 +12,6 @@ import { type InitState as CommonState } from '@/store/common/state'
 import SearchTypeSelector from '@/screens/Home/Views/Search/SearchTypeSelector'
 import DetailNav from '@/screens/Home/Views/Mylist/DetailNav'
 import { useMylistPlaylistsVisible } from '@/store/list/uiHook'
-import { BorderWidths } from '@/theme'
 
 const headerComponents: Partial<Record<CommonState['navActiveId'], React.ReactNode>> = {
   nav_search: <SearchTypeSelector />,
@@ -23,9 +22,8 @@ const HEADER_HEIGHT = _HEADER_HEIGHT * 0.8
 /**
  * Apple Music iPad 风格 Header
  *
- * — 毛玻璃半透明背景
+ * — 不透明内容背景，与内容层统一
  * — 18pt 粗体大标题
- * — 极细底部分隔线
  */
 const LeftHeader = () => {
   const theme = useTheme()
@@ -40,23 +38,8 @@ const LeftHeader = () => {
       ...styles.container,
       height: scaleSizeH(HEADER_HEIGHT) + statusBarHeight,
       paddingTop: statusBarHeight,
-      backgroundColor: theme['c-glass-background'],
-      borderBottomColor: theme['c-glass-border'],
-      borderBottomWidth: BorderWidths.hairline,
+      backgroundColor: theme['c-content-background'],
     }}>
-      {/* 水光漫反射柔光层 */}
-      <View
-        pointerEvents="none"
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: theme['c-glass-fluid-glow'],
-          opacity: 0.15,
-        }}
-      />
       {isMylistDetail
         ? <DetailNav titleSize={18} />
         : (
@@ -85,23 +68,8 @@ const RightHeader = () => {
       ...styles.container,
       height: scaleSizeH(HEADER_HEIGHT) + statusBarHeight,
       paddingTop: statusBarHeight,
-      backgroundColor: theme['c-glass-background'],
-      borderBottomColor: theme['c-glass-border'],
-      borderBottomWidth: BorderWidths.hairline,
+      backgroundColor: theme['c-content-background'],
     }}>
-      {/* 水光漫反射柔光层 */}
-      <View
-        pointerEvents="none"
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: theme['c-glass-fluid-glow'],
-          opacity: 0.15,
-        }}
-      />
       {isMylistDetail
         ? <DetailNav titleSize={18} />
         : (

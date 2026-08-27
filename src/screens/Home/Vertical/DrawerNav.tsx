@@ -10,83 +10,110 @@ import type { InitState } from '@/store/common/state'
 import { exitApp, setNavActiveId } from '@/core/common'
 import Text from '@/components/common/Text'
 import { useSettingValue } from '@/store/setting/hook'
-import { BorderRadius } from '@/theme'
+import { BorderRadius, BorderWidths } from '@/theme'
+import versionState from '@/store/version/state'
 
 const styles = createStyle({
   container: {
     flex: 1,
   },
   header: {
-    paddingTop: 16,
-    paddingBottom: 24,
-    paddingLeft: 24,
+    paddingTop: 20,
+    paddingBottom: 20,
+    paddingLeft: 16,
     flexDirection: 'row',
     justifyContent: 'flex-start',
     alignItems: 'center',
   },
-  headerText: {
-    marginLeft: 12,
+  // 品牌 Logo 瓷贴：主色底 + 白色 Logo，作为侧栏的视觉锚点
+  logoTile: {
+    width: 42,
+    height: 42,
+    borderRadius: BorderRadius.medium,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerInfo: {
+    marginLeft: 14,
+    justifyContent: 'center',
+  },
+  headerName: {
     fontWeight: '700',
+  },
+  headerVersion: {
+    marginTop: 2,
+  },
+  // 头部与菜单之间的发丝级分隔线，保持内容呼吸感
+  divider: {
+    height: BorderWidths.hairline,
+    marginLeft: 16,
+    marginRight: 16,
   },
   menus: {
     flex: 1,
   },
   list: {
-    paddingTop: 4,
+    paddingTop: 10,
     paddingBottom: 8,
     paddingHorizontal: 12,
   },
   /**
-   * Apple Music 风格菜单项
-   * — 圆角矩形 (radius 12)
-   * — 选中态：主色浅底 + 主色文字
-   * — 默认态：透明底 + 默认文字色
+   * 菜单项 — 胶囊行 + 图标瓷贴
+   * — 圆角矩形 (radius medium)
+   * — 选中态：主色浅底 + 发丝级玻璃描边 + 主色图标瓷贴 + 尾部箭头
+   * — 默认态：透明底 + 次要色图标
    */
   menuItem: {
     flexDirection: 'row',
-    paddingTop: 13,
-    paddingBottom: 13,
-    paddingLeft: 16,
-    paddingRight: 16,
+    paddingVertical: 9,
+    paddingHorizontal: 10,
     alignItems: 'center',
     borderRadius: BorderRadius.medium,
-    marginVertical: 2,
-    borderWidth: 0.5,
+    marginVertical: 3,
+    borderWidth: BorderWidths.hairline,
     borderColor: 'transparent',
   },
-  menuItemActive: {
-    borderWidth: 0.5,
-  },
-  iconContent: {
-    width: 28,
+  iconTile: {
+    width: 34,
+    height: 34,
+    borderRadius: BorderRadius.small,
+    justifyContent: 'center',
     alignItems: 'center',
   },
   text: {
-    paddingLeft: 14,
-    fontSize: 16,
+    paddingLeft: 12,
+    fontSize: 15,
     fontWeight: '500',
+    flex: 1,
   },
-  // 底部操作区
   footer: {
     paddingHorizontal: 12,
-    paddingBottom: 16,
-    borderTopWidth: 0,
+    paddingTop: 10,
+    paddingBottom: 14,
   },
 })
 
 /**
- * Apple Music 风格侧边栏头部
- * Logo + 应用名，左对齐
+ * 侧边栏品牌头部
+ * 主色 Logo 瓷贴 + 应用名 + 版本号副标签
  */
 const Header = () => {
   const theme = useTheme()
   const statusBarHeight = useStatusbarHeight()
   return (
-    <View style={{ paddingTop: statusBarHeight, backgroundColor: 'transparent' }}>
+    <View style={{ paddingTop: statusBarHeight }}>
       <View style={styles.header}>
-        <Icon name="logo" color={theme['c-primary']} size={30} />
-        <Text style={styles.headerText} size={26} color={theme['c-font']}>LX Music</Text>
+        <View style={{ ...styles.logoTile, backgroundColor: theme['c-primary'] }}>
+          <Icon name="logo" color="rgb(255, 255, 255)" size={22} />
+        </View>
+        <View style={styles.headerInfo}>
+          <Text style={styles.headerName} size={20} color={theme['c-font']}>LX Music</Text>
+          <Text style={styles.headerVersion} size={11} color={theme['c-font-label']}>
+            v{versionState.versionInfo.version}
+          </Text>
+        </View>
       </View>
+      <View style={{ ...styles.divider, backgroundColor: theme['c-border-background'] }} />
     </View>
   )
 }
@@ -94,7 +121,8 @@ const Header = () => {
 type IdType = InitState['navActiveId'] | 'nav_exit' | 'back_home'
 
 /**
- * 菜单项 — Apple Music 风格圆角选中态
+ * 菜单项 — 胶囊行选中态
+ * 图标瓷贴在选中时切换为主色底白图标，形成纵向导航的焦点指示
  */
 const MenuItem = ({ id, icon, onPress }: {
   id: IdType
@@ -106,20 +134,35 @@ const MenuItem = ({ id, icon, onPress }: {
   const theme = useTheme()
   const isActive = activeId == id
 
+  const content = isActive
+    ? (
+      <>
+        <View style={{ ...styles.iconTile, backgroundColor: theme['c-primary'] }}>
+          <Icon name={icon} size={17} color="rgb(255, 255, 255)" />
+        </View>
+        <Text style={{ ...styles.text, fontWeight: '600' }} color={theme['c-primary']}>{t(id)}</Text>
+        <Icon name="chevron-right" size={13} color={theme['c-primary-alpha-500']} />
+      </>
+      )
+    : (
+      <>
+        <View style={styles.iconTile}>
+          <Icon name={icon} size={17} color={theme['c-font-label']} />
+        </View>
+        <Text style={styles.text} color={theme['c-font']}>{t(id)}</Text>
+      </>
+      )
+
   if (isActive) {
     return (
       <View
         style={{
           ...styles.menuItem,
-          ...styles.menuItemActive,
-          backgroundColor: theme['c-primary-background-hover'],
+          backgroundColor: theme['c-primary-alpha-800'],
           borderColor: theme['c-glass-border'],
         }}
       >
-        <View style={styles.iconContent}>
-          <Icon name={icon} size={20} color={theme['c-primary']} />
-        </View>
-        <Text style={styles.text} color={theme['c-primary']}>{t(id)}</Text>
+        {content}
       </View>
     )
   }
@@ -130,10 +173,7 @@ const MenuItem = ({ id, icon, onPress }: {
       onPress={() => { onPress(id) }}
       activeOpacity={0.6}
     >
-      <View style={styles.iconContent}>
-        <Icon name={icon} size={20} color={theme['c-font-label']} />
-      </View>
-      <Text style={styles.text} color={theme['c-font']}>{t(id)}</Text>
+      {content}
     </TouchableOpacity>
   )
 }
@@ -175,7 +215,7 @@ export default memo(() => {
         </View>
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View style={{ ...styles.footer, borderTopWidth: BorderWidths.hairline, borderTopColor: theme['c-border-background'] }}>
         {showBackBtn ? <MenuItem id="back_home" icon="home" onPress={handlePress} /> : null}
         {showExitBtn ? <MenuItem id="nav_exit" icon="exit2" onPress={handlePress} /> : null}
       </View>

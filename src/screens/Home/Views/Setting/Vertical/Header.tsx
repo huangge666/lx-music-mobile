@@ -21,8 +21,8 @@ export default ({
     <View
       style={{
         ...styles.container,
-        borderBottomColor: theme['c-glass-border'],
-        backgroundColor: theme['c-glass-background'],
+        borderBottomColor: theme['c-border-background'],
+        backgroundColor: theme['c-content-background'],
       }}
     >
       <TouchableOpacity
