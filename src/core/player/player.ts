@@ -63,6 +63,13 @@ const createDelayNextTimeout = (delay: number) => {
 const { addDelayNextTimeout, clearDelayNextTimeout } = createDelayNextTimeout(5000)
 const { addDelayNextTimeout: addLoadTimeout, clearDelayNextTimeout: clearLoadTimeout } = createDelayNextTimeout(100000)
 
+// 用户主动暂停/停止。自动切歌过程中的 pause 事件不能当成用户暂停，
+// 否则后台恢复和 queue-ended 会误判而不切下一首。
+let pausedByUser = false
+// handlePlay 已开始取链但资源尚未交给播放器。后台 JS 被挂起时靠这个标记恢复。
+let waitingPlay = false
+let lastAutoToggleAt = 0
+
 const createGettingUrlId = (musicInfo: LX.Music.MusicInfo | LX.Download.ListItem) => {
   const tInfo = 'progress' in musicInfo ? musicInfo.metadata.musicInfo.meta.toggleMusicInfo : musicInfo.meta.toggleMusicInfo
   return `${musicInfo.id}_${tInfo?.id ?? ''}`
@@ -249,6 +256,7 @@ export const setMusicUrl = (
     }
     setMusicInfo({ quality: getCurrentMusicQuality(musicInfo, callbacks?.quality) })
     setResource(musicInfo, url, playerState.progress.nowPlayTime)
+    waitingPlay = false
     callbacks?.onSuccess?.()
   }).catch((err: any) => {
     console.log(err)
@@ -359,9 +367,12 @@ const handlePlay = async() => {
   }
 
   global.lx.isPlayedStop &&= false
+  pausedByUser = false
+  waitingPlay = true
   resetRandomNextMusicInfo()
 
   if (global.lx.restorePlayInfo) {
+    waitingPlay = false
     void handleRestorePlay(global.lx.restorePlayInfo)
     global.lx.restorePlayInfo = null
     return
@@ -370,9 +381,14 @@ const handlePlay = async() => {
   const playMusicInfo = playerState.playMusicInfo
   const musicInfo = playMusicInfo.musicInfo
 
-  if (!musicInfo) return
+  if (!musicInfo) {
+    waitingPlay = false
+    return
+  }
 
-  await setStop()
+  // 不要 await setStop()：后台 RN bridge 可能卡住，导致下一首取链一直不开始。
+  // stop 还会触发 queue-ended，和自动切歌叠在一起容易连跳。暂停即可，新资源加载后会替换队列。
+  void setPause()
   global.app_event.pause()
 
   clearDelayNextTimeout()
@@ -714,6 +730,7 @@ export const playPrev = async(isAutoToggle = false): Promise<void> => {
  * 恢复播放
  */
 export const play = () => {
+  pausedByUser = false
   if (playerState.playMusicInfo.musicInfo == null) return
   if (isEmpty()) {
     if (createGettingUrlId(playerState.playMusicInfo.musicInfo) != global.lx.gettingUrlId) setMusicUrl(playerState.playMusicInfo.musicInfo)
@@ -726,6 +743,8 @@ export const play = () => {
  * 暂停播放
  */
 export const pause = async() => {
+  pausedByUser = true
+  waitingPlay = false
   await setPause()
 }
 
@@ -733,10 +752,34 @@ export const pause = async() => {
  * 停止播放
  */
 export const stop = async() => {
+  pausedByUser = true
+  waitingPlay = false
   await setStop()
   setTimeout(() => {
     global.app_event.stop()
   })
+}
+
+/**
+ * 歌曲自然结束时切下一首。合并 track-changed / queue-ended 的重复回调。
+ */
+export const playNextIfAuto = async() => {
+  if (pausedByUser || global.lx.isPlayedStop) return false
+  const now = Date.now()
+  if (now - lastAutoToggleAt < 800) return false
+  lastAutoToggleAt = now
+  await playNext(true)
+  return true
+}
+
+/**
+ * 应用回到前台时，把后台被挂起的自动切歌/取链补上。
+ */
+export const recoverPlaybackIfNeeded = () => {
+  if (pausedByUser || global.lx.isPlayedStop || !waitingPlay) return
+  const musicInfo = playerState.playMusicInfo.musicInfo
+  if (!musicInfo || global.lx.gettingUrlId) return
+  setMusicUrl(musicInfo)
 }
 
 /**

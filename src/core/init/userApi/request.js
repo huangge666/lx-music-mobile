@@ -1,10 +1,13 @@
 // import needle from 'needle'
 // import progress from 'request-progress'
 import BackgroundTimer from 'react-native-background-timer'
+import { getGithubFetchUrls } from '@/utils/request'
 
 const defaultHeaders = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36',
 }
+
+
 // var proxyUrl = "http://" + user + ":" + password + "@" + host + ":" + port;
 // var proxiedRequest = request.defaults({'proxy': proxyUrl});
 
@@ -71,9 +74,7 @@ const blobToBuffer = (blob) => {
   })
 }
 
-export const fetchData = (url, { timeout = 13_000, ...options }) => {
-  // console.log('---start---', url)
-
+const fetchOnce = (url, { timeout = 13_000, ...options }) => {
   const controller = new global.AbortController()
   let id = BackgroundTimer.setTimeout(() => {
     id = null
@@ -117,6 +118,26 @@ export const fetchData = (url, { timeout = 13_000, ...options }) => {
     }),
     abort() {
       controller.abort()
+    },
+  }
+}
+
+export const fetchData = (url, options) => {
+  const urls = getGithubFetchUrls(url)
+  let index = 0
+  let requestObj = fetchOnce(urls[index], options)
+  const run = () => requestObj.request.catch(err => {
+    if (index < urls.length - 1) {
+      index += 1
+      requestObj = fetchOnce(urls[index], options)
+      return run()
+    }
+    return Promise.reject(err)
+  })
+  return {
+    request: run(),
+    abort() {
+      requestObj.abort()
     },
   }
 }

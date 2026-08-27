@@ -8,6 +8,47 @@ import { deflateRaw } from 'pako'
 const defaultHeaders = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36',
 }
+
+const GH_PROXY_PREFIX = 'https://v4.gh-proxy.org/'
+const GH_PROXY_PREFIXES = [
+  GH_PROXY_PREFIX,
+  'https://gh-proxy.org/',
+  'https://mirror.ghproxy.com/',
+  'https://ghproxy.net/',
+  'https://ghproxy.com/',
+]
+const GITHUB_HOST_RXP = /(?:raw\.githubusercontent\.com|gist\.githubusercontent\.com|github\.com)/i
+
+const unwrapGithubUrl = (url) => {
+  let raw = url.trim()
+  let changed = true
+  while (changed) {
+    changed = false
+    for (const prefix of GH_PROXY_PREFIXES) {
+      if (raw.toLowerCase().startsWith(prefix.toLowerCase())) {
+        raw = raw.slice(prefix.length).replace(/^\/+/, '')
+        changed = true
+      }
+    }
+  }
+  if (!/^https?:\/\//i.test(raw) && GITHUB_HOST_RXP.test(raw)) raw = 'https://' + raw
+  return raw
+}
+
+export const getGithubFetchUrls = (url) => {
+  if (typeof url != 'string') return [url]
+  const raw = unwrapGithubUrl(url)
+  if (!GITHUB_HOST_RXP.test(raw)) return [url]
+  const urls = []
+  const push = (item) => {
+    if (item && !urls.includes(item)) urls.push(item)
+  }
+  push(GH_PROXY_PREFIX + raw)
+  const jsdelivr = raw.match(/^https?:\/\/raw\.githubusercontent\.com\/([^/]+)\/([^/]+)\/([^/]+)\/(.+)$/i)
+  if (jsdelivr) push(`https://cdn.jsdelivr.net/gh/${jsdelivr[1]}/${jsdelivr[2]}@${jsdelivr[3]}/${jsdelivr[4]}`)
+  push(raw)
+  return urls
+}
 // var proxyUrl = "http://" + user + ":" + password + "@" + host + ":" + port;
 // var proxiedRequest = request.defaults({'proxy': proxyUrl});
 
@@ -17,22 +58,34 @@ const defaultHeaders = {
  * @param {*} url
  * @param {*} options
  */
+const mapFetchError = (err) => {
+  console.log('出错', err.message)
+  switch (err.message) {
+    case 'socket hang up':
+      return Promise.reject(new Error(requestMsg.unachievable))
+    case 'Aborted':
+      return Promise.reject(new Error(requestMsg.timeout))
+    case 'Network request failed':
+      return Promise.reject(new Error(requestMsg.notConnectNetwork))
+    default:
+      return Promise.reject(err)
+  }
+}
+
 export const httpFetch = (url, options = { method: 'get' }) => {
-  const requestObj = fetchData(url, options)
+  const urls = getGithubFetchUrls(url)
+  let index = 0
+  let requestObj = fetchData(urls[index], options)
+  const run = () => requestObj.request.catch(err => {
+    if (index < urls.length - 1) {
+      index += 1
+      requestObj = fetchData(urls[index], options)
+      return run()
+    }
+    return mapFetchError(err)
+  })
   return {
-    promise: requestObj.request.catch(err => {
-      console.log('出错', err.message)
-      switch (err.message) {
-        case 'socket hang up':
-          return Promise.reject(new Error(requestMsg.unachievable))
-        case 'Aborted':
-          return Promise.reject(new Error(requestMsg.timeout))
-        case 'Network request failed':
-          return Promise.reject(new Error(requestMsg.notConnectNetwork))
-        default:
-          return Promise.reject(err)
-      }
-    }),
+    promise: run(),
     cancelHttp() {
       requestObj.abort()
     },

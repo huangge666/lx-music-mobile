@@ -110,6 +110,16 @@ const registerPlaybackService = async() => {
     // console.log('currentIsPlaying', currentIsPlaying, global.lx.playInfo.isPlaying)
     // void updateMetaData(global.lx.store_playMusicInfo.musicInfo, currentIsPlaying)
   })
+  const handleAutoEnd = async() => {
+    if (global.lx.isPlayedStop) return handleExitApp('Timeout Exit')
+    if (global.lx.gettingUrlId) return
+    await TrackPlayer.pause()
+    global.app_event.playerPause()
+    global.app_event.pause()
+    global.app_event.playerEnded()
+    global.app_event.playerEmptied()
+  }
+
   TrackPlayer.addEventListener(TPEvent.PlaybackTrackChanged, async info => {
     // console.log('PlaybackTrackChanged====>', info)
     global.lx.playerTrackId = await getCurrentTrackId()
@@ -119,11 +129,7 @@ const registerPlaybackService = async() => {
     // console.log('global.lx.playerTrackId====>', global.lx.playerTrackId)
     if (isEmpty()) {
       // console.log('====TEMP PAUSE====')
-      await TrackPlayer.pause()
-      global.app_event.playerPause()
-      global.app_event.pause()
-      global.app_event.playerEnded()
-      global.app_event.playerEmptied()
+      await handleAutoEnd()
       // if (retryTrack) {
       //   if (retryTrack.musicId == retryGetUrlId) {
       //     if (++retryGetUrlNum > 1) {
@@ -198,6 +204,14 @@ const registerPlaybackService = async() => {
   //   //   })
   //   // }
   // })
+  TrackPlayer.addEventListener(TPEvent.PlaybackQueueEnded, async(info) => {
+    // 占位轨切歌仍由 PlaybackTrackChanged 处理。这里只补「当前曲在原轨上播完、没切到占位轨」的情况，
+    // 避免恢复播放时 dummy 轨 ended 再自动 playNext。
+    if (global.lx.gettingUrlId || isEmpty()) return
+    const duration = await TrackPlayer.getDuration().catch(() => 0)
+    const position = typeof info?.position === 'number' ? info.position : 0
+    if (duration > 1 && position >= duration - 1.5) await handleAutoEnd()
+  })
   // TrackPlayer.addEventListener('playback-destroy', async() => {
   //   console.log('playback-destroy')
   //   store.dispatch(playerAction.destroy())

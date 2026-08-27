@@ -39,7 +39,12 @@ export const windowSizeTools = {
     //     for (const handler of this.listeners) handler(size)
     //   })
     // })
-    const size = await getWindowSize()
+    const size = await Promise.race([
+      getWindowSize(),
+      new Promise<{ width: number, height: number }>((resolve) => {
+        setTimeout(() => { resolve({ width: 0, height: 0 }) }, 2000)
+      }),
+    ])
     // log.info('win size', size)
     if (size.width) {
       this.size = size
