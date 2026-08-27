@@ -17,17 +17,24 @@ const abis = [
   'universal',
 ]
 
-const address = [
-  // GitHub 直连优先：jsDelivr 对 gh 文件按路径长期缓存，?t= 无法刷新，
-  // 发版后可能长时间仍返回旧 version.json
-  [`https://raw.githubusercontent.com/${FORK_OWNER}/${FORK_REPO}/master/publish/version.json`, 'direct'],
-  [`https://cdn.jsdelivr.net/gh/${FORK_OWNER}/${FORK_REPO}@master/publish/version.json`, 'direct'],
-  [`https://fastly.jsdelivr.net/gh/${FORK_OWNER}/${FORK_REPO}@master/publish/version.json`, 'direct'],
-  [`https://gcore.jsdelivr.net/gh/${FORK_OWNER}/${FORK_REPO}@master/publish/version.json`, 'direct'],
+const rawVersionUrl = `https://raw.githubusercontent.com/${FORK_OWNER}/${FORK_REPO}/master/publish/version.json`
+
+// 新鲜源：直连 GitHub raw + gh-proxy 加速镜像（与 APK 下载同款代理，实时回源）。
+// jsDelivr 对 gh 文件按路径长期缓存，?t= 无法刷新，发版后可能长时间仍返回
+// 旧 version.json，导致“已是最新”误判，因此只能作为兜底。
+const FRESH_ADDRESS = [
+  rawVersionUrl,
+  `https://v4.gh-proxy.org/${rawVersionUrl}`,
+  `https://gh-proxy.org/${rawVersionUrl}`,
+]
+const FALLBACK_ADDRESS = [
+  `https://cdn.jsdelivr.net/gh/${FORK_OWNER}/${FORK_REPO}@master/publish/version.json`,
+  `https://fastly.jsdelivr.net/gh/${FORK_OWNER}/${FORK_REPO}@master/publish/version.json`,
+  `https://gcore.jsdelivr.net/gh/${FORK_OWNER}/${FORK_REPO}@master/publish/version.json`,
 ]
 
 
-// 单个地址最多尝试 2 次（首次 + 1 次重试）；各源并行请求，互不阻塞
+// 单个地址最多尝试 2 次（首次 + 1 次重试）
 const MAX_RETRY_PER_URL = 1
 
 const request = async(url, retryNum = 0) => {
@@ -73,33 +80,49 @@ const fetchVersion = (url, source) => {
   }
 }
 
-// 并行请求各源，取版本号最高的结果。GitHub 直连成功则立即返回，
-// 避免 jsDelivr 旧缓存先 200 把真正的新版本挡掉。
-export const getVersionInfo = () => new Promise((resolve, reject) => {
-  let pending = address.length
-  let best = null
+// 任一 promise 成功即 resolve，全部失败才 reject（手动实现竞速成功，
+// 避免依赖 Promise.any 的运行时兼容性）
+const raceSuccess = (promises) => new Promise((resolve, reject) => {
+  let pending = promises.length
   let lastErr = null
-  let finished = false
-
-  const complete = () => {
-    if (finished) return
-    finished = true
-    if (best) resolve(best)
-    else reject(lastErr || new Error('failed'))
+  if (pending === 0) {
+    reject(new Error('no urls'))
+    return
   }
-
-  for (const [url, source] of address) {
-    fetchVersion(url, source).then(info => {
-      if (!best || compareVer(best.version, info.version) < 0) best = info
-      pending--
-      if (url.includes('raw.githubusercontent.com') || pending === 0) complete()
-    }).catch(err => {
+  promises.forEach(p => {
+    p.then(resolve, err => {
       lastErr = err
-      pending--
-      if (pending === 0) complete()
+      if (--pending === 0) reject(lastErr)
     })
-  }
+  })
 })
+
+const pickLatest = (a, b) => (compareVer(a.version, b.version) < 0 ? b : a)
+
+// 新鲜源竞速：raw 直连与 gh-proxy 镜像回源同一文件，内容一致，
+// 任一成功立即返回，无需等待被墙/超时的其余源
+const fetchFreshInfo = () => raceSuccess(FRESH_ADDRESS.map(url => fetchVersion(url, 'direct')))
+
+// 兜底源：jsDelivr 全部完成后取版本号最高的结果（多 CDN 缓存新旧不一）
+const fetchFallbackInfo = async() => {
+  const results = await Promise.allSettled(FALLBACK_ADDRESS.map(url => fetchVersion(url, 'direct')))
+  const infos = results
+    .filter(r => r.status == 'fulfilled')
+    .map(r => r.value)
+  if (infos.length === 0) {
+    throw results[0]?.reason ?? new Error('failed')
+  }
+  return infos.reduce(pickLatest)
+}
+
+// 优先走新鲜源保证拿到真实最新版本；全部失败（如代理不可用）才降级 jsDelivr
+export const getVersionInfo = async() => {
+  try {
+    return await fetchFreshInfo()
+  } catch (err) {
+    return fetchFallbackInfo()
+  }
+}
 
 const getTargetAbi = async() => {
   const supportedAbis = await getSupportedAbis()
