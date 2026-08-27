@@ -5,7 +5,7 @@ import Popup, { type PopupType } from '@/components/common/Popup'
 import { FlatList, ScrollView, TouchableOpacity, View, type FlatListProps as _FlatListProps } from 'react-native'
 import { scaleSizeH, scaleSizeW } from '@/utils/pixelRatio'
 import { useTheme } from '@/store/theme/hook'
-import { Icon, IconMaterialCommunityIcons } from '@/components/common/Icon'
+import { Icon } from '@/components/common/Icon'
 import { useHorizontalMode, useUnmounted } from '@/utils/hooks'
 import { useI18n } from '@/lang'
 import Button from '@/components/common/Button'
@@ -270,7 +270,7 @@ const SourceDetail = ({ info, onConfirm, toggleSource }: { info: LX.Music.MusicI
         {
           toggleSource ? (
             <>
-              <IconMaterialCommunityIcons name="chevron-down" size={scaleSizeW(16)} color={theme['c-font-label']} />
+              <Icon name="chevron-down" rawSize={scaleSizeW(16)} color={theme['c-font-label']} />
               <View style={styles.detailInfo}>
                 <View style={styles.detailInfoName}>
                   <Text style={styles.detailInfoNameText} color={theme['c-font']} size={14} numberOfLines={2}>

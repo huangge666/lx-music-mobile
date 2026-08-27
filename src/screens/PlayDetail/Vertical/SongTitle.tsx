@@ -1,11 +1,10 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { View, TouchableOpacity } from 'react-native'
 import Text from '@/components/common/Text'
-import { Icon, IconMaterialCommunityIcons } from '@/components/common/Icon'
+import { Icon } from '@/components/common/Icon'
 import { usePlayerMusicInfo } from '@/store/player/hook'
 import { useTheme } from '@/store/theme/hook'
 import { createStyle, toast } from '@/utils/tools'
-import { scaleSizeW } from '@/utils/pixelRatio'
 import { collectMusic, uncollectMusic } from '@/core/player/player'
 import { getListMusicSync } from '@/utils/listManage'
 import { LIST_IDS } from '@/config/constant'
@@ -107,10 +106,10 @@ const SongTitle = () => {
       <View style={styles.actions}>
         <TouchableOpacity style={styles.circleBtn} activeOpacity={0.7} onPress={handleLove}>
           {isLove ? (
-            <IconMaterialCommunityIcons
+            <Icon
               name="heart"
               color={theme['c-primary']}
-              size={scaleSizeW(MacIconSize.md)}
+              size={MacIconSize.md}
             />
           ) : (
             <Icon

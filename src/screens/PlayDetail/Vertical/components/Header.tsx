@@ -5,7 +5,7 @@ import StatusBar from '@/components/common/StatusBar'
 import commonState from '@/store/common/state'
 import { useStatusbarHeight } from '@/store/common/hook'
 import { usePlayerMusicInfo } from '@/store/player/hook'
-import { IconMaterialCommunityIcons } from '@/components/common/Icon'
+import { Icon } from '@/components/common/Icon'
 import Image from '@/components/common/Image'
 import { useI18n } from '@/lang'
 import { scaleSizeH, scaleSizeW } from '@/utils/pixelRatio'
@@ -51,10 +51,10 @@ export default memo(({ showLyric, onBackToCover }: {
           accessibilityRole="button"
           accessibilityLabel={t('close')}
         >
-          <IconMaterialCommunityIcons
+          <Icon
             name="chevron-down"
             color={Immersive.text}
-            size={scaleSizeW(22)}
+            rawSize={scaleSizeW(22)}
           />
         </TouchableOpacity>
         <View style={styles.spacer} />
