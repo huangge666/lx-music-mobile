@@ -127,18 +127,18 @@ const styles = createStyle({
   list: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
-    marginTop: 2,
+    gap: 14,
+    marginTop: 4,
     alignItems: 'center',
   },
   item: {
-    width: 52,
+    width: 56,
     alignItems: 'center',
   },
   colorContent: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
@@ -147,15 +147,18 @@ const styles = createStyle({
     ...StyleSheet.absoluteFillObject,
   },
   imageInner: {
-    borderRadius: 20,
+    borderRadius: 22,
   },
   name: {
-    marginTop: 4,
+    marginTop: 6,
+    fontWeight: '500',
   },
   moreBtn: {
     marginLeft: 4,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
   },
 })

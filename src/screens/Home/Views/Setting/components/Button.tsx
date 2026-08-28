@@ -17,7 +17,7 @@ export default memo(({ disabled, onPress, children }: ButtonProps) => {
         ...styles.button,
         backgroundColor: theme['c-button-background'],
         borderWidth: 0.5,
-        borderColor: theme['c-glass-border'],
+        borderColor: theme.isDark ? 'rgba(255, 255, 255, 0.12)' : theme['c-glass-border'],
       }}
       onPress={onPress}
       disabled={disabled}

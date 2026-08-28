@@ -1,16 +1,18 @@
 import { memo, useRef, useState } from 'react'
-import { TouchableOpacity, FlatList, type FlatListProps } from 'react-native'
+import { TouchableOpacity, FlatList, View, type FlatListProps } from 'react-native'
 
 import { useTheme } from '@/store/theme/hook'
 import { createStyle } from '@/utils/tools'
 import Text from '@/components/common/Text'
+import { Icon } from '@/components/common/Icon'
 import { scaleSizeH } from '@/utils/pixelRatio'
-import { SETTING_SCREENS, type SettingScreenIds } from '../Main'
+import { SETTING_SCREENS, SETTING_NAV_ICONS, type SettingScreenIds } from '../Main'
 import { useI18n } from '@/lang'
+import { BorderRadius } from '@/theme'
 
 type FlatListType = FlatListProps<SettingScreenIds>
 
-const ITEM_HEIGHT = scaleSizeH(40)
+const ITEM_HEIGHT = scaleSizeH(46)
 
 const ListItem = memo(({ id, activeId, onPress }: {
   onPress: (item: SettingScreenIds) => void
@@ -21,6 +23,7 @@ const ListItem = memo(({ id, activeId, onPress }: {
   const t = useI18n()
 
   const active = activeId == id
+  const iconName = SETTING_NAV_ICONS[id]
 
   const handlePress = () => {
     onPress(id)
@@ -28,18 +31,46 @@ const ListItem = memo(({ id, activeId, onPress }: {
 
   return (
     <TouchableOpacity
-      style={{
-        ...styles.listItem,
-        height: ITEM_HEIGHT,
-        backgroundColor: active ? theme['c-primary-background'] : 'transparent',
-      }}
+      style={[
+        styles.listItem,
+        {
+          height: ITEM_HEIGHT,
+          backgroundColor: active ? theme['c-primary-background'] : 'transparent',
+        },
+      ]}
       onPress={handlePress}
       activeOpacity={0.7}
     >
+      {/* 激活指示小条 */}
+      <View
+        style={[
+          styles.activeIndicator,
+          {
+            backgroundColor: active ? theme['c-primary'] : 'transparent',
+          },
+        ]}
+      />
+      {/* 图标微徽章 */}
+      <View
+        style={[
+          styles.iconWrapper,
+          {
+            backgroundColor: active
+              ? (theme.isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.65)')
+              : (theme.isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.03)'),
+          },
+        ]}
+      >
+        <Icon
+          name={iconName}
+          size={16}
+          color={active ? theme['c-primary'] : theme['c-font-label']}
+        />
+      </View>
       <Text
         numberOfLines={1}
         size={14}
-        color={active ? theme['c-primary'] : theme['c-font-label']}
+        color={active ? theme['c-primary'] : theme['c-font']}
         style={active ? styles.textActive : styles.text}
       >
         {t(`setting_${id}`)}
@@ -66,7 +97,7 @@ export default ({ onChangeId }: {
     global.lx.settingActiveId = id
   }
 
-  const renderItem: FlatListType['renderItem'] = ({ item, index }) => (
+  const renderItem: FlatListType['renderItem'] = ({ item }) => (
     <ListItem
       key={item}
       id={item}
@@ -83,15 +114,14 @@ export default ({ onChangeId }: {
     <FlatList
       ref={flatListRef}
       style={styles.container}
+      contentContainerStyle={styles.listContent}
       data={SETTING_SCREENS}
       maxToRenderPerBatch={9}
-      // updateCellsBatchingPeriod={80}
       windowSize={9}
       removeClippedSubviews={true}
       initialNumToRender={18}
       renderItem={renderItem}
       keyExtractor={getkey}
-      // extraData={activeIndex}
       getItemLayout={getItemLayout}
     />
   )
@@ -101,26 +131,44 @@ export default ({ onChangeId }: {
 const styles = createStyle({
   container: {
     flexShrink: 1,
-    flexGrow: 0,
+    flexGrow: 1,
   },
-  // listContainer: {
-  //   // borderBottomWidth: BorderWidths.normal2,
-  // },
-
+  listContent: {
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+  },
   listItem: {
-    height: 'auto',
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 10,
+    marginBottom: 4,
     paddingRight: 12,
-    paddingLeft: 14,
-    borderRadius: 14,
+    paddingLeft: 8,
+    borderRadius: BorderRadius.medium,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  activeIndicator: {
+    width: 3,
+    height: 18,
+    borderRadius: 1.5,
+    marginRight: 6,
+  },
+  iconWrapper: {
+    width: 28,
+    height: 28,
+    borderRadius: BorderRadius.normal,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
   },
   text: {
     fontWeight: '500',
+    flex: 1,
   },
   textActive: {
     fontWeight: '600',
+    flex: 1,
   },
 })
+
 

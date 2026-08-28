@@ -30,7 +30,7 @@ export default () => {
   const theme = useTheme()
   const hasDynamicBg = useBgPic() != null
   const mainBackgroundColor = hasDynamicBg ? 'transparent' : theme['c-card-background']
-  const navBackgroundColor = hasDynamicBg ? theme['c-glass-background'] : theme['c-content-background']
+  const navBackgroundColor = hasDynamicBg ? 'transparent' : theme['c-content-background']
   const mainRef = useRef<MainType>(null)
 
   return (
@@ -38,7 +38,11 @@ export default () => {
       <View style={{ ...styles.nav, borderRightColor: theme['c-border-background'], backgroundColor: navBackgroundColor }}>
         <NavList onChangeId={(id) => mainRef.current?.setActiveId(id)} />
       </View>
-      <ScrollView keyboardShouldPersistTaps={'always'} style={{ backgroundColor: mainBackgroundColor }}>
+      <ScrollView
+        keyboardShouldPersistTaps={'always'}
+        showsVerticalScrollIndicator={false}
+        style={{ flex: 1, backgroundColor: mainBackgroundColor }}
+      >
         <View style={styles.main}>
           <Main ref={mainRef} />
         </View>

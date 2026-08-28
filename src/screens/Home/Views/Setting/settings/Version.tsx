@@ -1,4 +1,4 @@
-import { memo, useState, useEffect } from 'react'
+import { memo, useState, useEffect, useCallback } from 'react'
 import { StyleSheet, View } from 'react-native'
 
 import Section from '../components/Section'
@@ -8,11 +8,13 @@ import { sizeFormate } from '@/utils'
 
 import { useI18n } from '@/lang'
 import { useVersionDownloadProgressUpdated, useVersionInfo } from '@/store/version/hook'
+import { useTheme } from '@/store/theme/hook'
 import Text from '@/components/common/Text'
-import { showModal } from '@/core/version'
+import { checkUpdate, showModal } from '@/core/version'
 
 const currentVer = process.versions.app
 export default memo(() => {
+  const theme = useTheme()
   const t = useI18n()
   const versionInfo = useVersionInfo()
   // const versionStatus = useVrsionUpdateStatus()
@@ -23,6 +25,13 @@ export default memo(() => {
     // setVersionInfo({ showModal: true })
     showModal()
   }
+
+  // 检查更新：调用核心模块拉取远端版本信息
+  const handleCheckUpdate = useCallback(() => {
+    void checkUpdate()
+  }, [])
+
+  const isChecking = versionInfo.status === 'checking'
 
   useEffect(() => {
     if (versionInfo.isLatest) {
@@ -66,14 +75,26 @@ export default memo(() => {
   return (
     <Section title={t('setting_version')}>
       <SubTitle title={title}>
-        <View style={styles.desc}>
-          <Text size={14}>{t('version_label_latest_ver')}{versionInfo.newVersion?.version}</Text>
-          <Text size={14}>{t('version_label_current_ver')}{currentVer}</Text>
-          {
-            tip ? <Text size={14}>{tip}</Text> : null
-          }
+        <View style={styles.cardContainer}>
+          <View style={styles.versionRow}>
+            <View style={styles.versionTag}>
+              <Text size={12} color={theme['c-font-label']}>{t('version_label_current_ver')}</Text>
+              <Text size={15} style={styles.verNumber} color={theme['c-font']}>v{currentVer}</Text>
+            </View>
+            {versionInfo.newVersion?.version ? (
+              <View style={styles.versionTag}>
+                <Text size={12} color={theme['c-primary']}>{t('version_label_latest_ver')}</Text>
+                <Text size={15} style={styles.verNumber} color={theme['c-primary']}>v{versionInfo.newVersion?.version}</Text>
+              </View>
+            ) : null}
+          </View>
+          {tip ? <Text size={13} color={theme['c-font-label']} style={styles.tip}>{tip}</Text> : null}
         </View>
         <View style={styles.btn}>
+          {/* 检查更新：主动拉取远端版本，检查中时禁用避免重复请求 */}
+          <Button onPress={handleCheckUpdate} disabled={isChecking}>
+            {isChecking ? t('version_title_checking') : t('setting_version_btn_check')}
+          </Button>
           <Button onPress={handleOpenVersionModal}>{t('setting_version_show_ver_modal')}</Button>
         </View>
       </SubTitle>
@@ -82,8 +103,25 @@ export default memo(() => {
 })
 
 const styles = StyleSheet.create({
-  desc: {
-    marginBottom: 8,
+  cardContainer: {
+    marginBottom: 12,
+  },
+  versionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    marginBottom: 6,
+  },
+  versionTag: {
+    flexDirection: 'column',
+    gap: 2,
+  },
+  verNumber: {
+    fontWeight: '700',
+  },
+  tip: {
+    marginTop: 4,
+    lineHeight: 18,
   },
   btn: {
     flexDirection: 'row',

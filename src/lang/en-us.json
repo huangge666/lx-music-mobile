@@ -440,6 +440,7 @@
   "setting_sync_status_enabled": "connected",
   "setting_theme": "Theme",
   "setting_version": "Update",
+  "setting_version_btn_check": "Check for Updates",
   "setting_version_show_ver_modal": "Open Update Window 🚀",
   "share_card_title_music": "Share \"{name}\" to...",
   "share_title_music": "Song Sharing",

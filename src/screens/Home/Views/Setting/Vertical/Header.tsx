@@ -1,17 +1,16 @@
 import { useEffect, useRef } from 'react'
-import { Animated, Easing, StyleSheet, TouchableOpacity, View } from 'react-native'
+import { Animated, Easing, TouchableOpacity } from 'react-native'
 
 import { Icon } from '@/components/common/Icon'
 import Text from '@/components/common/Text'
 import { useI18n } from '@/lang'
 import { useTheme } from '@/store/theme/hook'
 import { createStyle } from '@/utils/tools'
-import { BorderRadius } from '@/theme'
-import { SETTING_NAV_ICONS, type SettingScreenIds } from '../Main'
+import { type SettingScreenIds } from '../Main'
 
 /**
  * 二级页沉浸式 Header — 不透明内容背景（遵循头部层约定，无分隔线）
- * 左侧圆形返回按钮 + 粗体标题，右侧当前页图标瓷贴点题
+ * 左侧圆形返回按钮 + 粗体标题
  * 挂载时自上而下轻微滑入，与子页推入转场呼应
  */
 export default ({
@@ -63,16 +62,6 @@ export default ({
       <Text numberOfLines={1} size={17} style={styles.title} color={theme['c-font']}>
         {t(`setting_${id}`)}
       </Text>
-      {/* 当前页图标瓷贴 — 与分组列表行的图标语言一致 */}
-      <View
-        pointerEvents="none"
-        style={[styles.iconBadge, {
-          backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.06)' : theme['c-primary-background'],
-          borderColor: theme.isDark ? 'rgba(255, 255, 255, 0.08)' : theme['c-glass-border'],
-        }]}
-      >
-        <Icon name={SETTING_NAV_ICONS[id]} size={16} color={theme['c-primary']} />
-      </View>
     </Animated.View>
   )
 }
@@ -97,13 +86,5 @@ const styles = createStyle({
     flex: 1,
     paddingLeft: 12,
     fontWeight: '700',
-  },
-  iconBadge: {
-    width: 30,
-    height: 30,
-    borderRadius: BorderRadius.normal,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
   },
 })
