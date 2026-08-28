@@ -20,7 +20,7 @@ import {
   removeTempPlayList,
 } from '@/core/player/tempPlayList'
 import { getMusicUrl, getPicPath, getLyricInfo } from '@/core/music'
-import { getPlayQuality } from '@/core/music/utils'
+import { getPlayQuality, handleGetOnlineMusicUrl } from '@/core/music/utils'
 import { requestMsg } from '@/utils/message'
 import { getRandom } from '@/utils/common'
 import { filterList } from './utils'
@@ -69,6 +69,10 @@ let pausedByUser = false
 // handlePlay 已开始取链但资源尚未交给播放器。后台 JS 被挂起时靠这个标记恢复。
 let waitingPlay = false
 let lastAutoToggleAt = 0
+// 单次取链的失败重试次数上限：配合 delayRetry（BackgroundTimer）做有界后台重试，
+// 避免后台切歌时立即递归在冻结的 JS 上再次失败，也防止 tooManyRequests 无限循环。
+let retryFetchCount = 0
+const MAX_FETCH_RETRY = 3
 
 const createGettingUrlId = (musicInfo: LX.Music.MusicInfo | LX.Download.ListItem) => {
   const tInfo = 'progress' in musicInfo ? musicInfo.metadata.musicInfo.meta.toggleMusicInfo : musicInfo.meta.toggleMusicInfo
@@ -214,7 +218,6 @@ const getMusicPlayUrl = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListIt
     if (isMusicUrlRequestInvalid(musicInfo, isRefresh) ||
       err.message == requestMsg.cancelRequest) return null
 
-    if (err.message == requestMsg.tooManyRequests) return delayRetry(musicInfo, isRefresh, quality)
     if (err.message == 'no api source' || err.message == 'source init failed') throw err
 
     // 多选源支持：在进入内部重试之前，先尝试其它已成功初始化的用户源。
@@ -232,7 +235,13 @@ const getMusicPlayUrl = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListIt
       }
     }
 
-    if (!isRetryed) return getMusicPlayUrl(musicInfo, isRefresh, true, quality)
+    // 用 BackgroundTimer 做有界的后台友好重试（含 tooManyRequests），
+    // 而不是立即递归：后台切歌时 JS 可能被冻结，立即递归极易再次失败；
+    // 延迟重试能在 App 回到后台后仍由后台定时器拉起，且次数有限防止无限循环。
+    if (retryFetchCount < MAX_FETCH_RETRY) {
+      retryFetchCount++
+      return delayRetry(musicInfo, isRefresh, quality)
+    }
 
     throw err
   })
@@ -248,7 +257,29 @@ export const setMusicUrl = (
   // 刷新当前歌曲时允许覆盖进行中的取链（音质切换），避免被 isPlay / 同曲取链去重直接丢掉
   if (!isRefresh && !diffCurrentMusicInfo(musicInfo)) return
   if (cancelDelayRetry) cancelDelayRetry()
+  // 每次发起新的取链，重置本轮的后台重试计数（有界重试）
+  retryFetchCount = 0
   global.lx.gettingUrlId = createGettingUrlId(musicInfo)
+
+  // 优先消费未过期的预取结果，避免后台切歌时重新发起网络请求。
+  // 预取缓存只存在内存中，过期后必须丢弃，回退到正常取链流程获取新 URL。
+  if (!isRefresh) {
+    const prewarmKey = createGettingUrlId(musicInfo)
+    const prewarmed = prewarmMusicUrlMap.get(prewarmKey)
+    if (prewarmed) {
+      prewarmMusicUrlMap.delete(prewarmKey)
+      if (Date.now() < prewarmed.expireAt) {
+        setMusicInfo({ quality: prewarmed.quality ?? getCurrentMusicQuality(musicInfo, callbacks?.quality) })
+        setResource(musicInfo, prewarmed.url, playerState.progress.nowPlayTime)
+        waitingPlay = false
+        callbacks?.onSuccess?.()
+        global.lx.gettingUrlId = ''
+        prewarmNextMusicUrl()
+        return
+      }
+    }
+  }
+
   void getMusicPlayUrl(musicInfo, isRefresh, false, callbacks?.quality).then((url) => {
     if (!url) {
       callbacks?.onError?.(new Error('aborted'))
@@ -258,6 +289,9 @@ export const setMusicUrl = (
     setResource(musicInfo, url, playerState.progress.nowPlayTime)
     waitingPlay = false
     callbacks?.onSuccess?.()
+    // 当前曲成功开始播放后，预取下一首在线歌曲 URL 到带 TTL 的内存缓存，
+    // 后台切歌时可直接消费；刷新/切音质场景不触发。
+    if (!isRefresh) prewarmNextMusicUrl()
   }).catch((err: any) => {
     console.log(err)
     if (err?.message == 'no api source') {
@@ -532,6 +566,72 @@ export const getNextPlayMusicInfo = async(): Promise<LX.Player.PlayMusicInfo | n
     // randomNextMusicInfo.index = nextIndex
   }
   return nextPlayMusicInfo
+}
+
+// 预取结果的内存缓存。用 handleGetOnlineMusicUrl 取链（不会写入本地持久缓存），
+// 存为「URL + 过期时间」，避免提前落库导致后续（跨歌曲/跨会话）命中已失效的 URL。
+const PREWARM_MUSIC_URL_TTL = 10 * 60 * 1000 // 10 分钟，超长歌曲会回退到正常取链
+const PREWARM_REQUEST_TIMEOUT = 15_000
+interface PrewarmMusicUrlCache {
+  url: string
+  expireAt: number
+  quality: LX.Quality | null
+}
+const prewarmMusicUrlMap = new Map<string, PrewarmMusicUrlCache>()
+
+let prewarmNextInProgress = false
+const prewarmNextMusicUrl = () => {
+  if (prewarmNextInProgress || pausedByUser || global.lx.isPlayedStop) return
+  const playMusicInfo = playerState.playMusicInfo
+  if (!playMusicInfo.musicInfo) return
+  prewarmNextInProgress = true
+  const now = Date.now()
+  // 预取前顺手清理过期条目，避免用户频繁切歌后缓存表持续增长。
+  for (const [key, caching] of prewarmMusicUrlMap) {
+    if (now >= caching.expireAt) prewarmMusicUrlMap.delete(key)
+  }
+  void getNextPlayMusicInfo().then(async(next) => {
+    if (!next?.musicInfo || next.musicInfo.id === playMusicInfo.musicInfo?.id) return
+    // 本地/下载歌曲的 URL 是本地路径，无需网络预取
+    if ('progress' in next.musicInfo || next.musicInfo.source === 'local') return
+    const key = createGettingUrlId(next.musicInfo)
+    const caching = prewarmMusicUrlMap.get(key)
+    // 已存在且未过期则复用，避免重复请求
+    if (caching && Date.now() < caching.expireAt) return
+    try {
+      const request = handleGetOnlineMusicUrl({
+        musicInfo: next.musicInfo,
+        onToggleSource: () => {},
+        // 预取必须绕过持久缓存，避免把旧 URL 当成新预取结果。
+        isRefresh: true,
+        allowToggleSource: true,
+      })
+      const result = await new Promise<Awaited<typeof request>>((resolve, reject) => {
+        const timer = BackgroundTimer.setTimeout(() => {
+          reject(new Error(`prewarm request timeout (${PREWARM_REQUEST_TIMEOUT}ms)`))
+        }, PREWARM_REQUEST_TIMEOUT)
+        request.then((value) => {
+          BackgroundTimer.clearTimeout(timer)
+          resolve(value)
+        }).catch((error) => {
+          BackgroundTimer.clearTimeout(timer)
+          reject(error)
+        })
+      })
+      if (result?.url) {
+        prewarmMusicUrlMap.set(key, {
+          url: result.url,
+          expireAt: Date.now() + PREWARM_MUSIC_URL_TTL,
+          quality: result.quality,
+        })
+      }
+    } catch (e) {
+      // 预取失败不打扰当前播放，静默忽略
+      console.log('prewarm next music url fail', e)
+    }
+  }).catch(() => {}).finally(() => {
+    prewarmNextInProgress = false
+  })
 }
 
 const handlePlayNext = async(playMusicInfo: LX.Player.PlayMusicInfo) => {
