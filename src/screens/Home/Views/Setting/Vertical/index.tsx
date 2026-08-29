@@ -4,9 +4,9 @@ import { Animated, Easing, View, useWindowDimensions } from 'react-native'
 import { navigations } from '@/navigation'
 import commonState from '@/store/common/state'
 import { useBackHandler } from '@/utils/hooks/useBackHandler'
+import { setSettingActiveScreenId } from '@/store/setting/uiState'
 import { createStyle } from '@/utils/tools'
 import { type SettingScreenIds } from '../Main'
-import Header from './Header'
 import Main from './Main'
 import NavList from './NavList'
 
@@ -39,6 +39,7 @@ export default () => {
     }
     global.lx.settingActiveId = id
     closingRef.current = false
+    setSettingActiveScreenId(id)
     setActiveId(id)
   }, [])
 
@@ -55,9 +56,20 @@ export default () => {
     animRef.current.start(({ finished }) => {
       closingRef.current = false
       // 动画被打断（用户再次打开）时保留页面，避免闪黑
-      if (finished) setActiveId(null)
+      if (!finished) return
+      setActiveId(null)
+      setSettingActiveScreenId(null)
     })
   }, [progress])
+
+  useEffect(() => {
+    global.app_event.on('closeSettingScreen', closeScreen)
+    return () => {
+      global.app_event.off('closeSettingScreen', closeScreen)
+      animRef.current?.stop()
+      setSettingActiveScreenId(null)
+    }
+  }, [closeScreen])
 
   // 每次打开子页：从零进度推入
   useEffect(() => {
@@ -105,7 +117,6 @@ export default () => {
                 },
               ]}
             >
-              <Header id={activeId} onBack={closeScreen} />
               <Main id={activeId} />
             </Animated.View>
           )

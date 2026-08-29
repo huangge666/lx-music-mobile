@@ -1,5 +1,19 @@
 import { useEffect, useState } from 'react'
 import state from './state'
+import { getSettingActiveScreenId } from './uiState'
+
+export const useSettingActiveScreenId = () => {
+  const [id, setId] = useState(getSettingActiveScreenId())
+
+  useEffect(() => {
+    global.app_event.on('settingScreenChanged', setId)
+    return () => {
+      global.app_event.off('settingScreenChanged', setId)
+    }
+  }, [])
+
+  return id
+}
 
 export const useSetting = () => {
   const [setting, updateSetting] = useState(state.setting)

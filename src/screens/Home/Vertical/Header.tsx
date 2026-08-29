@@ -6,7 +6,7 @@ import { createStyle } from '@/utils/tools'
 import { Icon } from '@/components/common/Icon'
 import Text from '@/components/common/Text'
 import StatusBar from '@/components/common/StatusBar'
-import { useSettingValue } from '@/store/setting/hook'
+import { useSettingActiveScreenId, useSettingValue } from '@/store/setting/hook'
 import { scaleSizeH } from '@/utils/pixelRatio'
 import { HEADER_HEIGHT } from '@/config/constant'
 import { type InitState as CommonState } from '@/store/common/state'
@@ -14,6 +14,7 @@ import SearchTypeSelector from '@/screens/Home/Views/Search/SearchTypeSelector'
 import DetailNav from '@/screens/Home/Views/Mylist/DetailNav'
 import { useMylistPlaylistsVisible } from '@/store/list/uiHook'
 import { backToHomeTab } from '@/core/common'
+import { type SettingScreenIds } from '@/screens/Home/Views/Setting'
 
 // Apple Music 各页面对应的大标题文案
 const headerComponents: Partial<Record<CommonState['navActiveId'], React.ReactNode>> = {
@@ -23,10 +24,21 @@ const headerComponents: Partial<Record<CommonState['navActiveId'], React.ReactNo
 type StandaloneNavId = Extract<CommonState['navActiveId'], 'nav_download' | 'nav_setting'>
 
 /** 下载与设置脱离主页分页，头部返回进入前的普通 Tab。 */
-const StandaloneHeader = ({ id }: { id: StandaloneNavId }) => {
+const StandaloneHeader = ({
+  id,
+  settingScreenId,
+}: {
+  id: StandaloneNavId
+  settingScreenId: SettingScreenIds | null
+}) => {
   const theme = useTheme()
   const t = useI18n()
   const statusBarHeight = useStatusbarHeight()
+  const isSettingScreen = id == 'nav_setting' && settingScreenId != null
+  const title = isSettingScreen ? t(`setting_${settingScreenId}`) : t(id)
+  const handleBack = isSettingScreen
+    ? () => { global.app_event.closeSettingScreen() }
+    : backToHomeTab
 
   return (
     <View style={{
@@ -37,14 +49,14 @@ const StandaloneHeader = ({ id }: { id: StandaloneNavId }) => {
     }}>
       <TouchableOpacity
         style={[styles.backBtn, { backgroundColor: theme['c-primary-background'] }]}
-        onPress={backToHomeTab}
+        onPress={handleBack}
         activeOpacity={0.6}
         accessibilityRole="button"
         accessibilityLabel={t('back')}
       >
         <Icon color={theme['c-primary']} name="chevron-left" size={19} />
       </TouchableOpacity>
-      <Text style={styles.standaloneTitle} size={22} color={theme['c-font']} numberOfLines={1}>{t(id)}</Text>
+      <Text style={styles.standaloneTitle} size={22} color={theme['c-font']} numberOfLines={1}>{title}</Text>
     </View>
   )
 }
@@ -133,6 +145,7 @@ const RightHeader = () => {
 
 const Header = () => {
   const drawerLayoutPosition = useSettingValue('common.drawerLayoutPosition')
+  const settingScreenId = useSettingActiveScreenId()
   const id = useNavActiveId()
   const standaloneId = id == 'nav_download' || id == 'nav_setting' ? id : null
 
@@ -140,7 +153,7 @@ const Header = () => {
     <>
       <StatusBar />
       {standaloneId
-        ? <StandaloneHeader id={standaloneId} />
+        ? <StandaloneHeader id={standaloneId} settingScreenId={settingScreenId} />
         : drawerLayoutPosition == 'left'
           ? <LeftHeader />
           : <RightHeader />}

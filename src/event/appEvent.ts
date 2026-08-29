@@ -3,6 +3,7 @@ import Event from './Event'
 import commonState from '@/store/common/state'
 import { type Source as SonglistSource } from '@/store/songlist/state'
 import { type SearchType } from '@/store/search/state'
+import { type SettingScreenIds } from '@/screens/Home/Views/Setting'
 
 
 // {
@@ -160,6 +161,14 @@ export class AppEvent extends Event {
 
   changeMenuVisible(visible: boolean) {
     this.emit('changeMenuVisible', visible)
+  }
+
+  settingScreenChanged(id: SettingScreenIds | null) {
+    this.emit('settingScreenChanged', id)
+  }
+
+  closeSettingScreen() {
+    this.emit('closeSettingScreen')
   }
 
   /**
