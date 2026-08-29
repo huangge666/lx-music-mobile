@@ -1,130 +1,164 @@
-<p align="center"><a href="https://github.com/lyswhut/lx-music-mobile"><img width="200" src="https://github.com/lyswhut/lx-music-mobile/blob/master/doc/images/icon.png" alt="lx-music logo"></a></p>
+<p align="center"><a href="https://github.com/huangge666/lx-music-mobile"><img width="180" src="https://github.com/lyswhut/lx-music-mobile/blob/master/doc/images/icon.png" alt="LX Music logo"></a></p>
 
 <h1 align="center">LX Music 移动版</h1>
 
 <p align="center">
-  <a href="https://github.com/lyswhut/lx-music-mobile/releases"><img src="https://img.shields.io/github/release/lyswhut/lx-music-mobile" alt="Release version"></a>
-  <a href="https://github.com/lyswhut/lx-music-mobile/actions/workflows/release.yml"><img src="https://github.com/lyswhut/lx-music-mobile/workflows/Build/badge.svg" alt="Build status"></a>
-  <a href="https://github.com/lyswhut/lx-music-mobile/actions/workflows/beta-pack.yml"><img src="https://github.com/lyswhut/lx-music-mobile/workflows/Build%20Beta/badge.svg" alt="Build status"></a>
-  <a href="https://github.com/facebook/react-native"><img src="https://img.shields.io/github/package-json/dependency-version/lyswhut/lx-music-mobile/react-native/master" alt="React native version"></a>
-  <!-- <a href="https://github.com/lyswhut/lx-music-mobile/releases"><img src="https://img.shields.io/github/downloads/lyswhut/lx-music-mobile/latest/total" alt="Downloads"></a> -->
-  <a href="https://github.com/lyswhut/lx-music-mobile/tree/dev"><img src="https://img.shields.io/github/package-json/v/lyswhut/lx-music-mobile/dev" alt="Dev branch version"></a>
-  <!-- <a href="https://github.com/lyswhut/lx-music-mobile/blob/master/LICENSE"><img src="https://img.shields.io/github/license/lyswhut/lx-music-mobile" alt="License"></a> -->
+  <a href="https://github.com/huangge666/lx-music-mobile/releases"><img src="https://img.shields.io/github/release/huangge666/lx-music-mobile" alt="Release version"></a>
+  <a href="https://github.com/huangge666/lx-music-mobile/actions/workflows/release.yml"><img src="https://github.com/huangge666/lx-music-mobile/actions/workflows/release.yml/badge.svg" alt="Build status"></a>
+  <a href="https://github.com/facebook/react-native"><img src="https://img.shields.io/github/package-json/dependency-version/huangge666/lx-music-mobile/react-native" alt="React Native version"></a>
+  <a href="https://github.com/huangge666/lx-music-mobile/blob/master/package.json"><img src="https://img.shields.io/github/package-json/v/huangge666/lx-music-mobile/master" alt="Package version"></a>
 </p>
 
-<p align="center">一个基于 React Native 开发的音乐软件</p>
+<p align="center">基于 React Native 的开源音乐播放器，支持 Android 手机与平板设备。</p>
 
-## 关于本仓库（huangge666 / [lx-music-mobile](https://github.com/huangge666/lx-music-mobile)）
+## 项目说明
 
-本仓库在 **[lyswhut/lx-music-mobile](https://github.com/lyswhut/lx-music-mobile)** 上游基础上，合并他人分支后做了功能与体验向的修改。**Release 与 Issue 请以本仓库为准**；上游更新可通过 `git remote add upstream …` 后自行 `fetch` / `merge`。
+本仓库是 [lyswhut/lx-music-mobile](https://github.com/lyswhut/lx-music-mobile) 的衍生仓库，在上游项目基础上合并了功能与体验改动。当前仓库的 Release、Issue 与自动化构建结果以本仓库为准。
 
-### 相对上游的主要改动
+当前版本：`20260828_2`（版本号来源于 `package.json`，并与 `publish/version.json` 保持同步）。完整变更记录请查看 [CHANGELOG.md](CHANGELOG.md)。
+
+### 主要功能
+
+- 聚合搜索、歌单与排行榜浏览，以及多音源切换。
+- 播放详情、歌词、翻译歌词、罗马音歌词、评论和桌面歌词。
+- 我的列表、试听列表、稍后播放、收藏歌单和歌曲换源。
+- 在线歌曲下载到本地，支持下载音质、封面、歌词与保存路径设置。
+- Android 下载目录为系统公共目录 `Download/lxmusic`，下载完成后会主动通知媒体库扫描；iOS 路径为应用沙盒 `Documents/download/lxmusic`。
+- 动态背景、多主题、横竖屏布局、后台播放、通知栏媒体控制与播放队列。
+- 通过独立的 [数据同步服务](https://github.com/lyswhut/lx-music-sync-server) 在受信任的网络中同步多端列表。
+
+### 本仓库的定制内容
 
 | 模块 | 说明 |
-|------|------|
-| **底部导航** | 新增 `BottomBar`（`src/screens/Home/components/BottomBar.tsx`），横版 / 竖版首页接入；`LIST_IDS` 增加 `download` 页签（`src/config/constant.ts`）。 |
-| **下载到本地** | 在线列表、我的歌单列表菜单支持下载（`OnlineList`、`Mylist/MusicList` 的 `ListMenu` / `listAction`）。核心逻辑在 `src/core/music/downloader.ts`。 |
-| **保存路径（Android）** | 使用系统公共目录 **`Download/lxmusic`**（`src/utils/fs.ts` 中 `getMusicDownloadDirectoryPath` / `ensureMusicDownloadDirectory`），便于在系统文件管理器的「下载」里找到；iOS 为应用沙盒 `Documents/download/lxmusic`。下载完成后 Android 会 `scanFile` 便于媒体库识别。 |
-| **存储权限** | Android 在写入公共下载目录前调用 `requestStoragePermission`（`src/utils/tools.ts`，非 Android 直接视为已授权）；拒绝或「不再询问」时 Toast / 弹窗引导前往系统设置（多语言文案见 `src/lang/*.json`）。 |
-| **下载音质与 CDN** | 下载取链音质与 **设置 → 播放音质** 一致（`getPlayQuality` + `getMusicUrl`）；下载请求附带各音源常见 **`Referer`**，减轻高码率直链 403。默认示例配置里 `player.playQuality` 为 `320k`（`src/config/defaultSetting.ts`，可按需调整）。 |
-| **下载页** | `src/screens/Home/Views/Download/index.js`：展示本地下载列表、刷新等。 |
-| **界面** | `PlayerBar` 等样式调整；`PactModal` 等小改动。 |
-| **Android 工程** | `android/build.gradle`、`gradle.properties`、`gradle-wrapper.properties` 等为本地可打包环境调整（若你环境不同请自行对齐）。 |
+| --- | --- |
+| 底部导航 | 横屏与竖屏首页接入 `BottomBar`，并增加下载页签。 |
+| 下载能力 | 在线列表、我的歌单列表支持下载，核心逻辑位于 `src/core/music/downloader.ts`。 |
+| 下载路径与权限 | Android 使用 `Download/lxmusic`，写入前申请存储权限；拒绝权限时提供系统设置引导。 |
+| 取链与音质 | 下载音质跟随“设置 → 播放音质”，请求会携带常见 `Referer` 以减少高码率直链失败。 |
+| 播放体验 | 增加下一首歌曲 URL 预取、有限延迟重试和稳定随机播放队列，降低切歌等待与重复播放。 |
+| 界面体验 | 设置页、播放详情页、歌单页、排行榜页、侧边栏及底部操作栏持续进行沉浸式交互优化。 |
 
-友好链接：https://linux.do
+## 下载与支持平台
 
-### 同步上游示例
+- 下载地址：[GitHub Releases](https://github.com/huangge666/lx-music-mobile/releases)
+- 常见问题：[FAQ.md](FAQ.md) 或 [在线文档](https://lyswhut.github.io/lx-music-doc/mobile/faq)
+- 目前官方发布流程以 Android APK 为主，最低支持 Android 5（API 21）。
+- 仓库保留 iOS 工程与脚本，但当前 CI 和官方 Release 未提供 iOS 安装包。
+- 桌面版项目：[lx-music-desktop](https://github.com/lyswhut/lx-music-desktop)
+- 项目发展说明：[Issue #1912](https://github.com/lyswhut/lx-music-desktop/issues/1912)
+
+请仅从本仓库主页列出的地址下载。其他渠道的安装包可能是第三方转载或修改版本，与本项目无关。
+
+## 本地开发
+
+### 环境要求
+
+- Node.js `18` 或更高版本（仓库提供 `.nvmrc`）。
+- npm `8.5.2` 或更高版本。
+- Android Studio、Android SDK、Android SDK Platform 36、Android SDK Build-Tools 35.0.0。
+- JDK、Android SDK 与模拟器或已开启开发者选项的 Android 设备。
+
+建议先按照 [移动版源码使用文档](https://lyswhut.github.io/lx-music-doc/mobile/use-source-code) 配置 React Native 环境。
+
+### 安装依赖并运行
 
 ```bash
-git fetch upstream
-git merge upstream/master   # 或 git rebase upstream/master
+git clone https://github.com/huangge666/lx-music-mobile.git
+cd lx-music-mobile
+npm install
+
+# 启动 Metro
+npm run start
+
+# 在另一终端运行 Android Debug 版本
+npm run dev
 ```
 
-### 自动同步上游 + 自动打包到 Release
+常用命令：
 
-仓库已附带两个工作流，配合一次性配置即可让「同步上游」与「打包发版」全自动跑：
+```bash
+npm run lint                 # ESLint 检查
+npm run lint:fix             # 自动修复可修复的 ESLint 问题
+npm run build:theme          # 重新生成主题文件
+npm run clear                # 清理 Android 构建缓存
+npm run sc                   # 清理 Metro 缓存后启动
+```
 
-- `.github/workflows/sync-upstream.yml`：每天 UTC 18:00（北京 02:00）自动 `merge upstream/master` 并推送，可在 Actions 页手动触发。
-- `.github/workflows/release.yml`：`push master` 或手动 `workflow_dispatch` 时构建多架构 APK 并发到 [Releases](https://github.com/huangge666/lx-music-mobile/releases)。
+### 构建 Android APK
 
-#### 一次性需要在 GitHub 配置的 Secrets
+Debug 构建：
 
-在仓库 **Settings → Secrets and variables → Actions → New repository secret** 添加：
+```bash
+cd android
+./gradlew assembleDebug
+```
 
-| Secret | 用途 | 是否必需 |
-|--------|------|----------|
-| `KEYSTORE_STORE_FILE_BASE64` | Android 签名 keystore 的 **base64**（`base64 -w0 your.keystore`） | 必需 |
-| `KEYSTORE_STORE_FILE` | keystore 文件名（构建时落到 `android/app/<这个名字>`） | 必需 |
-| `KEYSTORE_KEY_ALIAS` | keystore 的 key alias | 必需 |
-| `KEYSTORE_PASSWORD` | keystore 密码 | 必需 |
-| `KEYSTORE_KEY_PASSWORD` | key 密码 | 必需 |
-| `SYNC_TOKEN` | 一个 **Fine-grained PAT**，对本仓库给 **Contents: Read and write** + **Actions: Read and write**；用来让自动同步推送的提交能触发后续 workflow | 可选，强烈建议 |
+Windows PowerShell 或 CMD：
 
-> 不配置 `SYNC_TOKEN` 也能跑：默认会退化为 `GITHUB_TOKEN` 推送，并显式调用 `release.yml` 的 `workflow_dispatch` 兜底；但 PAT 模式更稳，且能让 release.yml 通过 `push` 事件自然触发。
+```powershell
+cd android
+gradlew.bat assembleDebug
+```
 
-#### 触发方式
+Release 构建：
 
-- **自动**：每天定时；如上游有更新，工作流会合并、推送并自动调起 Release 打包。
-- **手动**：到 **Actions → Sync Upstream → Run workflow**，可选输入 `upstream_branch`（默认 `master`）和是否同时跑 Release。
-- **直接发版**：到 **Actions → Build → Run workflow**，无需同步即可基于当前 master 重新打包发布。
+```bash
+npm run pack:android
+```
 
-#### 版本号说明
+Release 构建会按 ABI 输出 `arm64-v8a`、`armeabi-v7a`、`x86`、`x86_64` 及 `universal` 安装包。正式发布前请配置自己的签名文件；未配置时 Gradle 会回退到调试签名，仅适合本地验证。
 
-`release.yml` 使用 `package.json` 中的 `version` 作为 tag（前缀 `v`）。同步上游若未修改 `version`，tag 已存在时 `pkgdeps/git-tag-action` 不会重复创建；若希望每次同步都发新 release，可在合并完手动 bump 一下 `package.json` 的 version 再 push。
+## GitHub Actions 发布
 
----
+仓库包含两个工作流：
 
-## 说明
+- `.github/workflows/sync-upstream.yml`：每天 UTC 18:00（北京时间次日 02:00）同步 `lyswhut/lx-music-mobile` 的 `master` 分支，也支持手动触发。
+- `.github/workflows/release.yml`：在 `master` 推送或手动触发时构建多 ABI Android APK，并创建 GitHub Release。Tag 使用 `package.json` 的版本号并添加 `v` 前缀。
 
-所用技术栈：
+### Release 所需 Secrets
 
-- React Native
-- Redux
+在 GitHub 的 **Settings → Secrets and variables → Actions** 中配置：
 
-已支持的平台：
+| Secret | 用途 | 必需 |
+| --- | --- | --- |
+| `KEYSTORE_STORE_FILE_BASE64` | Android 签名 keystore 的 base64 内容 | 是 |
+| `KEYSTORE_STORE_FILE` | keystore 文件名 | 是 |
+| `KEYSTORE_KEY_ALIAS` | key alias | 是 |
+| `KEYSTORE_PASSWORD` | keystore 密码 | 是 |
+| `KEYSTORE_KEY_PASSWORD` | key 密码 | 是 |
+| `SYNC_TOKEN` | 上游同步后推送并触发后续 workflow 的 Fine-grained PAT | 否，建议配置 |
 
-- Android 5 及以上
+工作流同时兼容带 `MASTER_` 前缀的签名 Secret。`SYNC_TOKEN` 未配置时会回退到 `GITHUB_TOKEN`，并尝试通过 `workflow_dispatch` 触发 Release。
 
-***注：目前没有计划支持 iOS 和 HarmonyOS NEXT**。*<br>
-*桌面版项目地址：<https://github.com/lyswhut/lx-music-desktop>*<br>
-*LX Music 项目发展调整与新项目计划：https://github.com/lyswhut/lx-music-desktop/issues/1912*
+手动发布路径：打开 **Actions → Build → Run workflow**，即可基于当前 `master` 构建并发布；同步上游则进入 **Actions → Sync Upstream → Run workflow**。
 
-软件变化请查看[更新日志](https://github.com/huangge666/lx-music-mobile/blob/master/CHANGELOG.md)。
+### 手动同步上游
 
-软件下载请查看 [GitHub Releases](https://github.com/huangge666/lx-music-mobile/releases)。
+```bash
+git remote add upstream https://github.com/lyswhut/lx-music-mobile.git
+git fetch upstream
+git merge upstream/master
+```
 
-使用常见问题请参阅[移动版常见问题](https://github.com/huangge666/lx-music-mobile/blob/master/FAQ.md)。
+## 相关文档
 
-目前本项目的原始发布地址只有 [**GitHub**](https://github.com/huangge666/lx-music-mobile/releases)，其他渠道均为第三方转载发布，与本项目无关！
-
-为了提高使用门槛，本软件内的默认设置、UI 操作不以新手友好为目标，所以使用前建议先根据你的喜好浏览调整一遍软件设置，阅读一遍[音乐播放列表机制](https://lyswhut.github.io/lx-music-doc/mobile/faq/playlist)。
-
-### 数据同步服务
-
-从 v1.0.0 起，我们发布了一个独立的[数据同步服务](https://github.com/lyswhut/lx-music-sync-server#readme)。如果你有服务器，可以将其部署到服务器上作为私人多端同步服务使用，详情看该项目说明。
+- [更新日志](CHANGELOG.md)
+- [常见问题](FAQ.md)
+- [移动版在线文档](https://lyswhut.github.io/lx-music-doc/mobile)
+- [数据同步服务](https://github.com/lyswhut/lx-music-sync-server#readme)
 
 ## 贡献代码
 
-本项目欢迎 PR，但为了 PR 能顺利合并，需要注意以下几点：
+欢迎提交 Issue 与 Pull Request。为了便于维护：
 
-- 对于添加新功能的 PR，建议在提交 PR 前先创建 Issue 进行说明，以确认该功能是否确实需要；
-- 对于修复 bug 的 PR，请提供修复前后的说明及重现方式；
-- 对于其他类型的 PR，则适当附上说明。
-
-贡献代码步骤：
-
-1. 参照[源码使用方法](https://lyswhut.github.io/lx-music-doc/mobile/use-source-code)设置开发环境；
-2. 克隆本仓库代码并切换至 `dev` 分支进行开发；
-3. 提交 PR 至 `dev` 分支。
-
-<!--
-## 用户界面
-
-<p><img width="100%" src="https://github.com/lyswhut/lx-music-mobile/blob/master/doc/images/app.png" alt="lx-music mobile UI"></p> -->
+- 新功能建议先创建 Issue，确认需求和实现方向。
+- Bug 修复请提供复现步骤、预期行为、实际行为及修复说明。
+- UI 或交互调整请附上必要的截图或录屏，并说明影响的平台与屏幕方向。
+- 源码开发请基于 `dev` 分支，并将 PR 提交到 `dev` 分支。
 
 ## 项目协议
 
-本项目基于 [Apache License 2.0](https://github.com/lyswhut/lx-music-mobile/blob/master/LICENSE) 许可证发行，以下协议是对于 Apache License 2.0 的补充，如有冲突，以以下协议为准。
+本项目基于 [Apache License 2.0](LICENSE) 许可证发行，以下协议是对于 Apache License 2.0 的补充，如有冲突，以以下协议为准。
 
 ---
 
@@ -174,4 +208,4 @@ git merge upstream/master   # 或 git rebase upstream/master
 
 ---
 
-若对此有疑问请 mail to: lyswhut+qq.com (请将 `+` 替换成 `@`)
+如有协议相关疑问，请 mail to: lyswhut+qq.com（请将 `+` 替换成 `@`）。
