@@ -8,7 +8,7 @@ import {
   SonglistDetail,
   Comment,
   SourceManager,
-  // Setting,
+  SettingScreen,
 } from '@/screens'
 import { Provider } from '@/store/Provider'
 
@@ -18,6 +18,7 @@ import {
   SONGLIST_DETAIL_SCREEN,
   COMMENT_SCREEN,
   SOURCE_MANAGER_SCREEN,
+  SETTING_SCREEN,
   VERSION_MODAL,
   PACT_MODAL,
   SYNC_MODE_MODAL,
@@ -47,6 +48,7 @@ export default () => {
   Navigation.registerComponent(SONGLIST_DETAIL_SCREEN, () => WrappedComponent(SonglistDetail))
   Navigation.registerComponent(COMMENT_SCREEN, () => WrappedComponent(Comment))
   Navigation.registerComponent(SOURCE_MANAGER_SCREEN, () => WrappedComponent(SourceManager))
+  Navigation.registerComponent(SETTING_SCREEN, () => WrappedComponent(SettingScreen))
   Navigation.registerComponent(VERSION_MODAL, () => WrappedComponent(VersionModal))
   Navigation.registerComponent(PACT_MODAL, () => WrappedComponent(PactModal))
   Navigation.registerComponent(SYNC_MODE_MODAL, () => WrappedComponent(SyncModeModal))

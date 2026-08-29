@@ -7,7 +7,7 @@ import {
   SONGLIST_DETAIL_SCREEN,
   COMMENT_SCREEN,
   SOURCE_MANAGER_SCREEN,
-  // SETTING_SCREEN,
+  SETTING_SCREEN,
 } from './screenNames'
 
 import themeState from '@/store/theme/state'
@@ -15,6 +15,7 @@ import { NAV_SHEAR_NATIVE_IDS } from '@/config/constant'
 import { getStatusBarStyle } from './utils'
 import { windowSizeTools } from '@/utils/windowSizeTools'
 import { type ListInfoItem } from '@/store/songlist/state'
+import { type SettingScreenIds } from '@/screens/Home/Views/Setting/Main'
 
 // const store = getStore()
 // const getTheme = () => getter('common', 'theme')(store.getState())
@@ -313,6 +314,62 @@ export function pushSourceManagerScreen(componentId: string) {
     void Navigation.push(componentId, {
       component: {
         name: SOURCE_MANAGER_SCREEN,
+        options: {
+          topBar: {
+            visible: false,
+            height: 0,
+            drawBehind: false,
+          },
+          statusBar: {
+            drawBehind: true,
+            visible: true,
+            style: getStatusBarStyle(theme.isDark),
+            backgroundColor: 'transparent',
+          },
+          navigationBar: {
+            backgroundColor: theme['c-content-background'],
+          },
+          layout: {
+            componentBackgroundColor: theme['c-content-background'],
+          },
+          animations: {
+            push: {
+              content: {
+                translationX: {
+                  from: windowSizeTools.getSize().width,
+                  to: 0,
+                  duration: 260,
+                },
+              },
+            },
+            pop: {
+              content: {
+                translationX: {
+                  from: 0,
+                  to: windowSizeTools.getSize().width,
+                  duration: 260,
+                },
+              },
+            },
+          },
+        },
+      },
+    })
+  })
+}
+
+/**
+ * Push a setting subsection as a native screen so it shares the same
+ * navigation, background, and header behavior as source management.
+ */
+export function pushSettingScreen(componentId: string, settingScreenId: SettingScreenIds) {
+  requestAnimationFrame(() => {
+    const theme = themeState.theme
+
+    void Navigation.push(componentId, {
+      component: {
+        name: SETTING_SCREEN,
+        passProps: { settingScreenId },
         options: {
           topBar: {
             visible: false,

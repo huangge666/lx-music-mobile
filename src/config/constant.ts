@@ -26,6 +26,7 @@ export enum COMPONENT_IDS {
   songlistDetail = 'songlistDetail',
   comment = 'comment',
   sourceManager = 'sourceManager',
+  setting = 'setting',
 }
 
 export enum NAV_SHEAR_NATIVE_IDS {
