@@ -11,6 +11,8 @@ import { createStyle } from '@/utils/tools'
 import PagerView, { type PageScrollStateChangedNativeEvent, type PagerViewOnPageSelectedEvent } from 'react-native-pager-view'
 import { setNavActiveId } from '@/core/common'
 import settingState from '@/store/setting/state'
+import { useNavActiveId } from '@/store/common/hook'
+import { useTheme } from '@/store/theme/hook'
 
 const hideKeys = [
   'list.isShowAlbumName',
@@ -159,64 +161,33 @@ const MylistPage = () => {
 
   return visible ? component : null
 }
-const DownloadPage = () => {
-  const [visible, setVisible] = useState(commonState.navActiveId == 'nav_download')
-  useEffect(() => {
-    const handleNavIdUpdate = (id: CommonState['navActiveId']) => {
-      if (id == 'nav_download') {
-        requestAnimationFrame(() => {
-          setVisible(true)
-        })
-      }
-    }
-    global.state_event.on('navActiveIdUpdated', handleNavIdUpdate)
-	
-    return () => {
-      global.state_event.off('navActiveIdUpdated', handleNavIdUpdate)
-    }
-  }, [])
-  return visible ? <Download /> : null
-}
-const SettingPage = () => {
-  const [visible, setVisible] = useState(commonState.navActiveId == 'nav_setting')
-  const component = useMemo(() => <Setting />, [])
-  useEffect(() => {
-    const handleNavIdUpdate = (id: CommonState['navActiveId']) => {
-      if (id == 'nav_setting') {
-        requestAnimationFrame(() => {
-          setVisible(true)
-        })
-      }
-    }
-    global.state_event.on('navActiveIdUpdated', handleNavIdUpdate)
-
-    return () => {
-      global.state_event.off('navActiveIdUpdated', handleNavIdUpdate)
-    }
-  }, [])
-  return visible ? component : null
-}
-
 const viewMap = {
   nav_search: 0,
   nav_songlist: 1,
   nav_top: 2,
   nav_love: 3,
-  nav_download: 4,
-  nav_setting: 5,
-}
+} as const
 const indexMap = [
   'nav_search',
   'nav_songlist',
   'nav_top',
   'nav_love',
-  'nav_download',
-  'nav_setting',
 ] as const
 
+type TabNavId = keyof typeof viewMap
+
+const isTabNavId = (id: CommonState['navActiveId']): id is TabNavId => id in viewMap
+
 const Main = () => {
+  const navActiveId = useNavActiveId()
+  const theme = useTheme()
   const pagerViewRef = useRef<ComponentRef<typeof PagerView>>(null)
-  let activeIndexRef = useRef(viewMap[commonState.navActiveId])
+  const initialTabId = isTabNavId(commonState.navActiveId)
+    ? commonState.navActiveId
+    : isTabNavId(commonState.lastNavActiveId)
+      ? commonState.lastNavActiveId
+      : 'nav_search'
+  const activeIndexRef = useRef<number>(viewMap[initialTabId])
   // const isScrollingRef = useRef(false)
   // const scrollPositionRef = useRef(-1)
 
@@ -236,11 +207,12 @@ const Main = () => {
   // }, [setNavActiveIndex])
 
   const onPageSelected = useCallback(({ nativeEvent }: PagerViewOnPageSelectedEvent) => {
-    // console.log(nativeEvent)
+    // Standalone pages cover the pager and must never be replaced by a native page event.
+    if (!isTabNavId(commonState.navActiveId)) return
+    const id = indexMap[nativeEvent.position]
+    if (!id) return
     activeIndexRef.current = nativeEvent.position
-    if (activeIndexRef.current != viewMap[commonState.navActiveId]) {
-      setNavActiveId(indexMap[activeIndexRef.current])
-    }
+    if (commonState.navActiveId != id) setNavActiveId(id)
   }, [])
 
   const onPageScrollStateChanged = useCallback(({ nativeEvent }: PageScrollStateChangedNativeEvent) => {
@@ -266,6 +238,10 @@ const Main = () => {
 
   useEffect(() => {
     const handleUpdate = (id: CommonState['navActiveId']) => {
+      pagerViewRef.current?.setScrollEnabled(
+        isTabNavId(id) && settingState.setting['common.homePageScroll'],
+      )
+      if (!isTabNavId(id)) return
       const index = viewMap[id]
       if (activeIndexRef.current == index) return
       activeIndexRef.current = index
@@ -285,56 +261,61 @@ const Main = () => {
   }, [])
 
 
+  useEffect(() => {
+    pagerViewRef.current?.setScrollEnabled(
+      isTabNavId(navActiveId) && settingState.setting['common.homePageScroll'],
+    )
+  }, [navActiveId])
+
   const component = useMemo(() => (
-    <PagerView ref={pagerViewRef}
-      initialPage={activeIndexRef.current}
-      // onPageScroll={handlePageScroll}
-      offscreenPageLimit={1}
-      onPageSelected={onPageSelected}
-      onPageScrollStateChanged={onPageScrollStateChanged}
-      scrollEnabled={settingState.setting['common.homePageScroll']}
-      style={styles.pagerView}
-    >
-      <View collapsable={false} key="nav_search" style={styles.pageStyle}>
-        <SearchPage />
-      </View>
-      <View collapsable={false} key="nav_songlist" style={styles.pageStyle}>
-        <SongListPage />
-      </View>
-      <View collapsable={false} key="nav_top" style={styles.pageStyle}>
-        <LeaderboardPage />
-      </View>
-      <View collapsable={false} key="nav_love" style={styles.pageStyle}>
-        <MylistPage />
-      </View>
-      <View collapsable={false} key="nav_download" style={styles.pageStyle}>
-        <DownloadPage />
-      </View>
-      <View collapsable={false} key="nav_setting" style={styles.pageStyle}>
-        <SettingPage />
-      </View>
-      {/* <View collapsable={false} key="nav_search" style={styles.pageStyle}>
-        <Search />
-      </View>
-      <View collapsable={false} key="nav_songlist" style={styles.pageStyle}>
-        <SongList />
-      </View>
-      <View collapsable={false} key="nav_top" style={styles.pageStyle}>
-        <Leaderboard />
-      </View>
-      <View collapsable={false} key="nav_love" style={styles.pageStyle}>
-        <Mylist />
-      </View>
-      <View collapsable={false} key="nav_setting" style={styles.pageStyle}>
-        <Setting />
-      </View> */}
-    </PagerView>
-  ), [onPageScrollStateChanged, onPageSelected])
+    <View style={styles.container}>
+      <PagerView ref={pagerViewRef}
+        initialPage={activeIndexRef.current}
+        // onPageScroll={handlePageScroll}
+        offscreenPageLimit={1}
+        onPageSelected={onPageSelected}
+        onPageScrollStateChanged={onPageScrollStateChanged}
+        scrollEnabled={settingState.setting['common.homePageScroll']}
+        style={styles.pagerView}
+      >
+        <View collapsable={false} key="nav_search" style={styles.pageStyle}>
+          <SearchPage />
+        </View>
+        <View collapsable={false} key="nav_songlist" style={styles.pageStyle}>
+          <SongListPage />
+        </View>
+        <View collapsable={false} key="nav_top" style={styles.pageStyle}>
+          <LeaderboardPage />
+        </View>
+        <View collapsable={false} key="nav_love" style={styles.pageStyle}>
+          <MylistPage />
+        </View>
+      </PagerView>
+      {/* 下载与设置是独立页面，覆盖分页层后手势无法切换到相邻 Tab。 */}
+      {navActiveId == 'nav_download'
+        ? (
+            <View key="nav_download" style={[styles.overlay, { backgroundColor: theme['c-content-background'] }]}>
+              <Download />
+            </View>
+          )
+        : null}
+      {navActiveId == 'nav_setting'
+        ? (
+            <View key="nav_setting" style={[styles.overlay, { backgroundColor: theme['c-content-background'] }]}>
+              <Setting />
+            </View>
+          )
+        : null}
+    </View>
+  ), [navActiveId, onPageScrollStateChanged, onPageSelected, theme])
 
   return component
 }
 
 const styles = createStyle({
+  container: {
+    flex: 1,
+  },
   pagerView: {
     flex: 1,
     overflow: 'hidden',
@@ -342,6 +323,13 @@ const styles = createStyle({
   pageStyle: {
     // alignItems: 'center',
     // padding: 20,
+  },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
   },
 })
 

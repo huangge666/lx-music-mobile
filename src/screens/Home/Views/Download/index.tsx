@@ -13,6 +13,9 @@ import { handleFileMusicAction } from '@/core/init/deeplink/fileAction'
 import { useI18n } from '@/lang'
 import ConfirmAlert, { type ConfirmAlertType } from '@/components/common/ConfirmAlert'
 import CheckBox from '@/components/common/CheckBox'
+import { useBackHandler } from '@/utils/hooks/useBackHandler'
+import commonState from '@/store/common/state'
+import { backToHomeTab } from '@/core/common'
 
 interface DownloadListItem {
   key: string
@@ -182,6 +185,14 @@ export default () => {
   const [isLoading, setLoading] = useState(false)
   const [files, setFiles] = useState<MusicDownloadDirItem[]>([])
   const [tasks, setTasks] = useState<DownloadTaskItem[]>([])
+
+  useBackHandler(useCallback(() => {
+    if (Object.keys(commonState.componentIds).length == 1 && commonState.navActiveId == 'nav_download') {
+      backToHomeTab()
+      return true
+    }
+    return false
+  }, []))
 
   const refresh = useCallback(async(showLoading = false) => {
     if (showLoading) setLoading(true)

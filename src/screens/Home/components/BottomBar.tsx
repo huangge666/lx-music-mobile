@@ -11,6 +11,7 @@ import { createStyle, isAndroid } from '@/utils/tools'
 
 /** 底栏内容底边距。iOS 另有系统 Home Indicator；Android 需在栏内留出贴底安全距离。 */
 const TAB_BAR_PADDING_BOTTOM = isAndroid ? 16 : 8
+const TAB_BAR_MENUS = NAV_MENUS.filter(item => item.id != 'nav_download' && item.id != 'nav_setting')
 
 interface BarItemProps {
   id: typeof NAV_MENUS[number]['id']
@@ -87,7 +88,7 @@ export default memo(() => {
           opacity: 0.2,
         }}
       />
-      {NAV_MENUS.map(item => <BarItem key={item.id} id={item.id} icon={item.icon} />)}
+      {TAB_BAR_MENUS.map(item => <BarItem key={item.id} id={item.id} icon={item.icon} />)}
     </View>
   )
 })

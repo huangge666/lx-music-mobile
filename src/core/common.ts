@@ -80,13 +80,25 @@ export const removeComponentId = (name: string) => {
   commonActions.removeComponentId(name)
 }
 
+// 下载与设置是覆盖在主页分页上的独立页面，不能作为返回落点。
+const HOME_TAB_IDS = ['nav_search', 'nav_songlist', 'nav_top', 'nav_love'] as const
+const isHomeTabId = (id: CommonStateType['navActiveId']): id is typeof HOME_TAB_IDS[number] =>
+  HOME_TAB_IDS.includes(id as typeof HOME_TAB_IDS[number])
+
 export const setNavActiveId = (id: Parameters<typeof commonActions.setNavActiveId>['0']) => {
   if (id == commonState.navActiveId) return
   commonActions.setNavActiveId(id)
-  if (id != 'nav_setting') {
+  if (isHomeTabId(id)) {
     commonActions.setLastNavActiveId(id)
     saveViewPrevState({ id })
   }
+}
+
+export const backToHomeTab = () => {
+  const fallbackId: CommonStateType['navActiveId'] = isHomeTabId(commonState.lastNavActiveId)
+    ? commonState.lastNavActiveId
+    : 'nav_search'
+  setNavActiveId(fallbackId)
 }
 
 export const showPactModal = () => {

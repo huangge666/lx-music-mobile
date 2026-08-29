@@ -13,10 +13,40 @@ import { type InitState as CommonState } from '@/store/common/state'
 import SearchTypeSelector from '@/screens/Home/Views/Search/SearchTypeSelector'
 import DetailNav from '@/screens/Home/Views/Mylist/DetailNav'
 import { useMylistPlaylistsVisible } from '@/store/list/uiHook'
+import { backToHomeTab } from '@/core/common'
 
 // Apple Music 各页面对应的大标题文案
 const headerComponents: Partial<Record<CommonState['navActiveId'], React.ReactNode>> = {
   nav_search: <SearchTypeSelector />,
+}
+
+type StandaloneNavId = Extract<CommonState['navActiveId'], 'nav_download' | 'nav_setting'>
+
+/** 下载与设置脱离主页分页，头部返回进入前的普通 Tab。 */
+const StandaloneHeader = ({ id }: { id: StandaloneNavId }) => {
+  const theme = useTheme()
+  const t = useI18n()
+  const statusBarHeight = useStatusbarHeight()
+
+  return (
+    <View style={{
+      ...styles.container,
+      height: scaleSizeH(HEADER_HEIGHT) + statusBarHeight,
+      paddingTop: statusBarHeight,
+      backgroundColor: theme['c-content-background'],
+    }}>
+      <TouchableOpacity
+        style={[styles.backBtn, { backgroundColor: theme['c-primary-background'] }]}
+        onPress={backToHomeTab}
+        activeOpacity={0.6}
+        accessibilityRole="button"
+        accessibilityLabel={t('back')}
+      >
+        <Icon color={theme['c-primary']} name="chevron-left" size={19} />
+      </TouchableOpacity>
+      <Text style={styles.standaloneTitle} size={22} color={theme['c-font']} numberOfLines={1}>{t(id)}</Text>
+    </View>
+  )
 }
 
 /**
@@ -103,15 +133,17 @@ const RightHeader = () => {
 
 const Header = () => {
   const drawerLayoutPosition = useSettingValue('common.drawerLayoutPosition')
+  const id = useNavActiveId()
+  const standaloneId = id == 'nav_download' || id == 'nav_setting' ? id : null
 
   return (
     <>
       <StatusBar />
-      {
-        drawerLayoutPosition == 'left'
+      {standaloneId
+        ? <StandaloneHeader id={standaloneId} />
+        : drawerLayoutPosition == 'left'
           ? <LeftHeader />
-          : <RightHeader />
-      }
+          : <RightHeader />}
     </>
   )
 }
@@ -146,6 +178,20 @@ const styles = createStyle({
     alignItems: 'center',
     justifyContent: 'center',
     height: '100%',
+  },
+  backBtn: {
+    width: 34,
+    height: 34,
+    marginLeft: 8,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  standaloneTitle: {
+    flex: 1,
+    paddingLeft: 12,
+    paddingRight: 16,
+    fontWeight: '700',
   },
   titleBtn: {
     flex: 1,

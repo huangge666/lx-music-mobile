@@ -6,6 +6,7 @@ import Header from './Header'
 import Main from './Main'
 import { createStyle } from '@/utils/tools'
 import BottomBar from '../components/BottomBar'
+import { useNavActiveId } from '@/store/common/hook'
 
 const styles = createStyle({
   container: {
@@ -19,6 +20,10 @@ const styles = createStyle({
 })
 
 export default () => {
+  const navActiveId = useNavActiveId()
+  const isDownloadPage = navActiveId == 'nav_download'
+  const isSettingPage = navActiveId == 'nav_setting'
+
   return (
     <>
       <StatusBar />
@@ -27,8 +32,8 @@ export default () => {
         <View style={styles.content}>
           <Header />
           <Main />
-          <PlayerBar isHome />
-          <BottomBar />
+          {!isSettingPage ? <PlayerBar isHome /> : null}
+          {!isDownloadPage && !isSettingPage ? <BottomBar /> : null}
         </View>
       </View>
     </>

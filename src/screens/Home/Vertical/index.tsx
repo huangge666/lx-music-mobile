@@ -7,12 +7,16 @@ import DrawerLayoutFixed, { type DrawerLayoutFixedType } from '@/components/comm
 import { COMPONENT_IDS } from '@/config/constant'
 import { useSettingValue } from '@/store/setting/hook'
 import { scaleSizeW } from '@/utils/pixelRatio'
+import { useNavActiveId } from '@/store/common/hook'
 
 const MAX_DRAWER_WIDTH = scaleSizeW(300)
 
 export default () => {
   const drawer = useRef<DrawerLayoutFixedType>(null)
   const drawerLayoutPosition = useSettingValue('common.drawerLayoutPosition')
+  const navActiveId = useNavActiveId()
+  const isDownloadPage = navActiveId == 'nav_download'
+  const isSettingPage = navActiveId == 'nav_setting'
 
   useEffect(() => {
     const changeVisible = (visible: boolean) => {
@@ -41,8 +45,8 @@ export default () => {
       renderNavigationView={() => <DrawerNav />}
     >
       <Content />
-      <PlayerBar isHome />
-      <BottomBar />
+      {!isSettingPage ? <PlayerBar isHome /> : null}
+      {!isDownloadPage && !isSettingPage ? <BottomBar /> : null}
     </DrawerLayoutFixed>
   )
 }
