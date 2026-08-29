@@ -93,8 +93,24 @@ export default () => {
 
   return (
     <View style={styles.container}>
-      {/* 分组列表始终挂载，转场期间被子页覆盖，滚动偏移得以保留 */}
-      <NavList onChangeId={openScreen} />
+      {/* 列表保持挂载以保留滚动位置；子页转场时淡出底层内容。 */}
+      <Animated.View
+        pointerEvents={activeId ? 'none' : 'auto'}
+        accessibilityElementsHidden={activeId != null}
+        importantForAccessibility={activeId ? 'no-hide-descendants' : 'auto'}
+        style={[
+          styles.page,
+          {
+            opacity: progress.interpolate({
+              inputRange: [0, 0.45, 1],
+              outputRange: [1, 0, 0],
+              extrapolate: 'clamp',
+            }),
+          },
+        ]}
+      >
+        <NavList onChangeId={openScreen} />
+      </Animated.View>
       {activeId
         ? (
             <Animated.View

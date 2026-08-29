@@ -4,7 +4,6 @@ import { Animated, Easing, ScrollView, StyleSheet, TouchableOpacity, View } from
 import { Icon } from '@/components/common/Icon'
 import Text from '@/components/common/Text'
 import { useI18n } from '@/lang'
-import { useBgPic } from '@/store/common/hook'
 import { useTheme } from '@/store/theme/hook'
 import versionState from '@/store/version/state'
 import { createStyle } from '@/utils/tools'
@@ -124,7 +123,6 @@ export default ({ onChangeId }: {
 }) => {
   const theme = useTheme()
   const t = useI18n()
-  const hasDynamicBg = useBgPic() != null
   // 整页入场进度：分组卡错峰上浮，底部签名随末尾浮现
   const enter = useRef(new Animated.Value(0)).current
 
@@ -149,7 +147,7 @@ export default ({ onChangeId }: {
       showsVerticalScrollIndicator={false}
       style={{
         flex: 1,
-        backgroundColor: hasDynamicBg ? 'transparent' : theme['c-card-background'],
+        backgroundColor: theme['c-card-background'],
       }}
       contentContainerStyle={styles.content}
     >

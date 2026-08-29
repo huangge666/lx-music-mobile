@@ -5,7 +5,6 @@ import Main, { type MainType } from '../Main'
 import { createStyle } from '@/utils/tools'
 import { BorderWidths } from '@/theme'
 import { useTheme } from '@/store/theme/hook'
-import { useBgPic } from '@/store/common/hook'
 
 const styles = createStyle({
   container: {
@@ -28,20 +27,17 @@ const styles = createStyle({
 
 export default () => {
   const theme = useTheme()
-  const hasDynamicBg = useBgPic() != null
-  const mainBackgroundColor = hasDynamicBg ? 'transparent' : theme['c-card-background']
-  const navBackgroundColor = hasDynamicBg ? 'transparent' : theme['c-content-background']
   const mainRef = useRef<MainType>(null)
 
   return (
-    <View style={{ ...styles.container, backgroundColor: mainBackgroundColor }}>
-      <View style={{ ...styles.nav, borderRightColor: theme['c-border-background'], backgroundColor: navBackgroundColor }}>
+    <View style={{ ...styles.container, backgroundColor: theme['c-card-background'] }}>
+      <View style={{ ...styles.nav, borderRightColor: theme['c-border-background'], backgroundColor: theme['c-content-background'] }}>
         <NavList onChangeId={(id) => mainRef.current?.setActiveId(id)} />
       </View>
       <ScrollView
         keyboardShouldPersistTaps={'always'}
         showsVerticalScrollIndicator={false}
-        style={{ flex: 1, backgroundColor: mainBackgroundColor }}
+        style={{ flex: 1, backgroundColor: theme['c-card-background'] }}
       >
         <View style={styles.main}>
           <Main ref={mainRef} />

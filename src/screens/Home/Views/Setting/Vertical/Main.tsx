@@ -1,13 +1,11 @@
 import { ScrollView } from 'react-native'
 
-import { useBgPic } from '@/store/common/hook'
 import { useTheme } from '@/store/theme/hook'
 import { createStyle } from '@/utils/tools'
 import { SettingScreen, type SettingScreenIds } from '../Main'
 
 export default ({ id }: { id: SettingScreenIds }) => {
   const theme = useTheme()
-  const hasDynamicBg = useBgPic() != null
 
   return (
     <ScrollView
@@ -15,7 +13,7 @@ export default ({ id }: { id: SettingScreenIds }) => {
       showsVerticalScrollIndicator={false}
       style={{
         flex: 1,
-        backgroundColor: hasDynamicBg ? 'transparent' : theme['c-card-background'],
+        backgroundColor: theme['c-card-background'],
       }}
       contentContainerStyle={styles.content}
     >
