@@ -15,7 +15,7 @@
 
 本仓库是 [lyswhut/lx-music-mobile](https://github.com/lyswhut/lx-music-mobile) 的衍生仓库，在上游项目基础上合并了功能与体验改动。当前仓库的 Release、Issue 与自动化构建结果以本仓库为准。
 
-当前版本：`20260828_2`（版本号来源于 `package.json`，并与 `publish/version.json` 保持同步）。完整变更记录请查看 [CHANGELOG.md](CHANGELOG.md)。
+当前版本：`2.0.0`（版本号来源于 `package.json`，并与 `publish/version.json` 保持同步）。完整变更记录请查看 [CHANGELOG.md](CHANGELOG.md)。
 
 ### 主要功能
 

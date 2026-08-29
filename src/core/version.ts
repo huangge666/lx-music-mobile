@@ -1,4 +1,4 @@
-import { compareVer } from '@/utils'
+import { compareAppVersion } from '@/utils'
 import { downloadNewVersion, getVersionInfo } from '@/utils/version'
 import versionActions from '@/store/version/action'
 import versionState, { type InitState } from '@/store/version/state'
@@ -50,7 +50,7 @@ export const checkUpdate = async() => {
   } else {
     versionInfo.status = 'idle'
     versionInfo.isUnknown = false
-    if (compareVer(versionInfo.version, versionInfo.newVersion.version) != -1) {
+    if (compareAppVersion(versionInfo.version, versionInfo.newVersion.version) != -1) {
       versionInfo.isLatest = true
       // 远端 version.json 可能滞后，当前已是最新时以本地版本号为准
       if (versionInfo.newVersion.version !== versionInfo.version) {

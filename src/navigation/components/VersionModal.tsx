@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect, memo } from 'react'
 import { View, ScrollView } from 'react-native'
 
-import { compareVer, sizeFormate } from '@/utils'
+import { compareAppVersion, sizeFormate } from '@/utils'
 
 import Button from '@/components/common/Button'
 import { updateApp } from '@/utils/version'
@@ -33,7 +33,7 @@ const Content = memo(({ title, newVersionInfo }: {
     if (!newVersionInfo?.history) return []
     let arr = []
     for (const ver of newVersionInfo?.history) {
-      if (compareVer(currentVer, ver.version) < 0) arr.push(ver)
+      if (compareAppVersion(currentVer, ver.version) < 0) arr.push(ver)
     }
     return arr
   }, [newVersionInfo])

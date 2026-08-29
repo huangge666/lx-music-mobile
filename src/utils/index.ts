@@ -26,6 +26,21 @@ export function compareVer(currentVer: string, targetVer: string): -1 | 0 | 1 {
   return 0
 }
 
+const legacyDateVersionRx = /^\d{8}(?:_\d+)?$/
+const semanticVersionRx = /^\d+\.\d+\.\d+(?:[-+][0-9a-z.-]+)?$/i
+
+/**
+ * 应用版本从 YYYYMMDD_N 切换到语义化版本号时，旧日期版本必须视为低版本。
+ * 该规则仅用于应用更新，避免改变配置迁移等 compareVer 现有调用的行为。
+ */
+export function compareAppVersion(currentVer: string, targetVer: string): -1 | 0 | 1 {
+  const currentIsLegacy = legacyDateVersionRx.test(currentVer)
+  const targetIsLegacy = legacyDateVersionRx.test(targetVer)
+  if (currentIsLegacy && semanticVersionRx.test(targetVer)) return -1
+  if (targetIsLegacy && semanticVersionRx.test(currentVer)) return 1
+  return compareVer(currentVer, targetVer)
+}
+
 
 export const toNewMusicInfo = (oldMusicInfo: any): LX.Music.MusicInfo => {
   const meta: Record<string, any> = {

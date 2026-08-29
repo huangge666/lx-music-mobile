@@ -1,5 +1,5 @@
 import { httpGet } from '@/utils/request'
-import { compareVer } from '@/utils'
+import { compareAppVersion } from '@/utils'
 import { name } from '../../package.json'
 import { downloadFile, stopDownload, temporaryDirectoryPath } from '@/utils/fs'
 import { getSupportedAbis, installApk } from '@/utils/nativeModules/utils'
@@ -97,7 +97,7 @@ const raceSuccess = (promises) => new Promise((resolve, reject) => {
   })
 })
 
-const pickLatest = (a, b) => (compareVer(a.version, b.version) < 0 ? b : a)
+const pickLatest = (a, b) => (compareAppVersion(a.version, b.version) < 0 ? b : a)
 
 // 新鲜源竞速：raw 直连与 gh-proxy 镜像回源同一文件，内容一致，
 // 任一成功立即返回，无需等待被墙/超时的其余源
