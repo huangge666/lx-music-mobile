@@ -3,7 +3,7 @@
  * @param {string} text
  * @returns
  */
-export const parseChangelog = async(text) => {
+const parseChangelog = async(text) => {
   const versions = []
   const lines = text.split(/\r\n|\r|\n/)
   let currentVersion = null
@@ -38,3 +38,5 @@ export const parseChangelog = async(text) => {
 
   return versions
 }
+
+module.exports = { parseChangelog }

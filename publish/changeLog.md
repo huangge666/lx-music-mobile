@@ -1,10 +1,11 @@
 ### 优化
 
-- 底部导航栏内容底边距按平台差异化适配，Android 上避免 Tab 文案贴近手势条
-- 播放详情竖屏关闭按钮改用下拉箭头图标，与下拉关闭语义一致
-- 歌曲换源弹窗改为底部抽屉样式，音源切换改为一组选中态 chip 标签
-- 评论页头部与标签栏样式优化
+- 安装包体积优化：arm64-v8a 安装包从约 14MB 缩小到约 12.9MB
+- Lucide 图标改为按图标深度导入，避免 Metro 打包时把全部 1700+ 图标打进 JS 包（JS 包从 5.06MB 缩小到 3.39MB）
+- 移除已废弃的图标字体文件（MaterialCommunityIcons.ttf、icomoon.ttf，合计约 1.1MB）
+- Release 构建启用资源收缩（shrinkResources），并仅保留中英文语言资源
+- 移除不再使用的 react-native-vector-icons 依赖
 
-### 修复
+### 其他
 
-- 移除未注册、未使用的 Toast 残留组件并清理对应注释代码
+- 清理全量 TypeScript 与 ESLint 问题，修复发布脚本 ESM 语法兼容问题
