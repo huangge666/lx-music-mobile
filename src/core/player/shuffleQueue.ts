@@ -2,13 +2,11 @@ import { getRandom } from '@/utils/common'
 
 interface ShuffleCache {
   listId: string
-  signature: string
   order: string[]
+  orderSet: Set<string>
 }
 
 let cache: ShuffleCache | null = null
-
-const toSignature = (ids: string[]) => [...ids].sort().join('\0')
 
 const shuffleIds = (ids: string[]) => {
   const next = [...ids]
@@ -27,23 +25,23 @@ const shuffleIds = (ids: string[]) => {
  */
 export const getShuffledIds = (listId: string, remainingIds: string[]): string[] => {
   const remainingSet = new Set(remainingIds)
-  const signature = toSignature(remainingIds)
 
-  if (cache?.listId === listId && cache.signature === signature) {
-    return cache.order.filter(id => remainingSet.has(id))
-  }
+  const currentCache = cache
+  if (currentCache?.listId === listId) {
+    const kept = currentCache.order.filter(id => remainingSet.has(id))
+    const added = remainingIds.filter(id => !currentCache.orderSet.has(id))
 
-  if (cache?.listId === listId) {
-    const kept = cache.order.filter(id => remainingSet.has(id))
-    const keptSet = new Set(kept)
-    const added = remainingIds.filter(id => !keptSet.has(id))
+    // 集合未变化时仅返回当前剩余歌曲，避免每次切歌都排序并拼接整份签名字符串。
+    if (!added.length && kept.length === remainingIds.length) return kept
+
+    // 保留原有随机顺序，新加入的歌曲只追加到队尾并随机化，避免已播歌曲变化时重排整队。
     const order = kept.concat(shuffleIds(added))
-    cache = { listId, signature, order }
+    cache = { listId, order, orderSet: new Set(order) }
     return order
   }
 
   const order = shuffleIds(remainingIds)
-  cache = { listId, signature, order }
+  cache = { listId, order, orderSet: new Set(order) }
   return order
 }
 

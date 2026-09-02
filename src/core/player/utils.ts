@@ -37,7 +37,13 @@ export const filterMusicList = ({ playedList, listId, list, playerMusicInfo, dis
   let playerIndex = -1
 
   let canPlayList: Array<LX.Music.MusicInfo | LX.Download.ListItem> = []
-  const filteredPlayedList = playedList.filter(pmInfo => pmInfo.listId == listId && !pmInfo.isTempPlay).map(({ musicInfo }) => musicInfo)
+  // 随机播放时 playedList 会持续增长，使用 Set 将逐曲 findIndex 降为 O(1)，
+  // 避免大歌单切歌时反复扫描已播放历史造成卡顿。
+  const filteredPlayedIds = new Set(
+    playedList
+      .filter(pmInfo => pmInfo.listId == listId && !pmInfo.isTempPlay)
+      .map(({ musicInfo }) => musicInfo.id),
+  )
   const hasDislike = (info: LX.Music.MusicInfo) => {
     const name = info.name?.replaceAll(SPLIT_CHAR.DISLIKE_NAME, SPLIT_CHAR.DISLIKE_NAME_ALIAS).toLocaleLowerCase().trim() ?? ''
     const singer = info.singer?.replaceAll(SPLIT_CHAR.DISLIKE_NAME, SPLIT_CHAR.DISLIKE_NAME_ALIAS).toLocaleLowerCase().trim() ?? ''
@@ -58,9 +64,8 @@ export const filterMusicList = ({ playedList, listId, list, playerMusicInfo, dis
 
     canPlayList.push(s)
 
-    let index = filteredPlayedList.findIndex(m => m.id == s.id)
-    if (index > -1) {
-      filteredPlayedList.splice(index, 1)
+    if (filteredPlayedIds.has(s.id)) {
+      filteredPlayedIds.delete(s.id)
       return false
     }
     return true

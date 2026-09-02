@@ -491,14 +491,22 @@ export const getNextPlayMusicInfo = async(): Promise<LX.Player.PlayMusicInfo | n
 
   if (playerState.playMusicInfo.musicInfo == null) return null
 
-  if (randomNextMusicInfo.info) return randomNextMusicInfo.info
-
   const playMusicInfo = playerState.playMusicInfo
   const playInfo = playerState.playInfo
   // console.log(playInfo.playerListId)
   const currentListId = playInfo.playerListId
   if (!currentListId) return null
   const currentList = getList(currentListId)
+
+  // 预取会提前确定随机下一首；仅在模式仍为随机且歌曲仍存在时复用，
+  // 防止用户切换播放模式或删除歌曲后误播旧缓存。
+  if (
+    randomNextMusicInfo.info &&
+    settingState.setting['player.togglePlayMethod'] === 'random' &&
+    randomNextMusicInfo.info.listId === currentListId &&
+    currentList.some(item => item.id === randomNextMusicInfo.info?.musicInfo.id)
+  ) return randomNextMusicInfo.info
+  if (randomNextMusicInfo.info) resetRandomNextMusicInfo()
 
   const playedList = playerState.playedList
   if (playedList.length) { // 移除已播放列表内不存在原列表的歌曲
@@ -687,10 +695,18 @@ export const playNext = async(isAutoToggle = false): Promise<void> => {
       return
     }
   }
-  if (randomNextMusicInfo.info) {
+  // 预取缓存只适用于仍处于随机模式且歌曲未从当前歌单移除的情况。
+  // 模式切换或歌单变更后重新计算，避免优化逻辑改变用户的播放顺序。
+  if (
+    randomNextMusicInfo.info &&
+    settingState.setting['player.togglePlayMethod'] === 'random' &&
+    randomNextMusicInfo.info.listId === currentListId &&
+    currentList.some(item => item.id === randomNextMusicInfo.info?.musicInfo.id)
+  ) {
     await handlePlayNext(randomNextMusicInfo.info)
     return
   }
+  if (randomNextMusicInfo.info) resetRandomNextMusicInfo()
   // const isCheckFile = findNum > 2 // 针对下载列表，如果超过两次都碰到无效歌曲，则过滤整个列表内的无效歌曲
   let { filteredList, playerIndex } = await filterList({ // 过滤已播放歌曲
     listId: currentListId,
