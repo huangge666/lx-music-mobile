@@ -115,6 +115,8 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode verCode
         versionName verName
+        // 只保留中英文语言资源，剔除各依赖库打包进来的其他语言
+        resourceConfigurations += ['zh', 'en']
     }
 
     splits {
@@ -168,6 +170,8 @@ android {
             // see https://reactnative.dev/docs/signed-apk-android.
             signingConfig signingConfigs.debug
             minifyEnabled enableProguardInReleaseBuilds
+            // 配合 minifyEnabled 收缩未使用的资源（需 minifyEnabled 为 true）
+            shrinkResources true
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
 
             signingConfig signingConfigs.release

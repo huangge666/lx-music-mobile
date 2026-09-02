@@ -1,60 +1,62 @@
 import { memo, type ComponentProps } from 'react'
-import {
-  ArrowLeft,
-  Captions,
-  CaptionsOff,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  CircleDot,
-  CirclePlay,
-  CircleQuestionMark,
-  Clock3,
-  Disc3,
-  Download,
-  EllipsisVertical,
-  Eraser,
-  FolderPlus,
-  Gauge,
-  HardDrive,
-  Heart,
-  House,
-  ListMusic,
-  ListOrdered,
-  ListPlus,
-  LogOut,
-  Menu,
-  MessageCircle,
-  Minus,
-  Music2,
-  Pause,
-  Play,
-  RefreshCw,
-  Repeat,
-  Repeat1,
-  Search,
-  Settings,
-  Share2,
-  Shuffle,
-  SkipBack,
-  SkipForward,
-  SlidersHorizontal,
-  Square,
-  SquareCheckBig,
-  SquareMinus,
-  SquarePlay,
-  ThumbsUp,
-  Trash2,
-  Trophy,
-  Volume1,
-  Volume2,
-  VolumeX,
-  X,
-  AudioLines,
-  type LucideIcon,
-} from 'lucide-react-native'
+// 按图标深度导入：RN 0.73 / Metro 0.80 不支持 ESM tree-shaking，
+// 从包根 barrel 导入会把全部 1700+ 图标打进 JS bundle（约 +1.9MB），
+// 因此逐图标从 dist/cjs/icons/* 引入，仅打包实际用到的组件。
+// 深度路径的运行时类型通过 src/types/lucide.d.ts 的通配符声明补齐。
+import type { LucideIcon } from 'lucide-react-native'
+import ArrowLeft from 'lucide-react-native/dist/cjs/icons/arrow-left'
+import AudioLines from 'lucide-react-native/dist/cjs/icons/audio-lines'
+import Captions from 'lucide-react-native/dist/cjs/icons/captions'
+import CaptionsOff from 'lucide-react-native/dist/cjs/icons/captions-off'
+import ChevronDown from 'lucide-react-native/dist/cjs/icons/chevron-down'
+import ChevronLeft from 'lucide-react-native/dist/cjs/icons/chevron-left'
+import ChevronRight from 'lucide-react-native/dist/cjs/icons/chevron-right'
+import ChevronsLeft from 'lucide-react-native/dist/cjs/icons/chevrons-left'
+import ChevronsRight from 'lucide-react-native/dist/cjs/icons/chevrons-right'
+import CircleDot from 'lucide-react-native/dist/cjs/icons/circle-dot'
+import CirclePlay from 'lucide-react-native/dist/cjs/icons/circle-play'
+import CircleQuestionMark from 'lucide-react-native/dist/cjs/icons/circle-question-mark'
+import Clock3 from 'lucide-react-native/dist/cjs/icons/clock-3'
+import Disc3 from 'lucide-react-native/dist/cjs/icons/disc-3'
+import Download from 'lucide-react-native/dist/cjs/icons/download'
+import EllipsisVertical from 'lucide-react-native/dist/cjs/icons/ellipsis-vertical'
+import Eraser from 'lucide-react-native/dist/cjs/icons/eraser'
+import FolderPlus from 'lucide-react-native/dist/cjs/icons/folder-plus'
+import Gauge from 'lucide-react-native/dist/cjs/icons/gauge'
+import HardDrive from 'lucide-react-native/dist/cjs/icons/hard-drive'
+import Heart from 'lucide-react-native/dist/cjs/icons/heart'
+import House from 'lucide-react-native/dist/cjs/icons/house'
+import ListMusic from 'lucide-react-native/dist/cjs/icons/list-music'
+import ListOrdered from 'lucide-react-native/dist/cjs/icons/list-ordered'
+import ListPlus from 'lucide-react-native/dist/cjs/icons/list-plus'
+import LogOut from 'lucide-react-native/dist/cjs/icons/log-out'
+import Menu from 'lucide-react-native/dist/cjs/icons/menu'
+import MessageCircle from 'lucide-react-native/dist/cjs/icons/message-circle'
+import Minus from 'lucide-react-native/dist/cjs/icons/minus'
+import Music2 from 'lucide-react-native/dist/cjs/icons/music-2'
+import Pause from 'lucide-react-native/dist/cjs/icons/pause'
+import Play from 'lucide-react-native/dist/cjs/icons/play'
+import RefreshCw from 'lucide-react-native/dist/cjs/icons/refresh-cw'
+import Repeat from 'lucide-react-native/dist/cjs/icons/repeat'
+import Repeat1 from 'lucide-react-native/dist/cjs/icons/repeat-1'
+import Search from 'lucide-react-native/dist/cjs/icons/search'
+import Settings from 'lucide-react-native/dist/cjs/icons/settings'
+import Share2 from 'lucide-react-native/dist/cjs/icons/share-2'
+import Shuffle from 'lucide-react-native/dist/cjs/icons/shuffle'
+import SkipBack from 'lucide-react-native/dist/cjs/icons/skip-back'
+import SkipForward from 'lucide-react-native/dist/cjs/icons/skip-forward'
+import SlidersHorizontal from 'lucide-react-native/dist/cjs/icons/sliders-horizontal'
+import Square from 'lucide-react-native/dist/cjs/icons/square'
+import SquareCheckBig from 'lucide-react-native/dist/cjs/icons/square-check-big'
+import SquareMinus from 'lucide-react-native/dist/cjs/icons/square-minus'
+import SquarePlay from 'lucide-react-native/dist/cjs/icons/square-play'
+import ThumbsUp from 'lucide-react-native/dist/cjs/icons/thumbs-up'
+import Trash2 from 'lucide-react-native/dist/cjs/icons/trash-2'
+import Trophy from 'lucide-react-native/dist/cjs/icons/trophy'
+import Volume1 from 'lucide-react-native/dist/cjs/icons/volume-1'
+import Volume2 from 'lucide-react-native/dist/cjs/icons/volume-2'
+import VolumeX from 'lucide-react-native/dist/cjs/icons/volume-x'
+import X from 'lucide-react-native/dist/cjs/icons/x'
 import { StyleSheet, type StyleProp, type TextStyle } from 'react-native'
 import { scaleSizeW } from '@/utils/pixelRatio'
 import { useTextShadow, useTheme } from '@/store/theme/hook'
