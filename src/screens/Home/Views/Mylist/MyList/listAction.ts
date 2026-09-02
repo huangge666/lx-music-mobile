@@ -84,9 +84,13 @@ export const handleSync = (listInfo: LX.List.UserListInfo) => {
     confirmButtonText: global.i18n.t('list_remove_tip_button'),
   }).then(isSync => {
     if (!isSync) return
+
+    // syncSourceList 会在请求期间维护列表 loading 状态，这里只负责给出即时的开始提示。
+    toast(global.i18n.t('list_loading'))
     void syncSourceList(listInfo).then(() => {
       toast(global.i18n.t('list_update_success', { name: listInfo.name }))
-    }).catch(() => {
+    }).catch((error: unknown) => {
+      console.error(error)
       toast(global.i18n.t('list_update_error', { name: listInfo.name }))
     })
   })
