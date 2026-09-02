@@ -11,12 +11,15 @@ import { HEADER_HEIGHT as _HEADER_HEIGHT } from '@/config/constant'
 import { type InitState as CommonState } from '@/store/common/state'
 import SearchTypeSelector from '@/screens/Home/Views/Search/SearchTypeSelector'
 import DetailNav from '@/screens/Home/Views/Mylist/DetailNav'
+import ImportSonglist from '@/screens/Home/Views/Mylist/MyList/ImportSonglist'
 import { useMylistPlaylistsVisible } from '@/store/list/uiHook'
 import { Icon } from '@/components/common/Icon'
 import { backToHomeTab } from '@/core/common'
 
 const headerComponents: Partial<Record<CommonState['navActiveId'], React.ReactNode>> = {
   nav_search: <SearchTypeSelector />,
+  // “我的”页头部提供导入歌单入口（歌单页“打开歌单”的同款交互，改为直接导入）
+  nav_love: <ImportSonglist />,
 }
 
 const HEADER_HEIGHT = _HEADER_HEIGHT * 0.8

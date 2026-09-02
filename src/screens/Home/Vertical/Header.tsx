@@ -12,6 +12,7 @@ import { HEADER_HEIGHT } from '@/config/constant'
 import { type InitState as CommonState } from '@/store/common/state'
 import SearchTypeSelector from '@/screens/Home/Views/Search/SearchTypeSelector'
 import DetailNav from '@/screens/Home/Views/Mylist/DetailNav'
+import ImportSonglist from '@/screens/Home/Views/Mylist/MyList/ImportSonglist'
 import { useMylistPlaylistsVisible } from '@/store/list/uiHook'
 import { backToHomeTab } from '@/core/common'
 import { type SettingScreenIds } from '@/screens/Home/Views/Setting'
@@ -19,6 +20,8 @@ import { type SettingScreenIds } from '@/screens/Home/Views/Setting'
 // Apple Music 各页面对应的大标题文案
 const headerComponents: Partial<Record<CommonState['navActiveId'], React.ReactNode>> = {
   nav_search: <SearchTypeSelector />,
+  // “我的”页头部提供导入歌单入口（歌单页“打开歌单”的同款交互，改为直接导入）
+  nav_love: <ImportSonglist />,
 }
 
 type StandaloneNavId = Extract<CommonState['navActiveId'], 'nav_download' | 'nav_setting'>

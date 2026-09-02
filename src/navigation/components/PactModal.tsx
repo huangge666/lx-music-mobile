@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react'
-import { View, ScrollView, Alert } from 'react-native'
+import { View, ScrollView } from 'react-native'
 import { Navigation } from 'react-native-navigation'
 
 import Button from '@/components/common/Button'
@@ -80,20 +80,10 @@ const Footer = ({ componentId }: { componentId: string }) => {
     let _isAgreePact = isAgreePact
     if (!isAgreePact) updateSetting({ 'common.isAgreePact': true })
     void Navigation.dismissOverlay(componentId)
+    // 首次同意协议后仍需完成检查更新与 deeplink 初始化（原有的“完全免费且开源”提示弹窗已移除）
     if (!_isAgreePact) {
-      setTimeout(() => {
-        Alert.alert(
-          '',
-          Buffer.from('e69cace8bdafe4bbb6e5ae8ce585a8e5858de8b4b9e4b894e5bc80e6ba90efbc8ce5a682e69e9ce4bda0e698afe88ab1e992b1e8b4ade4b9b0e79a84efbc8ce8afb7e79bb4e68ea5e7bb99e5b7aee8af84efbc810a0a5468697320736f667477617265206973206672656520616e64206f70656e20736f757263652e', 'hex').toString(),
-          [{
-            text: Buffer.from('e5a5bde79a8420284f4b29', 'hex').toString(),
-            onPress: () => {
-              void checkUpdate()
-              void initDeeplink()
-            },
-          }],
-        )
-      }, 2e3)
+      void checkUpdate()
+      void initDeeplink()
     }
   }
 
