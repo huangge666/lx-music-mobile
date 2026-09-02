@@ -72,6 +72,27 @@ const mapFetchError = (err) => {
   }
 }
 
+/**
+ * @typedef {Object} HttpResponse
+ * @property {Record<string, string>} headers
+ * @property {any} body
+ * @property {number} statusCode
+ * @property {string} statusMessage
+ * @property {string} url
+ * @property {boolean} ok
+ */
+
+/**
+ * @typedef {Object} HttpFetchResult
+ * @property {Promise<HttpResponse>} promise
+ * @property {() => void} cancelHttp
+ */
+
+/**
+ * @param {string} url
+ * @param {any} [options]
+ * @returns {HttpFetchResult}
+ */
 export const httpFetch = (url, options = { method: 'get' }) => {
   const urls = getGithubFetchUrls(url)
   let index = 0

@@ -1,6 +1,5 @@
 import { forwardRef, useCallback, useImperativeHandle, useRef, useState } from 'react'
 import { DrawerLayoutAndroid, type DrawerLayoutAndroidProps, View, type LayoutChangeEvent } from 'react-native'
-// import { getWindowSise } from '@/utils/tools'
 import { usePageVisible } from '@/store/common/hook'
 import { type COMPONENT_IDS } from '@/config/constant'
 
@@ -84,8 +83,6 @@ const DrawerLayoutFixed = forwardRef<DrawerLayoutFixedType, Props>(({ visibleNav
         drawerWidth={drawerWidth}
         {...props}
         style={{ flex: 1, width: '100%' }}
-        drawerElevation={1000}
-        drawerStyle={{ elevation: 1000, zIndex: 1000 }}
       >
         <View style={{ marginRight: w == '100%' ? 0 : -1, flex: 1 }}>
           {children}
@@ -94,11 +91,5 @@ const DrawerLayoutFixed = forwardRef<DrawerLayoutFixedType, Props>(({ visibleNav
     </View>
   )
 })
-
-// const styles = createStyle({
-//   container: {
-//     flex: 1,
-//   },
-// })
 
 export default DrawerLayoutFixed

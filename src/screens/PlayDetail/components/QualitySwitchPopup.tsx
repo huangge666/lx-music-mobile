@@ -62,7 +62,7 @@ const useQualityLabel = () => {
 /**
  * 根据取链接失败的异常信息归类失败原因，返回对应的 i18n key
  */
-const getFailReasonKey = (err: any): string => {
+const getFailReasonKey = (err: any): 'quality_switch_failed_timeout' | 'quality_switch_failed_api' => {
   const msg = String(err?.message ?? '')
   if (/timeout/i.test(msg)) return 'quality_switch_failed_timeout'
   if (/source init failed|no api source|aborted|toggle source/i.test(msg)) return 'quality_switch_failed_api'
@@ -117,6 +117,8 @@ const QualitySwitchPopup = forwardRef<QualitySwitchPopupType>((_, ref) => {
 
   const qualitys = useMemo(() => {
     return visible ? getAvailableQualitys(playerState.playMusicInfo.musicInfo) : []
+    // playerMusicInfo.id 是“歌曲已切换”的代理依赖（playerState 为可变单例，musicInfo 无法直接进依赖数组）
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, playerMusicInfo.id])
 
   const handleChange = (quality: LX.Quality) => {
@@ -137,7 +139,7 @@ const QualitySwitchPopup = forwardRef<QualitySwitchPopupType>((_, ref) => {
     }
     // 保持弹窗打开以便展示行内切换动画，结束后再关闭
     // 写入全局默认播放音质，后续歌曲按此音质播放
-    void updateSetting({ 'player.playQuality': quality })
+    updateSetting({ 'player.playQuality': quality })
     // 显示行内切换动画，并启动超时保护（取链接流程可能长时间无响应或静默失败）
     setSwitchingQuality(quality)
     if (switchTimerRef.current) clearTimeout(switchTimerRef.current)

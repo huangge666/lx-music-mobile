@@ -73,8 +73,8 @@ export const buildActiveThemeColors = (theme: LX.Theme): LX.ActiveTheme => {
   // 暗色模式：c-content-background = 纯黑 #000，c-border-background = #38383A
   const isDark = theme.isDark
   return {
-    id: theme.id,
-    name: theme.name,
+    'id': theme.id,
+    'name': theme.name,
     isDark,
     ...theme.config.themeColors,
     ...theme.config.extInfo,

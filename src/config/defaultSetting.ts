@@ -1,5 +1,5 @@
 const defaultSetting: LX.AppSetting = {
-  version: '2.0',
+  'version': '2.0',
   'common.isAutoTheme': false,
   'common.langId': null,
   'common.apiSource': '',

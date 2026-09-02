@@ -2,7 +2,6 @@ import { memo, useMemo } from 'react'
 import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import Text from './Text'
-import { BorderRadius } from '@/theme'
 
 /**
  * Apple Music 风格 Badge

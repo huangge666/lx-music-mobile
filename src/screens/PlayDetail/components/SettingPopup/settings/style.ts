@@ -1,5 +1,4 @@
 import { createStyle } from '@/utils/tools'
-import { BorderRadius } from '@/theme'
 
 export default createStyle({
   container: {

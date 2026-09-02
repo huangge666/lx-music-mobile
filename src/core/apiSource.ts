@@ -143,7 +143,6 @@ export const setApiSource = (apiId: string) => {
     // 同时避免启动流程和手动切换流程走两套不同的加载逻辑。
     enqueueUserApiInit(apiId)
   } else {
-    // @ts-expect-error
     global.lx.qualityList = musicSdk.supportQuality[apiId] ?? {}
     destroyUserApi()
     if (!global.lx.apiInitPromise[1]) global.lx.apiInitPromise[2](true)

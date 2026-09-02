@@ -33,6 +33,8 @@ const apiList = {
   // test_api_wy: require('./wy/api-test'),
   // test_api_xm: require('./xm/api-test'),
 }
+// 各音源支持的音质表：source id -> quality 列表映射
+/** @type {Record<string, LX.QualityList>} */
 const supportQuality = {}
 
 for (const api of apiSourceInfo) {

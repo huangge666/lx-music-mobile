@@ -1,5 +1,5 @@
-import { memo, useMemo } from 'react'
-import { View } from 'react-native'
+import { memo, useMemo, useRef } from 'react'
+import { View, TouchableOpacity } from 'react-native'
 
 import Progress from '@/components/player/ProgressBar'
 import { usePlayerMusicInfo, useProgress, useStatusText } from '@/store/player/hook'
@@ -8,9 +8,7 @@ import { formatPlayTime2 } from '@/utils'
 import Text from '@/components/common/Text'
 import { useBufferProgress } from '@/plugins/player'
 import { useI18n } from '@/lang'
-import { TouchableOpacity } from 'react-native'
 import QualitySwitchPopup, { type QualitySwitchPopupType } from '../../../components/QualitySwitchPopup'
-import { useRef } from 'react'
 import {
   Immersive,
   MacSpacing,

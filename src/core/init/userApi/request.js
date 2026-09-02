@@ -122,6 +122,21 @@ const fetchOnce = (url, { timeout = 13_000, ...options }) => {
   }
 }
 
+/**
+ * @typedef {Object} HttpResponse
+ * @property {Record<string, string>} headers
+ * @property {any} body
+ * @property {number} statusCode
+ * @property {string} statusMessage
+ * @property {string} url
+ * @property {boolean} ok
+ */
+
+/**
+ * @param {string} url
+ * @param {any} [options]
+ * @returns {{ request: Promise<HttpResponse>, abort: () => void }}
+ */
 export const fetchData = (url, options) => {
   const urls = getGithubFetchUrls(url)
   let index = 0

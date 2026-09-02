@@ -148,7 +148,7 @@ export const Icon = memo(({ size = 15, rawSize, color, style, name, allowFontSca
     textShadowRadius: 2,
   }, style) : style
 
-  const LucideComp = ICON_MAP[name as IconName] ?? EXTRA_ICONS[name as keyof typeof EXTRA_ICONS] ?? Play
+  const LucideComp = ICON_MAP[name] ?? EXTRA_ICONS[name] ?? Play
   const iconSize = rawSize ?? scaleSizeW(size)
   const iconColor = color ?? theme['c-font']
 

@@ -11,6 +11,9 @@
     "rootDir": "./",
     "paths": {
       "@/*": ["./src/*"],
+      // 以下两个依赖包的 types 字段指向未构建的 lib 目录，改为直接指向其 TS 源码
+      "react-native-file-system": ["./node_modules/react-native-file-system/src"],
+      "react-native-local-media-metadata": ["./node_modules/react-native-local-media-metadata/src"],
       // "@config": ["src/config"],
       // "@store": ["src/store"],
       // "@components": ["src/components"],

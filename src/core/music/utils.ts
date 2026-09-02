@@ -187,7 +187,7 @@ export const getOnlineOtherSourceMusicUrlByLocal = async(musicInfo: LX.Music.Mus
   const cachedUrl = await getStoreMusicUrl(musicInfo, quality)
   if (cachedUrl && !isRefresh) return { url: cachedUrl, quality, isFromCache: true }
 
-  let reqPromise
+  let reqPromise: Promise<{ url: string, type: LX.Quality }>
   try {
     reqPromise = apis('local').getMusicUrl(toOldMusicInfo(musicInfo), null).promise
   } catch (err: any) {
@@ -208,7 +208,7 @@ export const getOnlineOtherSourceLyricByLocal = async(musicInfo: LX.Music.MusicI
   const lyricInfo = await getCachedLyricInfo(musicInfo)
   if (lyricInfo && !isRefresh) return { lyricInfo, isFromCache: true }
 
-  let reqPromise
+  let reqPromise: Promise<LX.Music.LyricInfo>
   try {
     reqPromise = apis('local').getLyric(toOldMusicInfo(musicInfo)).promise
   } catch (err: any) {
@@ -225,7 +225,7 @@ export const getOnlineOtherSourcePicByLocal = async(musicInfo: LX.Music.MusicInf
 }> => {
   if (!await global.lx.apiInitPromise[0]) throw new Error('source init failed')
 
-  let reqPromise
+  let reqPromise: Promise<string>
   try {
     reqPromise = apis('local').getPic(toOldMusicInfo(musicInfo)).promise
   } catch (err: any) {
@@ -274,19 +274,20 @@ const MAX_TOGGLE_ATTEMPTS = 10
  * 为请求 Promise 添加超时保护
  * 超时后 reject，避免某个无响应的源阻塞后续换源尝试
  */
-const withTimeout = <T>(promise: Promise<T>, ms: number, label: string): Promise<T> => {
-  return new Promise<T>((resolve, reject) => {
-    const timer = BackgroundTimer.setTimeout(() => {
-      reject(new Error(`${label} timeout (${ms}ms)`))
-    }, ms)
-    promise.then((result) => {
-      BackgroundTimer.clearTimeout(timer)
-      resolve(result)
-    }).catch((err) => {
-      BackgroundTimer.clearTimeout(timer)
-      reject(err)
-    })
-  })
+const withTimeout = async<T>(promise: Promise<T>, ms: number, label: string): Promise<T> => {
+  let timer: number | null = null
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<never>((_resolve, reject) => {
+        timer = BackgroundTimer.setTimeout(() => {
+          reject(new Error(`${label} timeout (${ms}ms)`))
+        }, ms)
+      }),
+    ])
+  } finally {
+    if (timer != null) BackgroundTimer.clearTimeout(timer)
+  }
 }
 
 /**
@@ -391,7 +392,7 @@ export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggl
   const cachedUrl = await getStoreMusicUrl(musicInfo, itemQuality)
   if (cachedUrl && !isRefresh) return { url: cachedUrl, musicInfo, quality: itemQuality, isFromCache: true }
 
-  let reqPromise
+  let reqPromise: Promise<{ url: string, type: LX.Quality }>
   try {
     reqPromise = musicSdk[musicInfo.source].getMusicUrl(toOldMusicInfo(musicInfo), itemQuality).promise
   } catch (err: any) {
@@ -445,7 +446,7 @@ export const handleGetOnlineMusicUrl = async({ musicInfo, quality, onToggleSourc
   // console.log(musicInfo.source)
   const targetQuality = quality ?? getPlayQuality(settingState.setting['player.playQuality'], musicInfo)
 
-  let reqPromise
+  let reqPromise: Promise<{ url: string, type: LX.Quality }>
   try {
     reqPromise = musicSdk[musicInfo.source].getMusicUrl(toOldMusicInfo(musicInfo), targetQuality).promise
   } catch (err: any) {
@@ -534,7 +535,7 @@ export const getOnlineOtherSourcePicUrl = async({ musicInfos, onToggleSource, is
 
   if (musicInfo.meta.picUrl && !isRefresh) return { musicInfo, url: musicInfo.meta.picUrl, isFromCache: true }
 
-  let reqPromise
+  let reqPromise: Promise<string>
   try {
     reqPromise = musicSdk[musicInfo.source].getPic(toOldMusicInfo(musicInfo))
   } catch (err: any) {
@@ -565,7 +566,7 @@ export const handleGetOnlinePicUrl = async({ musicInfo, isRefresh, onToggleSourc
   isFromCache: boolean
 }> => {
   // console.log(musicInfo.source)
-  let reqPromise
+  let reqPromise: Promise<string>
   try {
     reqPromise = musicSdk[musicInfo.source].getPic(toOldMusicInfo(musicInfo))
   } catch (err) {
@@ -628,7 +629,7 @@ export const getOnlineOtherSourceLyricInfo = async({ musicInfos, onToggleSource,
     if (lyricInfo) return { musicInfo, lyricInfo, isFromCache: true }
   }
 
-  let reqPromise
+  let reqPromise: Promise<LX.Music.LyricInfo>
   try {
     // TODO: remove any type
     reqPromise = (musicSdk[musicInfo.source].getLyric(toOldMusicInfo(musicInfo)) as any).promise
@@ -664,7 +665,7 @@ export const handleGetOnlineLyricInfo = async({ musicInfo, onToggleSource, isRef
   isFromCache: boolean
 }> => {
   // console.log(musicInfo.source)
-  let reqPromise
+  let reqPromise: Promise<LX.Music.LyricInfo>
   try {
     // TODO: remove any type
     reqPromise = (musicSdk[musicInfo.source].getLyric(toOldMusicInfo(musicInfo)) as any).promise
