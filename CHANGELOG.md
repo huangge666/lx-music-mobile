@@ -6,6 +6,21 @@ Project versioning adheres to [Semantic Versioning](http://semver.org/).
 Commit convention is based on [Conventional Commits](http://conventionalcommits.org).
 Change log format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [2.0.5](https://github.com/huangge666/lx-music-mobile/compare/v2.0.4...v2.0.5) - 2026-09-04
+
+### 修复
+
+- 修复随机播放中手动点歌后，把已播列表或随机队列从前面重新顺序播放的问题
+- 修复切歌过程中过期的下一首预取把旧队列写回的问题
+- 修复下一首/上一首等待期间用户已点歌时仍覆盖当前曲的问题
+- 修复切换音质后下一首仍使用旧音质预取地址的问题
+- 修复定时停止监听移除时可能误删其他 hook 的问题
+
+### 优化
+
+- 随机播放手动点歌后从点选位置继续，不再重播已听过的顺序
+- 切歌后立即按当前音质预取下一首，丢弃过期预取
+
 ## [2.0.4](https://github.com/huangge666/lx-music-mobile/compare/v1.8.4...v2.0.4) - 2026-09-02
 
 ### 优化
