@@ -58,3 +58,16 @@ export const pickShuffledNextIndex = (listId: string, filteredList: Array<{ id: 
   const index = filteredList.findIndex(item => item.id === nextId)
   return index < 0 ? 0 : index
 }
+
+/**
+ * 手动点到随机队列中的某首歌后，把该曲之后的未播歌曲提前，其前未播歌曲挪到队尾。
+ * 避免下一首又从队列头部把「点过的歌前面那些」按原顺序重播一遍。
+ */
+export const jumpShuffleQueue = (listId: string, musicId: string) => {
+  const currentCache = cache
+  if (!currentCache || currentCache.listId !== listId) return
+  const idx = currentCache.order.indexOf(musicId)
+  if (idx < 0) return
+  const order = currentCache.order.slice(idx + 1).concat(currentCache.order.slice(0, idx))
+  cache = { listId, order, orderSet: new Set(order) }
+}

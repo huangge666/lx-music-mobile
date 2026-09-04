@@ -55,7 +55,9 @@ const timeoutTools = {
     hook(this.getTime(), global.lx.isPlayedStop)
   },
   removeTimeHook(hook: Hook) {
-    this.timeHooks.splice(this.timeHooks.indexOf(hook), 1)
+    const index = this.timeHooks.indexOf(hook)
+    if (index < 0) return
+    this.timeHooks.splice(index, 1)
   },
 }
 
