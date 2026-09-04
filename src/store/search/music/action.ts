@@ -1,5 +1,5 @@
 import state, { type InitState, type Source } from './state'
-import { sortInsert, similar, arrPush } from '@/utils/common'
+import { arrPush } from '@/utils/common'
 import { deduplicationList, toNewMusicInfo } from '@/utils'
 
 
@@ -13,21 +13,34 @@ export interface SearchResult {
 
 
 /**
- * 按搜索关键词重新排序列表
+ * 按搜索关键词重新排序列表（轻量分级规则）
+ * 不再对每条结果做 Levenshtein 编辑距离（O(n·m)），改为 O(n) 的分级匹配：
+ *   4 = 歌名与关键词完全一致
+ *   3 = 歌手与关键词完全一致
+ *   2 = 歌名包含关键词
+ *   1 = 歌手包含关键词
+ *   0 = 其余（保持源返回顺序）
+ * 同级内依赖 sort 的稳定性保持原有相对顺序。
  * @param list 歌曲列表
  * @param keyword 搜索关键词
  * @returns 排序后的列表
  */
 const handleSortList = (list: LX.Music.MusicInfoOnline[], keyword: string) => {
-  let arr: any[] = []
-  for (const item of list) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    sortInsert(arr, {
-      num: similar(keyword, `${item.name} ${item.singer}`),
-      data: item,
+  const kw = keyword.trim().toLowerCase()
+  if (!kw) return list
+  return list
+    .map(item => {
+      const name = item.name?.toLowerCase?.() ?? ''
+      const singer = item.singer?.toLowerCase?.() ?? ''
+      let score = 0
+      if (name == kw) score = 4
+      else if (singer == kw) score = 3
+      else if (name.includes(kw)) score = 2
+      else if (singer.includes(kw)) score = 1
+      return { item, score }
     })
-  }
-  return arr.map(item => item.data).reverse()
+    .sort((a, b) => b.score - a.score)
+    .map(s => s.item)
 }
 
 

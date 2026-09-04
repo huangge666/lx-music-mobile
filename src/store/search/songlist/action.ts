@@ -1,5 +1,3 @@
-import { sortInsert, similar } from '@/utils/common'
-
 import type { InitState, ListInfoItem, Source } from './state'
 import state from './state'
 
@@ -12,21 +10,39 @@ export interface SearchResult {
 
 
 /**
- * 按搜索关键词重新排序列表
- * @param list 歌曲列表
+ * 按搜索关键词重新排序列表（轻量分级规则）
+ * 不再对每条结果做 Levenshtein 编辑距离（O(n·m)），改为 O(n) 的分级匹配：
+ *   2 = 歌单名与关键词完全一致
+ *   1 = 歌单名包含关键词
+ *   0 = 其余（保持源返回顺序）
+ * 同级内依赖 sort 的稳定性保持原有相对顺序。
+ * @param list 歌单列表
  * @param keyword 搜索关键词
  * @returns 排序后的列表
  */
 const handleSortList = (list: ListInfoItem[], keyword: string) => {
-  let arr: any[] = []
-  for (const item of list) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    sortInsert(arr, {
-      num: similar(keyword, item.name),
-      data: item,
+  const kw = keyword.trim().toLowerCase()
+  if (!kw) return list
+  return list
+    .map(item => {
+      const name = item.name?.toLowerCase?.() ?? ''
+      let score = 0
+      if (name == kw) score = 2
+      else if (name.includes(kw)) score = 1
+      return { item, score }
     })
-  }
-  return arr.map(item => item.data).reverse()
+    .sort((a, b) => b.score - a.score)
+    .map(s => s.item)
+}
+
+/** 按 id 去重（保留首次出现的位置），支撑增量合并与翻页不出现重复项 */
+const deduplicationSonglist = (list: ListInfoItem[]): ListInfoItem[] => {
+  const ids = new Set<string>()
+  return list.filter(item => {
+    if (ids.has(item.id)) return false
+    ids.add(item.id)
+    return true
+  })
 }
 
 
@@ -51,7 +67,8 @@ const setLists = (results: SearchResult[], page: number, text: string): ListInfo
   else listInfo.total = limit * page
   listInfo.page = page
   list = handleSortList(list, text)
-  listInfo.list = page > 1 ? [...listInfo.list, ...list] : list
+  // 增量合并（先到先展示）时同一页会被多次合并，去重避免重复项
+  listInfo.list = page > 1 ? deduplicationSonglist([...listInfo.list, ...list]) : list
   state.source = 'all'
   return listInfo.list
 }

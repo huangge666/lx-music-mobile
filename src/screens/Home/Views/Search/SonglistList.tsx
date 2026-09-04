@@ -31,7 +31,13 @@ export default forwardRef<MusicListType, {}>((props, ref) => {
         const page = 1
         searchInfoRef.current.text = text
         searchInfoRef.current.source = source
-        return search(text, page, source).then((list) => {
+        return search(text, page, source, (list) => {
+          // 「全部音源」先到先展示：每个源返回即增量渲染，不被最慢源拖住
+          if (isUnmountedRef.current) return
+          requestAnimationFrame(() => {
+            listRef.current?.setList(list, source == 'all')
+          })
+        }).then((list) => {
           // const result = setListInfo(listDetail, id, page)
           if (isUnmountedRef.current) return
           requestAnimationFrame(() => {
@@ -56,7 +62,13 @@ export default forwardRef<MusicListType, {}>((props, ref) => {
   const handleRefresh: SonglistProps['onRefresh'] = () => {
     const page = 1
     listRef.current?.setStatus('refreshing')
-    search(searchInfoRef.current.text, page, searchInfoRef.current.source).then((list) => {
+    search(searchInfoRef.current.text, page, searchInfoRef.current.source, (list) => {
+      // 「全部音源」先到先展示
+      if (isUnmountedRef.current) return
+      requestAnimationFrame(() => {
+        listRef.current?.setList(list, searchInfoRef.current.source == 'all')
+      })
+    }).then((list) => {
       // const result = setListInfo(listDetail, searchSonglistState.listDetailInfo.id, page)
       if (isUnmountedRef.current) return
       listRef.current?.setList(list, searchInfoRef.current.source == 'all')
@@ -69,7 +81,13 @@ export default forwardRef<MusicListType, {}>((props, ref) => {
     listRef.current?.setStatus('loading')
     const info = searchSonglistState.listInfos[searchInfoRef.current.source]!
     const page = info.list.length ? info.page + 1 : 1
-    search(searchInfoRef.current.text, page, searchInfoRef.current.source).then((list) => {
+    search(searchInfoRef.current.text, page, searchInfoRef.current.source, (list) => {
+      // 「全部音源」翻页也先到先展示
+      if (isUnmountedRef.current) return
+      requestAnimationFrame(() => {
+        listRef.current?.setList(list, searchInfoRef.current.source == 'all')
+      })
+    }).then((list) => {
       // const result = setListInfo(listDetail, searchSonglistState.listDetailInfo.id, page)
       if (isUnmountedRef.current) return
       listRef.current?.setList(list, searchInfoRef.current.source == 'all')
