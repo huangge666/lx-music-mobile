@@ -6,6 +6,21 @@ Project versioning adheres to [Semantic Versioning](http://semver.org/).
 Commit convention is based on [Conventional Commits](http://conventionalcommits.org).
 Change log format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [2.0.6](https://github.com/huangge666/lx-music-mobile/compare/v2.0.5...v2.0.6) - 2026-09-04
+
+### 新增
+
+- 下载页失败任务支持一键重试
+
+### 优化
+
+- 统一下一首预取流程：合并开播预取与临播预取两条链路，优先复用本地缓存的播放地址并校验可用性，失效才重新取链，一首歌播完时下一首链接最多只请求一次
+- 「全部音源」搜索与歌单搜索改为先到先展示：每个源的结果一返回即增量上屏，不再被最慢的源拖住整页空白
+- 搜索结果排序从逐条编辑距离改为轻量分级匹配（歌名/歌手精确与包含），同级保持源返回顺序
+- 下载任务改为并发队列（同时最多 2 个），多选下载时按顺序排队执行
+- 下载进度通知节流（至少 1 秒或进度增量 2%），下载页纯进度更新不再重复扫描整个下载目录
+- 下载状态文案接入多语言
+
 ## [2.0.5](https://github.com/huangge666/lx-music-mobile/compare/v2.0.4...v2.0.5) - 2026-09-04
 
 ### 修复
