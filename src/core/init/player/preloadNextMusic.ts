@@ -1,67 +1,30 @@
-import { getMusicUrl } from '@/core/music'
-import { getNextPlayMusicInfo, resetRandomNextMusicInfo } from '@/core/player/player'
-import { checkUrl } from '@/utils/request'
-import playerState from '@/store/player/state'
-import { isCached } from '@/plugins/player/utils'
+import { prewarmNextMusicUrl, resetRandomNextMusicInfo } from '@/core/player/player'
 
-
-const preloadMusicInfo = {
-  isLoading: false,
-  preProgress: 0,
-  info: null as LX.Player.PlayMusicInfo | null,
-}
-const resetPreloadInfo = () => {
-  preloadMusicInfo.preProgress = 0
-  preloadMusicInfo.info = null
-  preloadMusicInfo.isLoading = false
-}
-const preloadNextMusicUrl = async(curTime: number) => {
-  if (preloadMusicInfo.isLoading || curTime - preloadMusicInfo.preProgress < 3) return
-  preloadMusicInfo.isLoading = true
-  console.log('preload next music url')
-  const info = await getNextPlayMusicInfo()
-  if (info) {
-    preloadMusicInfo.info = info
-    const url = await getMusicUrl({ musicInfo: info.musicInfo }).catch(() => '')
-    if (url) {
-      console.log('preload url', url)
-      const [cached, available] = await Promise.all([isCached(url), checkUrl(url).then(() => true).catch(() => false)])
-      if (!cached && !available) {
-        const url = await getMusicUrl({ musicInfo: info.musicInfo, isRefresh: true }).catch(() => '')
-        console.log('preload url refresh', url)
-      }
-    }
-  }
-  preloadMusicInfo.isLoading = false
-}
-
+/**
+ * 下一首预取的「触发器」。
+ *
+ * 预取本体已统一到 player.ts 的 prewarmNextMusicUrl（当前曲开播成功即预取，
+ * 内部优先复用持久缓存 + 可用性校验，失败按 key 退避重试）。
+ * 这里只保留两类触发时机，不再有独立的取链逻辑：
+ * 1. 歌曲临近结束（剩余 < 10s）时再触发一次预取，
+ *    覆盖开播时预取已过期（如超长歌曲）或失败的情况；
+ * 2. 播放模式变化时使随机下一首缓存失效并重新预取。
+ * 重复调用是安全的：prewarmNextMusicUrl 内部有触发节流、缓存命中去重与失败退避。
+ */
 export default () => {
-  const setProgress = (time: number) => {
-    if (!playerState.musicInfo.id) return
-    preloadMusicInfo.preProgress = time
-  }
-
-  const handleSetPlayInfo = () => {
-    resetPreloadInfo()
-  }
-
   const handleConfigUpdated: typeof global.state_event.configUpdated = (keys, settings) => {
     if (!keys.includes('player.togglePlayMethod')) return
-    if (!preloadMusicInfo.info || preloadMusicInfo.info.isTempPlay) return
+    // 播放模式变化后「下一首」会变，丢弃旧的随机下一首缓存并重新预取
     resetRandomNextMusicInfo()
-    preloadMusicInfo.info = null
-    preloadMusicInfo.preProgress = playerState.progress.nowPlayTime
+    prewarmNextMusicUrl()
   }
 
   const handlePlayProgressChanged: typeof global.state_event.playProgressChanged = (progress) => {
     const duration = progress.maxPlayTime
-    if (duration > 10 && duration - progress.nowPlayTime < 10 && !preloadMusicInfo.info) {
-      void preloadNextMusicUrl(progress.nowPlayTime)
-    }
+    // 剩余不足 10s 时触发临播预取；不会产生重复网络请求（见 prewarmNextMusicUrl 内部去重）
+    if (duration > 10 && duration - progress.nowPlayTime < 10) prewarmNextMusicUrl()
   }
 
-  global.app_event.on('setProgress', setProgress)
-  global.app_event.on('musicToggled', handleSetPlayInfo)
   global.state_event.on('configUpdated', handleConfigUpdated)
   global.state_event.on('playProgressChanged', handlePlayProgressChanged)
 }

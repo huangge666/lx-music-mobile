@@ -32,6 +32,9 @@ import { addListMusics, removeListMusics } from '@/core/list'
 import { addDislikeInfo } from '@/core/dislikeList'
 import { getActiveApiSources, getUserApiHandlers, isUserApiReady } from '@/core/apiSource'
 import { toOldMusicInfo } from '@/utils'
+import { getMusicUrl as getStoreMusicUrl } from '@/utils/data'
+import { checkUrl } from '@/utils/request'
+import { isCached } from '@/plugins/player/utils'
 
 // import { checkMusicFileAvailable } from '@renderer/utils/music'
 
@@ -625,44 +628,101 @@ export const getNextPlayMusicInfo = async(): Promise<LX.Player.PlayMusicInfo | n
   return nextPlayMusicInfo
 }
 
-// 预取结果的内存缓存。用 handleGetOnlineMusicUrl 取链（不会写入本地持久缓存），
-// 存为「URL + 过期时间」，避免提前落库导致后续（跨歌曲/跨会话）命中已失效的 URL。
+// ============ 统一的下一首预取（合并自旧 preloadNextMusic 临播预取路径） ============
+// 预取结果的内存缓存。优先复用持久缓存（经可用性校验），缓存缺失/失效时才用
+// handleGetOnlineMusicUrl 强制刷新；刷新结果只进内存不落库，
+// 避免提前落库导致后续（跨歌曲/跨会话）命中已失效的 URL。
 const PREWARM_MUSIC_URL_TTL = 10 * 60 * 1000 // 10 分钟，超长歌曲会回退到正常取链
 const PREWARM_REQUEST_TIMEOUT = 15_000
+// 同一首「下一首」两次预取尝试的最小间隔：临播触发器在歌曲结尾每个进度事件都会调用，失败后需退避
+const PREWARM_RETRY_INTERVAL = 10_000
+// 触发层节流间隔：同一首当前曲短时间内最多触发一次完整预取流程，
+// 避免进度事件反复执行 getNextPlayMusicInfo（大列表过滤有开销）
+const PREWARM_TRIGGER_INTERVAL = 2_000
 interface PrewarmMusicUrlCache {
   url: string
   expireAt: number
   quality: LX.Quality | null
 }
 const prewarmMusicUrlMap = new Map<string, PrewarmMusicUrlCache>()
+/** 每个预取 key 的最近一次尝试时间，用于失败后的退避重试 */
+const prewarmAttemptAtMap = new Map<string, number>()
+/** 触发层节流状态：上次触发时针对的当前曲 id 与时间 */
+let prewarmLastTriggerForId: string | null = null
+let prewarmLastTriggerAt = 0
 
 let prewarmSeq = 0
-const prewarmNextMusicUrl = () => {
+
+/**
+ * 校验已缓存的 URL 是否仍可用：已被播放器本地缓存，或 HEAD 请求通过
+ */
+const isPrewarmUrlUsable = async(url: string): Promise<boolean> => {
+  const [cached, available] = await Promise.all([
+    isCached(url).catch(() => false),
+    checkUrl(url).then(() => true).catch(() => false),
+  ])
+  return cached || available
+}
+
+/**
+ * 统一的下一首预取入口（当前曲开播成功、歌曲临近结束时都会调用）。
+ * 流程：
+ * 1. 计算下一首（随机模式复用 randomNextMusicInfo 缓存）；
+ * 2. 优先复用持久缓存中的 URL，经 isCached / HEAD 校验可用则直接进内存预热表；
+ * 3. 缓存缺失或已失效时才 isRefresh 强制刷新，结果只进内存预热表。
+ * 旧的 preloadNextMusic 路径（临播再走一遍 getMusicUrl + checkUrl + 失败重刷）已并入此处，
+ * 一首歌播完时下一首 URL 最多只会拉一次。
+ */
+export const prewarmNextMusicUrl = () => {
   if (pausedByUser || global.lx.isPlayedStop) return
   const playMusicInfo = playerState.playMusicInfo
   if (!playMusicInfo.musicInfo) return
-  // 切歌后允许立刻预取新的下一首；过期序号的结果直接丢弃
-  const seq = ++prewarmSeq
+  // 切歌后允许立刻预取新的下一首；同一首歌在节流间隔内不重复触发
   const startedForId = playMusicInfo.musicInfo.id
-  const now = Date.now()
+  const triggerNow = Date.now()
+  if (startedForId === prewarmLastTriggerForId && triggerNow - prewarmLastTriggerAt < PREWARM_TRIGGER_INTERVAL) return
+  prewarmLastTriggerForId = startedForId
+  prewarmLastTriggerAt = triggerNow
+  // 过期序号的结果直接丢弃
+  const seq = ++prewarmSeq
   // 预取前顺手清理过期条目，避免用户频繁切歌后缓存表持续增长。
   for (const [key, caching] of prewarmMusicUrlMap) {
-    if (now >= caching.expireAt) prewarmMusicUrlMap.delete(key)
+    if (triggerNow >= caching.expireAt) prewarmMusicUrlMap.delete(key)
+  }
+  for (const [key, at] of prewarmAttemptAtMap) {
+    if (triggerNow - at >= PREWARM_MUSIC_URL_TTL) prewarmAttemptAtMap.delete(key)
   }
   void getNextPlayMusicInfo().then(async(next) => {
     if (seq !== prewarmSeq || playerState.playMusicInfo.musicInfo?.id !== startedForId) return
     if (!next?.musicInfo || next.musicInfo.id === startedForId) return
     // 本地/下载歌曲的 URL 是本地路径，无需网络预取
     if ('progress' in next.musicInfo || next.musicInfo.source === 'local') return
-    const key = createGettingUrlId(next.musicInfo)
-    const caching = prewarmMusicUrlMap.get(key)
+    const nextMusicInfo = next.musicInfo
+    const key = createGettingUrlId(nextMusicInfo)
     // 已存在且未过期则复用，避免重复请求
+    const caching = prewarmMusicUrlMap.get(key)
     if (caching && Date.now() < caching.expireAt) return
+    // 失败退避：临播触发器会反复调用，同一 key 的重试间隔至少 PREWARM_RETRY_INTERVAL
+    const lastAttemptAt = prewarmAttemptAtMap.get(key)
+    if (lastAttemptAt != null && Date.now() - lastAttemptAt < PREWARM_RETRY_INTERVAL) return
+    prewarmAttemptAtMap.set(key, Date.now())
     try {
+      // 1) 优先复用持久缓存：正常取链会写盘，这里校验仍可用就直接进内存预热表，省一次网络请求
+      const targetQuality = getPlayQuality(settingState.setting['player.playQuality'], nextMusicInfo)
+      const cachedUrl = await getStoreMusicUrl(nextMusicInfo, targetQuality).catch(() => '')
+      if (cachedUrl && await isPrewarmUrlUsable(cachedUrl)) {
+        if (seq !== prewarmSeq || playerState.playMusicInfo.musicInfo?.id !== startedForId) return
+        prewarmMusicUrlMap.set(key, {
+          url: cachedUrl,
+          expireAt: Date.now() + PREWARM_MUSIC_URL_TTL,
+          quality: targetQuality,
+        })
+        return
+      }
+      // 2) 持久缓存缺失/失效 → 强制刷新取新链（绕过持久缓存，避免把旧 URL 当成新预取结果）
       const request = handleGetOnlineMusicUrl({
-        musicInfo: next.musicInfo,
+        musicInfo: nextMusicInfo,
         onToggleSource: () => {},
-        // 预取必须绕过持久缓存，避免把旧 URL 当成新预取结果。
         isRefresh: true,
         allowToggleSource: true,
       })
@@ -685,7 +745,7 @@ const prewarmNextMusicUrl = () => {
         quality: result.quality,
       })
     } catch (e) {
-      // 预取失败不打扰当前播放，静默忽略
+      // 预取失败不打扰当前播放，静默忽略（临播触发器会按退避间隔重试）
       console.log('prewarm next music url fail', e)
     }
   }).catch(() => {})
