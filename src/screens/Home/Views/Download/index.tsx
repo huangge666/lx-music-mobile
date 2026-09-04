@@ -8,7 +8,7 @@ import { Icon } from '@/components/common/Icon'
 import { useNavActiveId } from '@/store/common/hook'
 import { BorderWidths, BorderRadius } from '@/theme'
 import { sizeFormate } from '@/utils'
-import { getDownloadTasks, removeDownloadTask, type DownloadTaskItem } from '@/core/music/downloader'
+import { getDownloadTasks, removeDownloadTask, retryDownloadTask, type DownloadTaskItem } from '@/core/music/downloader'
 import { handleFileMusicAction } from '@/core/init/deeplink/fileAction'
 import { useI18n } from '@/lang'
 import ConfirmAlert, { type ConfirmAlertType } from '@/components/common/ConfirmAlert'
@@ -69,10 +69,12 @@ const DownloadRow = memo(({
   item,
   onPlay,
   onRemove,
+  onRetry,
 }: {
   item: DownloadListItem
   onPlay: (item: DownloadListItem) => Promise<void>
   onRemove: (item: DownloadListItem) => void
+  onRetry: (item: DownloadListItem) => void
 }) => {
   const theme = useTheme()
   const t = useI18n()
@@ -83,6 +85,7 @@ const DownloadRow = memo(({
   }, [item.downloaded, item.size, item.total])
   const isRunning = item.status === 'run' || item.status === 'waiting'
   const isCompleted = item.status === 'completed'
+  const isError = item.status === 'error'
   const subtitle = [item.quality, item.statusText || item.status, sizeText].filter(Boolean).join(' · ')
 
   return (
@@ -101,6 +104,7 @@ const DownloadRow = memo(({
       </View>
       <View style={styles.rowActions}>
         {isCompleted ? <IconAction name="play-outline" accessibilityLabel={t('play')} onPress={() => { void onPlay(item) }} /> : null}
+        {isError ? <IconAction name="retry" accessibilityLabel={t('download_retry')} onPress={() => { onRetry(item) }} /> : null}
         {item.path
           ? <IconAction
               name="remove"
@@ -215,10 +219,22 @@ export default () => {
     }
   }, [navActiveId, refresh])
 
+  // 上次事件时已完成任务数：用于判断是否需要重扫下载目录（目录内容只在有任务完成时才会变化）
+  const prevCompletedCountRef = useRef(-1)
+
   useEffect(() => {
     const handleDownloadListUpdate = () => {
       if (navActiveId == 'nav_download') {
-        refresh(false).catch(() => {})
+        const taskList = getDownloadTasks()
+        const completedCount = taskList.filter(item => item.status === 'completed').length
+        if (completedCount !== prevCompletedCountRef.current) {
+          // 有新完成的任务（或首次事件）：完整刷新（任务 + 目录扫描）
+          prevCompletedCountRef.current = completedCount
+          refresh(false).catch(() => {})
+        } else {
+          // 纯进度/状态更新：只刷内存中的任务状态，避免每次进度回调都全目录扫描
+          setTasks(taskList)
+        }
       }
     }
     global.app_event.on('downloadListUpdate', handleDownloadListUpdate)
@@ -289,6 +305,12 @@ export default () => {
     removeConfirmRef.current?.show(item)
   }
 
+  const handleRetry = (item: DownloadListItem) => {
+    if (!item.taskId) return
+    // 失败结果会写回任务状态并再次通知刷新，这里无需处理 Promise 结果
+    void retryDownloadTask(item.taskId).catch(() => {})
+  }
+
   const handleRemoveConfirm = (item: DownloadListItem, removeFile: boolean) => {
     void (async() => {
       if (item.taskId) {
@@ -326,6 +348,7 @@ export default () => {
                     item={item}
                     onPlay={handlePlay}
                     onRemove={handleRemove}
+                    onRetry={handleRetry}
                   />
                 )}
               />

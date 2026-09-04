@@ -39,6 +39,7 @@ import Play from 'lucide-react-native/dist/cjs/icons/play'
 import RefreshCw from 'lucide-react-native/dist/cjs/icons/refresh-cw'
 import Repeat from 'lucide-react-native/dist/cjs/icons/repeat'
 import Repeat1 from 'lucide-react-native/dist/cjs/icons/repeat-1'
+import RotateCcw from 'lucide-react-native/dist/cjs/icons/rotate-ccw'
 import Search from 'lucide-react-native/dist/cjs/icons/search'
 import Settings from 'lucide-react-native/dist/cjs/icons/settings'
 import Share2 from 'lucide-react-native/dist/cjs/icons/share-2'
@@ -128,6 +129,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
 // 语义化新增：删除类操作（调用点逐步迁移）
 const EXTRA_ICONS: Record<string, LucideIcon> = {
   'delete': Trash2,
+  'retry': RotateCcw,
 }
 
 type IconName = keyof typeof ICON_MAP

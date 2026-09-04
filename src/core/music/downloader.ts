@@ -50,6 +50,16 @@ interface DownloadTaskState extends DownloadTaskItem {
 const downloadingTasks = new Map<string, Promise<string>>()
 const downloadTaskStates = new Map<string, DownloadTaskState>()
 
+/** 同时进行的下载任务上限：多选/连点下载时排队执行，避免同时起一堆 downloadFile 抢占带宽与 IO */
+const MAX_CONCURRENT_DOWNLOADS = 2
+/** 等待执行的下载队列（FIFO）。resolve/reject 用于维持 downloadMusicToLocal 的 Promise 契约 */
+const downloadQueue: Array<{
+  musicInfo: LX.Music.MusicInfoOnline
+  resolve: (path: string) => void
+  reject: (err: any) => void
+}> = []
+let activeDownloadCount = 0
+
 const getDownloadTaskKey = (musicInfo: LX.Music.MusicInfoOnline) => `${musicInfo.source}:${musicInfo.id}`
 const notifyDownloadListUpdate = () => {
   global.app_event.downloadListUpdate()
@@ -72,11 +82,16 @@ const createTaskState = (musicInfo: LX.Music.MusicInfoOnline): DownloadTaskState
   jobId: null,
 })
 
-const updateTaskState = (taskId: string, state: Partial<DownloadTaskState>) => {
+/**
+ * 更新任务状态
+ * @param notify 是否通知 UI 刷新（downloadListUpdate 会触发下载页重扫）。
+ *               高频进度回调传 false 做静默更新，由调用方按节流策略统一通知。
+ */
+const updateTaskState = (taskId: string, state: Partial<DownloadTaskState>, notify = true) => {
   const prev = downloadTaskStates.get(taskId)
   if (!prev) return
   downloadTaskStates.set(taskId, { ...prev, ...state })
-  notifyDownloadListUpdate()
+  if (notify) notifyDownloadListUpdate()
 }
 
 export const getDownloadTasks = (): DownloadTaskItem[] => {
@@ -97,6 +112,8 @@ export const removeDownloadTask = async(taskId: string, removeFile = false) => {
   if (removeFile && task.filePath) {
     await removeMusicDownloadTarget(task.filePath).catch(() => {})
   }
+  // 移除排队中的任务时立即调度，让对应的等待 Promise 尽快以「已取消」结束
+  pumpDownloadQueue()
   notifyDownloadListUpdate()
 }
 
@@ -251,6 +268,10 @@ const runDownloadMusicToLocal = async(musicInfo: LX.Music.MusicInfoOnline) => {
 
   let lastProgressTime = Date.now()
   let lastWritten = 0
+  // 进度通知节流：UI 刷新（downloadListUpdate）至少间隔 1s，或进度增量 >= 2% 才通知，
+  // 状态本身每次都更新（notify=false 静默），保证节流窗口结束后首个事件能刷出最新进度
+  let lastNotifyTime = Date.now()
+  let lastNotifyProgress = 0
 
   const result = await downloadFile(url, savePath, {
     background: true,
@@ -271,14 +292,20 @@ const runDownloadMusicToLocal = async(musicInfo: LX.Music.MusicInfoOnline) => {
       lastProgressTime = now
       lastWritten = bytesWritten
       const speed = byteDiff > 0 ? `${sizeFormate(byteDiff * 1000 / timeDiff)}/s` : ''
+      const progress = contentLength > 0 ? bytesWritten / contentLength : 0
       updateTaskState(taskId, {
         status: 'run',
         downloaded: bytesWritten,
         total: contentLength,
-        progress: contentLength > 0 ? bytesWritten / contentLength : 0,
+        progress,
         speed,
-        statusText: speed ? `下载中 ${speed}` : '下载中',
-      })
+        statusText: speed ? global.i18n.t('download_running_with_speed', { speed }) : global.i18n.t('download_running'),
+      }, false)
+      if (now - lastNotifyTime >= 1000 || progress - lastNotifyProgress >= 0.02) {
+        lastNotifyTime = now
+        lastNotifyProgress = progress
+        notifyDownloadListUpdate()
+      }
     },
   }).promise
   if (result.statusCode < 200 || result.statusCode >= 300) {
@@ -305,7 +332,36 @@ const runDownloadMusicToLocal = async(musicInfo: LX.Music.MusicInfoOnline) => {
   return savePath
 }
 
-export const downloadMusicToLocal = async(musicInfo: LX.Music.MusicInfoOnline) => {
+/**
+ * 下载队列调度：从队头取任务执行，保持同时进行的下载数不超过 MAX_CONCURRENT_DOWNLOADS。
+ * 排队期间被移除的任务（downloadTaskStates 里已无对应状态）直接取消，不发起下载。
+ */
+const pumpDownloadQueue = () => {
+  while (activeDownloadCount < MAX_CONCURRENT_DOWNLOADS && downloadQueue.length) {
+    const { musicInfo, resolve, reject } = downloadQueue.shift()!
+    const taskKey = getDownloadTaskKey(musicInfo)
+    if (!downloadTaskStates.has(taskKey)) {
+      reject(new Error(global.i18n.t('download_cancelled')))
+      continue
+    }
+    activeDownloadCount++
+    void runDownloadMusicToLocal(musicInfo).then(resolve, (err: any) => {
+      updateTaskState(taskKey, {
+        status: 'error',
+        statusText: err?.message || global.i18n.t('download_failed'),
+        errorMessage: err?.message || global.i18n.t('download_failed'),
+        speed: '',
+        jobId: null,
+      })
+      reject(err)
+    }).finally(() => {
+      activeDownloadCount--
+      pumpDownloadQueue()
+    })
+  }
+}
+
+export const downloadMusicToLocal = async(musicInfo: LX.Music.MusicInfoOnline): Promise<string> => {
   const taskKey = getDownloadTaskKey(musicInfo)
   const downloadingTask = downloadingTasks.get(taskKey)
   if (downloadingTask) return downloadingTask
@@ -314,20 +370,25 @@ export const downloadMusicToLocal = async(musicInfo: LX.Music.MusicInfoOnline) =
   notifyDownloadListUpdate()
   toast(global.i18n.t('download_start', { name: musicInfo.name }))
 
-  const task = runDownloadMusicToLocal(musicInfo)
-    .catch((err: any) => {
-      updateTaskState(taskKey, {
-        status: 'error',
-        statusText: err?.message || global.i18n.t('download_failed'),
-        errorMessage: err?.message || global.i18n.t('download_failed'),
-        speed: '',
-        jobId: null,
-      })
-      throw err
-    })
-    .finally(() => {
-      downloadingTasks.delete(taskKey)
-    })
+  // 入队（并发上限内立即执行）。对外契约不变：完成时 resolve 保存路径，失败时 reject
+  const task = new Promise<string>((resolve, reject) => {
+    downloadQueue.push({ musicInfo, resolve, reject })
+    pumpDownloadQueue()
+  }).finally(() => {
+    downloadingTasks.delete(taskKey)
+  })
   downloadingTasks.set(taskKey, task)
   return task
+}
+
+/**
+ * 重试失败的下载任务：重置任务状态并重新入队
+ */
+export const retryDownloadTask = async(taskId: string): Promise<string> => {
+  const task = downloadTaskStates.get(taskId)
+  // 仅失败任务可重试；进行中/排队/已完成的任务不做处理
+  if (!task || task.status !== 'error' || downloadingTasks.has(taskId)) {
+    return Promise.reject(new Error(global.i18n.t('download_failed')))
+  }
+  return downloadMusicToLocal(task.musicInfo)
 }
