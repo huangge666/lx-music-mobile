@@ -28,7 +28,8 @@ export default async(setting: LX.AppSetting) => {
     // global.app_event.stop()
     void playNextIfAuto().then((toggled) => {
       if (!toggled) return
-      global.app_event.setProgress(0)
+      // 进度已在 handlePlay 里同步清零。这里再 setProgress(0) 会把新歌 seek 到 0，
+      // 锁屏后台时该回调可能晚到，打断已经开始的加载。
       setStatusText(global.i18n.t('player__end'))
     })
     // })

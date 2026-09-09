@@ -8,6 +8,22 @@ import playerState from '@/store/player/state'
 
 const list: LX.Player.Track[] = []
 
+// 锁屏后台时 RN bridge 偶发不返回。单次原生调用必须有上限，否则 playPromise 堵死后续切歌。
+const NATIVE_CALL_TIMEOUT = 5000
+const withNativeTimeout = async <T>(promise: Promise<T>): Promise<T | undefined> => {
+  let timer: number | null = null
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<undefined>((resolve) => {
+        timer = BackgroundTimer.setTimeout(() => resolve(undefined), NATIVE_CALL_TIMEOUT)
+      }),
+    ])
+  } finally {
+    if (timer != null) BackgroundTimer.clearTimeout(timer)
+  }
+}
+
 const defaultUserAgent = 'Mozilla/5.0 (Linux; Android 10; Pixel 3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.79 Mobile Safari/537.36'
 const httpRxp = /^(https?:\/\/.+|\/.+)/
 
@@ -151,32 +167,26 @@ const handlePlayMusic = async(musicInfo: LX.Player.PlayMusic, url: string, time:
 // console.log(tracks, time)
   const tracks = buildTracks(musicInfo, url)
   const track = tracks[0]
-  // await updateMusicInfo(track)
-  const currentTrackIndex = await TrackPlayer.getCurrentTrack()
-  await TrackPlayer.add(tracks).then(() => list.push(...tracks))
-  const queue = await TrackPlayer.getQueue() as LX.Player.Track[]
-  await TrackPlayer.skip(queue.findIndex(t => t.id == track.id))
+  // 先改 trackId，避免 skip 过程中 PlaybackState 仍按占位轨把 Connecting/Playing 丢掉
+  global.lx.playerTrackId = track.id
+  const currentTrackIndex = await withNativeTimeout(TrackPlayer.getCurrentTrack())
+  await withNativeTimeout(TrackPlayer.add(tracks).then(() => {
+    list.push(...tracks)
+  }))
+  const queue = ((await withNativeTimeout(TrackPlayer.getQueue())) ?? []) as LX.Player.Track[]
+  const skipIndex = queue.findIndex(t => t.id == track.id)
+  if (skipIndex >= 0) await withNativeTimeout(TrackPlayer.skip(skipIndex))
 
-  if (currentTrackIndex == null) {
-    if (!isTempTrack(track.id as string)) {
-      if (time) await TrackPlayer.seekTo(time)
-      if (global.lx.restorePlayInfo) {
-        await TrackPlayer.pause()
-        // let startupAutoPlay = settingState.setting['player.startupAutoPlay']
-        global.lx.restorePlayInfo = null
-
-      // TODO startupAutoPlay
-      // if (startupAutoPlay) store.dispatch(playerAction.playMusic())
-      } else {
-        await TrackPlayer.play()
-      }
+  if (!isTempTrack(track.id as string)) {
+    if (time) void TrackPlayer.seekTo(time)
+    if (global.lx.restorePlayInfo && currentTrackIndex == null) {
+      void TrackPlayer.pause()
+      global.lx.restorePlayInfo = null
+    } else {
+      // waitForBuffer 时 play() 可能一直不 resolve，不能 await 堵住后续切歌
+      void TrackPlayer.play()
     }
-  } else {
-    await TrackPlayer.pause()
-    if (!isTempTrack(track.id as string)) {
-      await TrackPlayer.seekTo(time)
-      await TrackPlayer.play()
-    }
+    global.app_event.playerLoadstart()
   }
 
   if (queue.length > 2) {

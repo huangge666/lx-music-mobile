@@ -6,7 +6,7 @@ import { isTempId, isEmpty } from './utils'
 // import { play as lrcPlay, pause as lrcPause } from '@/core/lyric'
 import { exitApp } from '@/core/common'
 import { getCurrentTrackId } from './playList'
-import { pause, play, playNext, playPrev } from '@/core/player/player'
+import { pause, play, playNext, playNextIfAuto, playPrev } from '@/core/player/player'
 
 let isInitialized = false
 
@@ -110,10 +110,11 @@ const registerPlaybackService = async() => {
     // console.log('currentIsPlaying', currentIsPlaying, global.lx.playInfo.isPlaying)
     // void updateMetaData(global.lx.store_playMusicInfo.musicInfo, currentIsPlaying)
   })
-  const handleAutoEnd = async() => {
+  const handleAutoEnd = () => {
     if (global.lx.isPlayedStop) return handleExitApp('Timeout Exit')
-    if (global.lx.gettingUrlId) return
-    await TrackPlayer.pause()
+    // 先切下一首。pause 在锁屏后台可能不返回，不能挡在切歌前面。
+    if (!global.lx.gettingUrlId) void playNextIfAuto()
+    void TrackPlayer.pause().catch(() => {})
     global.app_event.playerPause()
     global.app_event.pause()
     global.app_event.playerEnded()

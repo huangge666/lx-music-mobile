@@ -1,4 +1,4 @@
-import { playNext, setMusicUrl } from '@/core/player/player'
+import { isPausedByUser, markPlaybackStarted, playNext, setMusicUrl } from '@/core/player/player'
 import { setStatusText } from '@/core/player/playStatus'
 import { getPosition, isEmpty, setStop } from '@/plugins/player'
 import { isActive } from '@/utils/tools'
@@ -59,7 +59,9 @@ export default () => {
 
   const handleLoadstart = () => {
     console.log('handleLoadstart', playerState.isPlay)
-    if (global.lx.isPlayedStop || !playerState.isPlay) return
+    // 自动切歌会先 pause，isPlay 为 false；锁屏时 Ready 也会再发一次 pause。
+    // 用用户是否主动暂停判断，否则加载超时永远不启动，卡在 buffering。
+    if (global.lx.isPlayedStop || isPausedByUser()) return
     startLoadingTimeout()
     setStatusText(global.i18n.t('player__loading'))
   }
@@ -73,6 +75,7 @@ export default () => {
   // }
 
   const handlePlaying = () => {
+    markPlaybackStarted()
     setStatusText('')
     clearLoadingTimeout()
   }
@@ -84,6 +87,8 @@ export default () => {
 
   const handleWating = () => {
     setStatusText(global.i18n.t('player__buffering'))
+    if (global.lx.isPlayedStop || isPausedByUser()) return
+    startLoadingTimeout()
   }
 
   const handleError = () => {

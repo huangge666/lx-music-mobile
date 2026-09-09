@@ -26,6 +26,7 @@ import { getRandom } from '@/utils/common'
 import { filterList } from './utils'
 import { jumpShuffleQueue, pickShuffledNextIndex } from './shuffleQueue'
 import BackgroundTimer from 'react-native-background-timer'
+import { setMaxplayTime, setNowPlayTime } from '@/core/player/progress'
 import { checkIgnoringBatteryOptimization, checkNotificationPermission, debounceBackgroundTimer } from '@/utils/tools'
 import { LIST_IDS } from '@/config/constant'
 import { addListMusics, removeListMusics } from '@/core/list'
@@ -276,7 +277,8 @@ export const setMusicUrl = (
       if (Date.now() < prewarmed.expireAt && qualityMatched) {
         setMusicInfo({ quality: prewarmed.quality ?? desiredQuality })
         setResource(musicInfo, prewarmed.url, playerState.progress.nowPlayTime)
-        waitingPlay = false
+        // URL 已交给播放器，超时改守「真正开播」；Playing 时由 markPlaybackStarted 清掉
+        addLoadTimeout()
         callbacks?.onSuccess?.()
         global.lx.gettingUrlId = ''
         prewarmNextMusicUrl()
@@ -287,18 +289,21 @@ export const setMusicUrl = (
 
   void getMusicPlayUrl(musicInfo, isRefresh, false, callbacks?.quality).then((url) => {
     if (!url) {
+      clearLoadTimeout()
       callbacks?.onError?.(new Error('aborted'))
       return
     }
     setMusicInfo({ quality: getCurrentMusicQuality(musicInfo, callbacks?.quality) })
     setResource(musicInfo, url, playerState.progress.nowPlayTime)
-    waitingPlay = false
+    // 取链成功后不能清超时：锁屏后台 play() 可能卡住，需要靠超时刷新/切歌
+    addLoadTimeout()
     callbacks?.onSuccess?.()
     // 当前曲成功开始播放后，预取下一首在线歌曲 URL。
     // 音质切换成功后也要重预取，避免下一首仍命中旧音质缓存。
     prewarmNextMusicUrl()
   }).catch((err: any) => {
     console.log(err)
+    clearLoadTimeout()
     if (err?.message == 'no api source') {
       // 未启用音源时每首歌都会失败，不能自动切歌把整个列表扫一遍
       setStatusText(global.i18n.t('player__no_api_source'))
@@ -314,7 +319,6 @@ export const setMusicUrl = (
   }).finally(() => {
     if (musicInfo === playerState.playMusicInfo.musicInfo) {
       global.lx.gettingUrlId = ''
-      clearLoadTimeout()
     }
   })
 }
@@ -425,6 +429,11 @@ const handlePlay = async() => {
     return
   }
 
+  // 切歌时同步清掉上一首进度。不能依赖 ended 之后异步 setProgress(0)：
+  // 锁屏后台该回调会晚于 debouncePlay，新歌会被 seek 到上一首结尾附近然后卡住加载。
+  setNowPlayTime(0)
+  setMaxplayTime(0)
+
   // 不要 await setStop()：后台 RN bridge 可能卡住，导致下一首取链一直不开始。
   // stop 还会触发 queue-ended，和自动切歌叠在一起容易连跳。暂停即可，新资源加载后会替换队列。
   void setPause()
@@ -432,7 +441,8 @@ const handlePlay = async() => {
 
   clearDelayNextTimeout()
   clearLoadTimeout()
-
+  // 从切歌开始守到真正 Playing，避免 Connecting 事件被丢掉后永远没有加载超时
+  addLoadTimeout()
 
   if (settingState.setting['player.togglePlayMethod'] == 'random' && !playMusicInfo.isTempPlay) addPlayedList(playMusicInfo as LX.Player.PlayMusicInfo)
 
@@ -996,6 +1006,13 @@ export const playNextIfAuto = async() => {
   return true
 }
 
+export const isPausedByUser = () => pausedByUser
+
+export const markPlaybackStarted = () => {
+  waitingPlay = false
+  clearLoadTimeout()
+}
+
 /**
  * 应用回到前台时，把后台被挂起的自动切歌/取链补上。
  */
@@ -1003,7 +1020,9 @@ export const recoverPlaybackIfNeeded = () => {
   if (pausedByUser || global.lx.isPlayedStop || !waitingPlay) return
   const musicInfo = playerState.playMusicInfo.musicInfo
   if (!musicInfo || global.lx.gettingUrlId) return
-  setMusicUrl(musicInfo)
+  // 资源还没交给播放器则重新取链；已经在新轨上则补一次 play，避免只卡在 waitForBuffer。
+  if (isEmpty()) setMusicUrl(musicInfo)
+  else void setPlay()
 }
 
 /**

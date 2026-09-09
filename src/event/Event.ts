@@ -1,5 +1,6 @@
 // import mitt from 'mitt'
 // import type { Emitter } from 'mitt'
+import BackgroundTimer from 'react-native-background-timer'
 
 export default class Event {
   listeners: Map<string, Array<(...args: any[]) => any>>
@@ -22,14 +23,16 @@ export default class Event {
   }
 
   emit(eventName: string, ...args: any[]) {
-    setImmediate(() => {
+    // 锁屏/后台时 RN 的 setImmediate 会被冻结，playerEnded、loadstart 等发不出去，
+    // 表现为播完下一首一直停在加载。BackgroundTimer 走原生 Handler，前台播放服务存活期间仍能触发。
+    BackgroundTimer.setTimeout(() => {
       let targetListeners = this.listeners.get(eventName)
       if (!targetListeners) return
       for (const listener of targetListeners) {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         listener(...args)
       }
-    })
+    }, 0)
   }
 
   offAll(eventName: string) {
