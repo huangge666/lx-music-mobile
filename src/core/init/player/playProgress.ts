@@ -9,6 +9,7 @@ import playerState from '@/store/player/state'
 import settingState from '@/store/setting/state'
 import { onScreenStateChange } from '@/utils/nativeModules/utils'
 import { AppState } from 'react-native'
+import { prewarmNextMusicUrl } from '@/core/player/player'
 
 const delaySavePlayInfo = throttleBackgroundTimer(() => {
   void savePlayInfo({
@@ -29,9 +30,14 @@ export default () => {
   const getCurrentTime = () => {
     let id = playerState.musicInfo.id
     void getPosition().then(position => {
-      if (!position || id != playerState.musicInfo.id) return
+      // position === 0 是合法起点，不能当成无效进度丢掉
+      if (position == null || id != playerState.musicInfo.id) return
       setNowPlayTime(position)
       if (!playerState.isPlay) return
+
+      const duration = playerState.progress.maxPlayTime
+      // 息屏后 UI 进度定时器会停，锁屏后台仍靠这条路径触发临播预取
+      if (duration > 10 && duration - position < 10) prewarmNextMusicUrl()
 
       if (settingState.setting['player.isSavePlayTime'] && !playerState.playMusicInfo.isTempPlay && isScreenOn) {
         delaySavePlayInfo()
@@ -62,11 +68,14 @@ export default () => {
     updateTimeout = null
   }
   const startUpdateTimeout = () => {
-    if (!isScreenOn) return
     clearUpdateTimeout()
+    // 锁屏也要跑：后台切歌依赖临播预取，停掉进度轮询后下一首 URL 经常还没准备好
+    const interval = isScreenOn
+      ? 1000 / settingState.setting['player.playbackRate']
+      : 3000
     updateTimeout = BackgroundTimer.setInterval(() => {
       getCurrentTime()
-    }, 1000 / settingState.setting['player.playbackRate'])
+    }, interval)
     getCurrentTime()
   }
 
@@ -154,9 +163,7 @@ export default () => {
 
   const handleScreenStateChanged: Parameters<typeof onScreenStateChange>[0] = (state) => {
     isScreenOn = state == 'ON'
-    if (isScreenOn) {
-      if (playerState.isPlay) startUpdateTimeout()
-    } else clearUpdateTimeout()
+    if (playerState.isPlay) startUpdateTimeout()
   }
 
   // 修复在某些设备上屏幕状态改变事件未触发导致的进度条未更新的问题

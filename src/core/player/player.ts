@@ -27,7 +27,7 @@ import { filterList } from './utils'
 import { jumpShuffleQueue, pickShuffledNextIndex } from './shuffleQueue'
 import BackgroundTimer from 'react-native-background-timer'
 import { setMaxplayTime, setNowPlayTime } from '@/core/player/progress'
-import { checkIgnoringBatteryOptimization, checkNotificationPermission, debounceBackgroundTimer } from '@/utils/tools'
+import { checkIgnoringBatteryOptimization, checkNotificationPermission } from '@/utils/tools'
 import { LIST_IDS } from '@/config/constant'
 import { addListMusics, removeListMusics } from '@/core/list'
 import { addDislikeInfo } from '@/core/dislikeList'
@@ -98,7 +98,9 @@ const isMusicUrlRequestInvalid = (musicInfo: LX.Music.MusicInfo | LX.Download.Li
   if (global.lx.isPlayedStop) return true
   if (createGettingUrlId(musicInfo) != global.lx.gettingUrlId) return true
   if (musicInfo.id != playerState.playMusicInfo.musicInfo?.id) return true
-  return isRefresh ? false : playerState.isPlay
+  // 自动切歌会先 pause 再取链，但 pause 事件异步到达时 isPlay 可能还是 true，
+  // 不能据此丢掉这次请求。waitingPlay 表示当前就是这次切歌在取链。
+  return isRefresh || waitingPlay ? false : playerState.isPlay
 }
 
 const getCurrentMusicQuality = (musicInfo: LX.Music.MusicInfo | LX.Download.ListItem, quality?: LX.Quality): LX.Quality | null => {
@@ -366,7 +368,9 @@ const handleRestorePlay = async(restorePlayInfo: LX.Player.SavedPlayInfo) => {
 }
 
 
-const debouncePlay = debounceBackgroundTimer((musicInfo: LX.Player.PlayMusic) => {
+// 切歌后立刻取链。不能再用 debounce：锁屏后台 200ms 定时器偶发不触发，
+// 表现为下一首不加载，点进 App 才开始。封面/歌词仍异步，不挡播放。
+const startPlay = (musicInfo: LX.Player.PlayMusic) => {
   setMusicUrl(musicInfo)
 
   void getPicPath({ musicInfo, listId: playerState.playMusicInfo.listId }).then((url: string) => {
@@ -393,7 +397,7 @@ const debouncePlay = debounceBackgroundTimer((musicInfo: LX.Player.PlayMusic) =>
     if (musicInfo.id != playerState.playMusicInfo.musicInfo?.id) return
     setStatusText(global.i18n.t('lyric__load_error'))
   })
-}, 200)
+}
 
 // 处理音乐播放
 const handlePlay = async() => {
@@ -430,14 +434,9 @@ const handlePlay = async() => {
   }
 
   // 切歌时同步清掉上一首进度。不能依赖 ended 之后异步 setProgress(0)：
-  // 锁屏后台该回调会晚于 debouncePlay，新歌会被 seek 到上一首结尾附近然后卡住加载。
+  // 锁屏后台该回调可能晚于取链，新歌会被 seek 到上一首结尾附近然后卡住加载。
   setNowPlayTime(0)
   setMaxplayTime(0)
-
-  // 不要 await setStop()：后台 RN bridge 可能卡住，导致下一首取链一直不开始。
-  // stop 还会触发 queue-ended，和自动切歌叠在一起容易连跳。暂停即可，新资源加载后会替换队列。
-  void setPause()
-  global.app_event.pause()
 
   clearDelayNextTimeout()
   clearLoadTimeout()
@@ -446,7 +445,11 @@ const handlePlay = async() => {
 
   if (settingState.setting['player.togglePlayMethod'] == 'random' && !playMusicInfo.isTempPlay) addPlayedList(playMusicInfo as LX.Player.PlayMusicInfo)
 
-  debouncePlay(musicInfo)
+  // 先取链，再 pause。pause 事件会把 isPlay 置 false，若先发事件，
+  // 后台里后续 URL 结果可能被 isMusicUrlRequestInvalid 丢掉。
+  startPlay(musicInfo)
+  void setPause()
+  global.app_event.pause()
 }
 
 /**
@@ -1017,11 +1020,14 @@ export const markPlaybackStarted = () => {
  * 应用回到前台时，把后台被挂起的自动切歌/取链补上。
  */
 export const recoverPlaybackIfNeeded = () => {
-  if (pausedByUser || global.lx.isPlayedStop || !waitingPlay) return
+  if (pausedByUser || global.lx.isPlayedStop) return
   const musicInfo = playerState.playMusicInfo.musicInfo
-  if (!musicInfo || global.lx.gettingUrlId) return
-  // 资源还没交给播放器则重新取链；已经在新轨上则补一次 play，避免只卡在 waitForBuffer。
-  if (isEmpty()) setMusicUrl(musicInfo)
+  if (!musicInfo) return
+  // waitingPlay：切歌后资源还没交给播放器
+  // gettingUrlId：后台取链被冻住，回前台补一次
+  // isEmpty：已经切到下一首信息，但播放器还停在占位轨
+  if (!waitingPlay && !global.lx.gettingUrlId && !isEmpty()) return
+  if (isEmpty() || waitingPlay) setMusicUrl(musicInfo)
   else void setPlay()
 }
 

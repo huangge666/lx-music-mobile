@@ -113,7 +113,7 @@ const registerPlaybackService = async() => {
   const handleAutoEnd = () => {
     if (global.lx.isPlayedStop) return handleExitApp('Timeout Exit')
     // 先切下一首。pause 在锁屏后台可能不返回，不能挡在切歌前面。
-    if (!global.lx.gettingUrlId) void playNextIfAuto()
+    void playNextIfAuto()
     void TrackPlayer.pause().catch(() => {})
     global.app_event.playerPause()
     global.app_event.pause()
