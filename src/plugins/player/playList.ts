@@ -16,7 +16,9 @@ const withNativeTimeout = async <T>(promise: Promise<T>): Promise<T | undefined>
     return await Promise.race([
       promise,
       new Promise<undefined>((resolve) => {
-        timer = BackgroundTimer.setTimeout(() => resolve(undefined), NATIVE_CALL_TIMEOUT)
+        timer = BackgroundTimer.setTimeout(() => {
+          resolve(undefined)
+        }, NATIVE_CALL_TIMEOUT)
       }),
     ])
   } finally {
@@ -129,6 +131,15 @@ export const isTempTrack = (trackId: string) => /\/\/default$/.test(trackId)
 export const getCurrentTrackId = async() => {
   const currentTrackIndex = await TrackPlayer.getCurrentTrack()
   return list[currentTrackIndex]?.id
+}
+/**
+ * 用原生队列下标同步取 track id。
+ * Android 的 playback-track-changed 只回传下标（nextTrack: int），而 list 与原生队列严格同步，
+ * 这里直接映射即可，省掉一次 bridge 往返 —— 后台切歌瞬间 bridge 可能很慢，能少一次就少一次。
+ */
+export const getTrackIdByIndex = (index: unknown): string | undefined => {
+  if (typeof index != 'number' || index < 0) return undefined
+  return list[index]?.id as string | undefined
 }
 export const getCurrentTrack = async() => {
   const currentTrackIndex = await TrackPlayer.getCurrentTrack()

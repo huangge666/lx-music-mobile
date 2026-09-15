@@ -49,7 +49,8 @@ export default () => {
   const addDelayNextTimeout = () => {
     clearDelayNextTimeout()
     delayNextTimeout = BackgroundTimer.setTimeout(() => {
-      if (global.lx.isPlayedStop) {
+      // 用户暂停/停止，或已判定连续取链失败而停播时，不能再自动往下切
+      if (global.lx.isPlayedStop || isPausedByUser()) {
         setStatusText('')
         return
       }
@@ -95,6 +96,9 @@ export default () => {
     if (!playerState.musicInfo.id) return
     clearLoadingTimeout()
     if (global.lx.isPlayedStop) return
+    // 已处于暂停/停止态（含「连续取链失败」的停播）时不再重试或自动跳下一首，
+    // 否则失败处理会绕过停播状态，把整张列表无声音地扫一遍
+    if (isPausedByUser()) return
     if (playerState.playMusicInfo.musicInfo && retryNum < 2) { // 若音频URL无效则尝试刷新2次URL
       let musicInfo = playerState.playMusicInfo.musicInfo
       void getPosition().then((position) => {
@@ -107,8 +111,8 @@ export default () => {
         const retryDelay = retryNum * 1000
         setStatusText(global.i18n.t('player__refresh_url'))
         BackgroundTimer.setTimeout(() => {
-          // 延迟期间用户可能已切歌，需再次校验
-          if (playerState.playMusicInfo.musicInfo !== musicInfo || global.lx.isPlayedStop) return
+          // 延迟期间用户可能已切歌或已停播，需再次校验
+          if (playerState.playMusicInfo.musicInfo !== musicInfo || global.lx.isPlayedStop || isPausedByUser()) return
           setMusicUrl(playerState.playMusicInfo.musicInfo, true)
         }, retryDelay)
       })

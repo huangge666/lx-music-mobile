@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
-import TrackPlayer, { State as TPState, Event as TPEvent } from 'react-native-track-player'
+import TrackPlayer, { State as TPState, Event as TPEvent, RepeatMode } from 'react-native-track-player'
 import BackgroundTimer from 'react-native-background-timer'
 // import { store } from '@/store'
 // import { action as playerAction, STATUS } from '@/store/modules/player'
 import { isTempId, isEmpty } from './utils'
 // import { play as lrcPlay, pause as lrcPause } from '@/core/lyric'
 import { exitApp } from '@/core/common'
-import { getCurrentTrackId } from './playList'
-import { isWaitingPlay, pause, play, playNext, playNextIfAuto, playPrev } from '@/core/player/player'
+import { getCurrentTrackId, getTrackIdByIndex } from './playList'
+import { isPausedByUser, isWaitingPlay, pause, play, playNext, playNextIfAuto, playPrev } from '@/core/player/player'
 
 let isInitialized = false
 
@@ -112,16 +112,35 @@ const registerPlaybackService = async() => {
     // void updateMetaData(global.lx.store_playMusicInfo.musicInfo, currentIsPlaying)
   })
   const dummyIdRxp = /\/\/default$/
-  // 占位静音轨续播，维持前台播放服务。不要用 RepeatMode.Track：预取命中时新歌可能被设成单曲循环。
+  /**
+   * 占位静音轨续播，维持前台播放服务。
+   * 用原生 repeat=Track 让占位轨自己循环，而不是靠 JS 每 2 秒 seekTo+play 续一次：
+   * Android 后台/灭屏时 JS 随时可能被冻结，续不上播放就会彻底停下，
+   * 进程随即被降级为 cached 并被冻结，之后取链要等回到前台才继续 ——
+   * 表现就是「下一首不加载，进前台才开始加载」。交给原生循环后，
+   * 整个等待取链期间只需要在切歌瞬间唤醒一次 JS（把新轨 skip 进队列）。
+   * 真实轨开始播放时由 handlePlayMusic 把 repeat 重置回 Off，避免新歌被单曲循环。
+   */
   const keepDummyAlive = () => {
+    // 用户主动暂停/停止后不能自己复活播放
+    if (isPausedByUser() || global.lx.isPlayedStop) return
+    console.log('keep placeholder track alive, repeat=one')
+    void TrackPlayer.setRepeatMode(RepeatMode.Track).catch(() => {})
     void TrackPlayer.seekTo(0).catch(() => {})
     void TrackPlayer.play().catch(() => {})
   }
   const handleAutoEnd = () => {
-    if (global.lx.isPlayedStop) return handleExitApp('Timeout Exit')
+    if (global.lx.isPlayedStop) {
+      void handleExitApp('Timeout Exit')
+      return
+    }
     keepDummyAlive()
     if (isWaitingPlay() || global.lx.gettingUrlId) return
-    void playNextIfAuto()
+    console.log('auto end: play next')
+    // 取链异常不能让占位轨「只响不切」：loadTimeout / 回前台恢复会兜底重试
+    void playNextIfAuto().catch((err) => {
+      console.log('auto play next fail', err)
+    })
     global.app_event.playerEnded()
     global.app_event.playerEmptied()
   }
@@ -129,16 +148,28 @@ const registerPlaybackService = async() => {
   TrackPlayer.addEventListener(TPEvent.PlaybackTrackChanged, info => {
     // console.log('PlaybackTrackChanged====>', info)
     if (info.track == null) return
-    if (global.lx.isPlayedStop) return handleExitApp('Timeout Exit')
+    if (global.lx.isPlayedStop) {
+      void handleExitApp('Timeout Exit')
+      return
+    }
 
     const nextTrack = (info as { nextTrack?: string | number }).nextTrack
+    // iOS 回传的是 track id，直接用
     if (typeof nextTrack === 'string') {
       global.lx.playerTrackId = nextTrack
       if (dummyIdRxp.test(nextTrack)) handleAutoEnd()
       return
     }
 
-    // nextTrack 可能是下标。不要无限等 getCurrentTrack：后台 bridge 卡住时切歌不会开始。
+    // Android 回传的是下标（MusicManager.onTrackUpdate 只 putInt），list 与原生队列同步，可同步映射
+    const nextId = getTrackIdByIndex(nextTrack)
+    if (nextId) {
+      global.lx.playerTrackId = nextId
+      if (dummyIdRxp.test(nextId)) handleAutoEnd()
+      return
+    }
+
+    // list 还没跟上时再退回 bridge + 定时器：不要无限等 getCurrentTrack，后台 bridge 卡住时切歌不会开始
     void getCurrentTrackId().then(id => {
       if (id) global.lx.playerTrackId = id
       if (isEmpty()) handleAutoEnd()
@@ -205,13 +236,19 @@ const registerPlaybackService = async() => {
   //   // }
   // })
   TrackPlayer.addEventListener(TPEvent.PlaybackQueueEnded, (info) => {
+    // 正在取链：继续撑住占位轨，取链完成后由 handlePlayMusic 把新轨 skip 进来
     if (isWaitingPlay() || global.lx.gettingUrlId) {
       keepDummyAlive()
       return
     }
-    // 占位轨切歌仍由 PlaybackTrackChanged 处理。这里只补「当前曲在原轨上播完、没切到占位轨」的情况，
-    // 避免恢复播放时 dummy 轨 ended 再自动 playNext。
-    if (isEmpty()) return
+    // 停在占位轨上（队列真正播完）时也必须续播：直接 return 会让播放停下，
+    // 进程被降级冻结后只能等回前台，正是「下一首不加载」的症状。
+    if (isEmpty()) {
+      keepDummyAlive()
+      void playNextIfAuto().catch(() => {})
+      return
+    }
+    // 当前曲在原轨上播完、还没切到占位轨：补一次结束处理
     const position = typeof info?.position === 'number' ? info.position : 0
     if (position < 1) return
     handleAutoEnd()

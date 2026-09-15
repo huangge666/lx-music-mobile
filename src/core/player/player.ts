@@ -53,7 +53,8 @@ const createDelayNextTimeout = (delay: number) => {
     clearDelayNextTimeout()
     timeout = BackgroundTimer.setTimeout(() => {
       timeout = null
-      if (global.lx.isPlayedStop) return
+      // pausedByUser：用户暂停/停止或已判定连续失败停播时，不能再自动往下切
+      if (global.lx.isPlayedStop || pausedByUser) return
       console.log('delay next timeout timeout', delay)
       void playNext(true)
     }, delay)
@@ -73,6 +74,24 @@ let pausedByUser = false
 // handlePlay 已开始取链但资源尚未交给播放器。后台 JS 被挂起时靠这个标记恢复。
 let waitingPlay = false
 let lastAutoToggleAt = 0
+// 是否处于「用户/自动流程想要播放」的状态。
+// 启动时只恢复播放信息、还没真正播放的情况下停在占位轨（waitingPlay/gettingUrlId 都是空），
+// 回前台不能据此当成「被冻结的取链」补切歌，否则会把恢复出来但没播的这首跳过去。
+let playbackRequested = false
+// 自动切歌是否已在执行。getNextPlayMusicInfo/filterList 是异步的，这期间 waitingPlay 还没置位，
+// 仅靠 800ms 时间去抖会让 track-changed、queue-ended、1500ms 兜底同时进来时重复切歌（跳歌）。
+let autoNextInFlight = false
+// 连续取链失败的「不同歌曲」计数。音源不可用/断网时失败处理会一首首自动跳过
+// （listLoop 下会无限循环），而占位轨的原生保活循环会让这段空转一直有音频在播、通知栏一直显示播放中。
+// 只统计「换了歌还失败」，所以单首歌取链失败仍按原逻辑重试并跳到下一首；
+// 用户重新发起播放（play()）或任一首成功开播时清零。
+const MAX_CONSECUTIVE_FETCH_FAIL = 3
+let consecutiveFetchFail = 0
+let lastFetchFailMusicId: string | null = null
+const resetFetchFailCount = () => {
+  consecutiveFetchFail = 0
+  lastFetchFailMusicId = null
+}
 // 单次取链的失败重试次数上限：配合 delayRetry（BackgroundTimer）做有界后台重试，
 // 避免后台切歌时立即递归在冻结的 JS 上再次失败，也防止 tooManyRequests 无限循环。
 let retryFetchCount = 0
@@ -278,6 +297,8 @@ export const setMusicUrl = (
       const qualityMatched = !desiredQuality || !prewarmed.quality || prewarmed.quality === desiredQuality
       if (Date.now() < prewarmed.expireAt && qualityMatched) {
         setMusicInfo({ quality: prewarmed.quality ?? desiredQuality })
+        // 资源马上交给播放器：取消上一轮失败留下的「5 秒后切下一首」
+        clearDelayNextTimeout()
         setResource(musicInfo, prewarmed.url, playerState.progress.nowPlayTime)
         // URL 已交给播放器，超时改守「真正开播」；Playing 时由 markPlaybackStarted 清掉
         addLoadTimeout()
@@ -296,6 +317,9 @@ export const setMusicUrl = (
       return
     }
     setMusicInfo({ quality: getCurrentMusicQuality(musicInfo, callbacks?.quality) })
+    // 取链成功要取消上一轮失败留下的「5 秒后切下一首」：
+    // 否则刷新（重试/切音质）成功、歌已经重新开播，5 秒后仍会被跳过。
+    clearDelayNextTimeout()
     setResource(musicInfo, url, playerState.progress.nowPlayTime)
     // 取链成功后不能清超时：锁屏后台 play() 可能卡住，需要靠超时刷新/切歌
     addLoadTimeout()
@@ -306,7 +330,28 @@ export const setMusicUrl = (
   }).catch((err: any) => {
     console.log(err)
     clearLoadTimeout()
-    if (err?.message == 'no api source') {
+    const noApiSource = err?.message == 'no api source'
+    // 只统计「换了歌还是失败」：同一首的重试/刷新不重复计数
+    if (musicInfo.id !== lastFetchFailMusicId) {
+      lastFetchFailMusicId = musicInfo.id
+      consecutiveFetchFail++
+    }
+    // 连续多首不同歌曲都取链失败：停手，别再无声音地扫列表（listLoop 下会一直循环下去）。
+    // 走暂停态而不是继续自动切歌，keepDummyAlive / 各处自动推进都会被 pausedByUser 拦住。
+    if (consecutiveFetchFail >= MAX_CONSECUTIVE_FETCH_FAIL) {
+      console.log('too many consecutive fetch failures, stop playback')
+      setStatusText(global.i18n.t('player__source_all_failed'))
+      clearDelayNextTimeout()
+      clearLoadTimeout()
+      pausedByUser = true
+      playbackRequested = false
+      waitingPlay = false
+      void setStop()
+      global.app_event.error()
+      callbacks?.onError?.(err)
+      return
+    }
+    if (noApiSource) {
       // 未启用音源时每首歌都会失败，不能自动切歌把整个列表扫一遍
       setStatusText(global.i18n.t('player__no_api_source'))
       global.app_event.error()
@@ -424,6 +469,11 @@ const handlePlay = async() => {
     global.lx.restorePlayInfo = null
     return
   }
+
+  // 恢复播放信息不算「要播放」，只有真正进入取链/播放流程才置位（见 playbackRequested 说明）。
+  // 置位前是 false 说明这次是用户重新发起播放（而不是自动切歌链路），失败计数清零给新的机会。
+  if (!playbackRequested) resetFetchFailCount()
+  playbackRequested = true
 
   const playMusicInfo = playerState.playMusicInfo
   const musicInfo = playMusicInfo.musicInfo
@@ -861,9 +911,15 @@ export const playNext = async(isAutoToggle = false): Promise<void> => {
       break
     default:
       nextIndex = -1
-      return
+      break
   }
-  if (nextIndex < 0) return
+  if (nextIndex < 0) {
+    // 自动切歌但确实没有下一首（顺序播放到列表末尾、未知播放模式等）：主动停止。
+    // 不能只 return：播放器会停在占位静音轨上，而它的保活循环是原生的，
+    // 没人松开就会一直静音空转、通知栏一直显示播放中。
+    if (isAutoToggle) return stop()
+    return
+  }
 
   await handlePlayNext({
     musicInfo: filteredList[nextIndex],
@@ -966,6 +1022,9 @@ export const playPrev = async(isAutoToggle = false): Promise<void> => {
  */
 export const play = () => {
   pausedByUser = false
+  playbackRequested = true
+  // 用户明确要求播放：之前连续失败的停播状态解除
+  resetFetchFailCount()
   if (playerState.playMusicInfo.musicInfo == null) return
   if (isEmpty()) {
     if (createGettingUrlId(playerState.playMusicInfo.musicInfo) != global.lx.gettingUrlId) setMusicUrl(playerState.playMusicInfo.musicInfo)
@@ -979,6 +1038,7 @@ export const play = () => {
  */
 export const pause = async() => {
   pausedByUser = true
+  playbackRequested = false
   waitingPlay = false
   await setPause()
 }
@@ -988,6 +1048,7 @@ export const pause = async() => {
  */
 export const stop = async() => {
   pausedByUser = true
+  playbackRequested = false
   waitingPlay = false
   await setStop()
   setTimeout(() => {
@@ -999,11 +1060,14 @@ export const stop = async() => {
  * 歌曲自然结束时切下一首。合并 track-changed / queue-ended 的重复回调。
  */
 export const playNextIfAuto = async() => {
-  if (pausedByUser || global.lx.isPlayedStop || waitingPlay) return false
+  if (pausedByUser || global.lx.isPlayedStop || waitingPlay || autoNextInFlight) return false
   const now = Date.now()
   if (now - lastAutoToggleAt < 800) return false
   lastAutoToggleAt = now
-  await playNext(true)
+  autoNextInFlight = true
+  await playNext(true).finally(() => {
+    autoNextInFlight = false
+  })
   return true
 }
 
@@ -1013,6 +1077,8 @@ export const isWaitingPlay = () => waitingPlay
 export const markPlaybackStarted = () => {
   waitingPlay = false
   clearLoadTimeout()
+  // 成功开播：连续失败计数清零
+  resetFetchFailCount()
 }
 
 /**
@@ -1020,6 +1086,8 @@ export const markPlaybackStarted = () => {
  */
 export const recoverPlaybackIfNeeded = () => {
   if (pausedByUser || global.lx.isPlayedStop) return
+  // 本来就没有要播放（如启动时只恢复播放信息、用户还没点播放）时不要补切歌
+  if (!playbackRequested) return
   const musicInfo = playerState.playMusicInfo.musicInfo
   if (!musicInfo) return
   if (!waitingPlay && !global.lx.gettingUrlId && !isEmpty()) return
