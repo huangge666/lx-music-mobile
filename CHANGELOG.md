@@ -6,6 +6,15 @@ Project versioning adheres to [Semantic Versioning](http://semver.org/).
 Commit convention is based on [Conventional Commits](http://conventionalcommits.org).
 Change log format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [2.0.9](https://github.com/huangge666/lx-music-mobile/compare/v2.0.7...v2.0.9) - 2026-09-15
+
+### 修复
+
+- 修复锁屏后自动切歌失效的问题：恢复锁屏下的播放进度轮询与结尾预取，切歌改用立即取链避免后台请求被丢弃
+- 修复后台切歌期间暂停导致取链长时间挂起、播放进度丢失的问题
+- 修复连续取链失败时静默扫描整个播放列表并在后台反复切歌的问题，现改为连续 3 首取链失败后停止播放并提示
+- 修复手动暂停或停止播放后仍被自动切歌打断的问题
+
 ## [2.0.6](https://github.com/huangge666/lx-music-mobile/compare/v2.0.5...v2.0.6) - 2026-09-04
 
 ### 新增
