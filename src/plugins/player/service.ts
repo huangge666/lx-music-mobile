@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import TrackPlayer, { State as TPState, Event as TPEvent } from 'react-native-track-player'
+import BackgroundTimer from 'react-native-background-timer'
 // import { store } from '@/store'
 // import { action as playerAction, STATUS } from '@/store/modules/player'
 import { isTempId, isEmpty } from './utils'
 // import { play as lrcPlay, pause as lrcPause } from '@/core/lyric'
 import { exitApp } from '@/core/common'
 import { getCurrentTrackId } from './playList'
-import { pause, play, playNext, playNextIfAuto, playPrev } from '@/core/player/player'
+import { isWaitingPlay, pause, play, playNext, playNextIfAuto, playPrev } from '@/core/player/player'
 
 let isInitialized = false
 
@@ -110,44 +111,42 @@ const registerPlaybackService = async() => {
     // console.log('currentIsPlaying', currentIsPlaying, global.lx.playInfo.isPlaying)
     // void updateMetaData(global.lx.store_playMusicInfo.musicInfo, currentIsPlaying)
   })
+  const dummyIdRxp = /\/\/default$/
+  // 占位静音轨续播，维持前台播放服务。不要用 RepeatMode.Track：预取命中时新歌可能被设成单曲循环。
+  const keepDummyAlive = () => {
+    void TrackPlayer.seekTo(0).catch(() => {})
+    void TrackPlayer.play().catch(() => {})
+  }
   const handleAutoEnd = () => {
     if (global.lx.isPlayedStop) return handleExitApp('Timeout Exit')
-    // 先切下一首。pause 在锁屏后台可能不返回，不能挡在切歌前面。
+    keepDummyAlive()
+    if (isWaitingPlay() || global.lx.gettingUrlId) return
     void playNextIfAuto()
-    void TrackPlayer.pause().catch(() => {})
-    global.app_event.playerPause()
-    global.app_event.pause()
     global.app_event.playerEnded()
     global.app_event.playerEmptied()
   }
 
-  TrackPlayer.addEventListener(TPEvent.PlaybackTrackChanged, async info => {
+  TrackPlayer.addEventListener(TPEvent.PlaybackTrackChanged, info => {
     // console.log('PlaybackTrackChanged====>', info)
-    global.lx.playerTrackId = await getCurrentTrackId()
     if (info.track == null) return
     if (global.lx.isPlayedStop) return handleExitApp('Timeout Exit')
 
-    // console.log('global.lx.playerTrackId====>', global.lx.playerTrackId)
-    if (isEmpty()) {
-      // console.log('====TEMP PAUSE====')
-      await handleAutoEnd()
-      // if (retryTrack) {
-      //   if (retryTrack.musicId == retryGetUrlId) {
-      //     if (++retryGetUrlNum > 1) {
-      //       store.dispatch(playerAction.playNext(true))
-      //       retryGetUrlId = null
-      //       retryTrack = null
-      //       return
-      //     }
-      //   } else {
-      //     retryGetUrlId = retryTrack.musicId
-      //     retryGetUrlNum = 0
-      //   }
-      //   store.dispatch(playerAction.refreshMusicUrl(global.lx.playInfo.currentPlayMusicInfo, errorTime))
-      // } else {
-      //   store.dispatch(playerAction.playNext(true))
-      // }
+    const nextTrack = (info as { nextTrack?: string | number }).nextTrack
+    if (typeof nextTrack === 'string') {
+      global.lx.playerTrackId = nextTrack
+      if (dummyIdRxp.test(nextTrack)) handleAutoEnd()
+      return
     }
+
+    // nextTrack 可能是下标。不要无限等 getCurrentTrack：后台 bridge 卡住时切歌不会开始。
+    void getCurrentTrackId().then(id => {
+      if (id) global.lx.playerTrackId = id
+      if (isEmpty()) handleAutoEnd()
+    })
+    BackgroundTimer.setTimeout(() => {
+      if (isWaitingPlay() || global.lx.gettingUrlId) return
+      if (isEmpty()) handleAutoEnd()
+    }, 1500)
   //   // if (!info.nextTrack) return
   //   // if (info.track) {
   //   //   const track = info.track.substring(0, info.track.lastIndexOf('__//'))
@@ -205,13 +204,17 @@ const registerPlaybackService = async() => {
   //   //   })
   //   // }
   // })
-  TrackPlayer.addEventListener(TPEvent.PlaybackQueueEnded, async(info) => {
+  TrackPlayer.addEventListener(TPEvent.PlaybackQueueEnded, (info) => {
+    if (isWaitingPlay() || global.lx.gettingUrlId) {
+      keepDummyAlive()
+      return
+    }
     // 占位轨切歌仍由 PlaybackTrackChanged 处理。这里只补「当前曲在原轨上播完、没切到占位轨」的情况，
     // 避免恢复播放时 dummy 轨 ended 再自动 playNext。
-    if (global.lx.gettingUrlId || isEmpty()) return
-    const duration = await TrackPlayer.getDuration().catch(() => 0)
+    if (isEmpty()) return
     const position = typeof info?.position === 'number' ? info.position : 0
-    if (duration > 1 && position >= duration - 1.5) await handleAutoEnd()
+    if (position < 1) return
+    handleAutoEnd()
   })
   // TrackPlayer.addEventListener('playback-destroy', async() => {
   //   console.log('playback-destroy')

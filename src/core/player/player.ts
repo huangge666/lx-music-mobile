@@ -445,11 +445,9 @@ const handlePlay = async() => {
 
   if (settingState.setting['player.togglePlayMethod'] == 'random' && !playMusicInfo.isTempPlay) addPlayedList(playMusicInfo as LX.Player.PlayMusicInfo)
 
-  // 先取链，再 pause。pause 事件会把 isPlay 置 false，若先发事件，
-  // 后台里后续 URL 结果可能被 isMusicUrlRequestInvalid 丢掉。
+  // 后台切歌不要 pause：停掉前台播放服务后 Android 会冻 JS，取链要等进 App 才继续。
+  // 占位静音轨由 playback service 循环撑着，新资源 skip 后会替换队列。
   startPlay(musicInfo)
-  void setPause()
-  global.app_event.pause()
 }
 
 /**
@@ -1001,7 +999,7 @@ export const stop = async() => {
  * 歌曲自然结束时切下一首。合并 track-changed / queue-ended 的重复回调。
  */
 export const playNextIfAuto = async() => {
-  if (pausedByUser || global.lx.isPlayedStop) return false
+  if (pausedByUser || global.lx.isPlayedStop || waitingPlay) return false
   const now = Date.now()
   if (now - lastAutoToggleAt < 800) return false
   lastAutoToggleAt = now
@@ -1010,6 +1008,7 @@ export const playNextIfAuto = async() => {
 }
 
 export const isPausedByUser = () => pausedByUser
+export const isWaitingPlay = () => waitingPlay
 
 export const markPlaybackStarted = () => {
   waitingPlay = false
@@ -1023,12 +1022,14 @@ export const recoverPlaybackIfNeeded = () => {
   if (pausedByUser || global.lx.isPlayedStop) return
   const musicInfo = playerState.playMusicInfo.musicInfo
   if (!musicInfo) return
-  // waitingPlay：切歌后资源还没交给播放器
-  // gettingUrlId：后台取链被冻住，回前台补一次
-  // isEmpty：已经切到下一首信息，但播放器还停在占位轨
   if (!waitingPlay && !global.lx.gettingUrlId && !isEmpty()) return
-  if (isEmpty() || waitingPlay) setMusicUrl(musicInfo)
-  else void setPlay()
+  // 占位轨上且还没切到下一首：补一次自动切歌
+  if (isEmpty() && !waitingPlay && !global.lx.gettingUrlId) {
+    void playNextIfAuto()
+    return
+  }
+  // 强制刷新，避免 gettingUrlId 已指向当前曲时 setMusicUrl 直接 return
+  setMusicUrl(musicInfo, true)
 }
 
 /**

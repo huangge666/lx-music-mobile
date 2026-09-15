@@ -1,4 +1,4 @@
-import TrackPlayer, { State } from 'react-native-track-player'
+import TrackPlayer, { RepeatMode, State } from 'react-native-track-player'
 import BackgroundTimer from 'react-native-background-timer'
 import { defaultUrl } from '@/config'
 // import { action as playerAction } from '@/store/modules/player'
@@ -176,6 +176,7 @@ const handlePlayMusic = async(musicInfo: LX.Player.PlayMusic, url: string, time:
   const queue = ((await withNativeTimeout(TrackPlayer.getQueue())) ?? []) as LX.Player.Track[]
   const skipIndex = queue.findIndex(t => t.id == track.id)
   if (skipIndex >= 0) await withNativeTimeout(TrackPlayer.skip(skipIndex))
+  void TrackPlayer.setRepeatMode(RepeatMode.Off)
 
   if (!isTempTrack(track.id as string)) {
     if (time) void TrackPlayer.seekTo(time)
