@@ -6,6 +6,18 @@ Project versioning adheres to [Semantic Versioning](http://semver.org/).
 Commit convention is based on [Conventional Commits](http://conventionalcommits.org).
 Change log format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [2.1.0](https://github.com/huangge666/lx-music-mobile/compare/v2.0.9...v2.1.0) - 2026-09-16
+
+### 优化
+
+- 下一首无缝切歌：预取到下一首播放地址后提前写入播放器队列，当前歌曲播放结束时由播放器直接切轨，切歌不再等待取链
+- 后台与锁屏下切歌同样走播放器原生队列，不再依赖 JS 在切歌瞬间取链
+- 从后台返回时先读取播放器当前播放的曲目，再决定刷新界面或兜底切歌，避免界面与播放状态不一致
+
+### 修复
+
+- 修复切歌后锁屏与通知栏仍显示上一首歌曲信息的问题
+
 ## [2.0.9](https://github.com/huangge666/lx-music-mobile/compare/v2.0.7...v2.0.9) - 2026-09-15
 
 ### 修复
