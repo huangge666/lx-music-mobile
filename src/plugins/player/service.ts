@@ -7,7 +7,7 @@ import { isTempId, isEmpty } from './utils'
 // import { play as lrcPlay, pause as lrcPause } from '@/core/lyric'
 import { exitApp } from '@/core/common'
 import { getCurrentTrackId, getTrackIdByIndex } from './playList'
-import { isPausedByUser, isWaitingPlay, pause, play, playNext, playNextIfAuto, playPrev } from '@/core/player/player'
+import { consumeNativeNextIfNeeded, isPausedByUser, isWaitingPlay, pause, play, playNext, playNextIfAuto, playPrev } from '@/core/player/player'
 
 let isInitialized = false
 
@@ -153,29 +153,37 @@ const registerPlaybackService = async() => {
       return
     }
 
+    const adoptTrackId = (id: string) => {
+      global.lx.playerTrackId = id
+      if (dummyIdRxp.test(id)) {
+        handleAutoEnd()
+        return
+      }
+      // 预入队的下一首被原生切过来：只同步 JS，不要再 playNext 取链
+      consumeNativeNextIfNeeded(id)
+    }
+
     const nextTrack = (info as { nextTrack?: string | number }).nextTrack
     // iOS 回传的是 track id，直接用
     if (typeof nextTrack === 'string') {
-      global.lx.playerTrackId = nextTrack
-      if (dummyIdRxp.test(nextTrack)) handleAutoEnd()
+      adoptTrackId(nextTrack)
       return
     }
 
     // Android 回传的是下标（MusicManager.onTrackUpdate 只 putInt），list 与原生队列同步，可同步映射
     const nextId = getTrackIdByIndex(nextTrack)
     if (nextId) {
-      global.lx.playerTrackId = nextId
-      if (dummyIdRxp.test(nextId)) handleAutoEnd()
+      adoptTrackId(nextId)
       return
     }
 
     // list 还没跟上时再退回 bridge + 定时器：不要无限等 getCurrentTrack，后台 bridge 卡住时切歌不会开始
     void getCurrentTrackId().then(id => {
-      if (id) global.lx.playerTrackId = id
-      if (isEmpty()) handleAutoEnd()
+      if (typeof id === 'string') adoptTrackId(id)
     })
     BackgroundTimer.setTimeout(() => {
       if (isWaitingPlay() || global.lx.gettingUrlId) return
+      if (consumeNativeNextIfNeeded(global.lx.playerTrackId)) return
       if (isEmpty()) handleAutoEnd()
     }, 1500)
   //   // if (!info.nextTrack) return

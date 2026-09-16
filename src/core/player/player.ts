@@ -36,6 +36,7 @@ import { toOldMusicInfo } from '@/utils'
 import { getMusicUrl as getStoreMusicUrl } from '@/utils/data'
 import { checkUrl } from '@/utils/request'
 import { isCached } from '@/plugins/player/utils'
+import { enqueueNextMusic, getCurrentTrackId } from '@/plugins/player/playList'
 
 // import { checkMusicFileAvailable } from '@renderer/utils/music'
 
@@ -96,6 +97,11 @@ const resetFetchFailCount = () => {
 // 避免后台切歌时立即递归在冻结的 JS 上再次失败，也防止 tooManyRequests 无限循环。
 let retryFetchCount = 0
 const MAX_FETCH_RETRY = 3
+/** 已写入原生队列、等当前曲结束由 ExoPlayer 自己切过去的下一首 */
+let preparedNext: { playMusicInfo: LX.Player.PlayMusicInfo, trackId: string } | null = null
+const clearPreparedNext = () => {
+  preparedNext = null
+}
 
 const createGettingUrlId = (musicInfo: LX.Music.MusicInfo | LX.Download.ListItem) => {
   const tInfo = 'progress' in musicInfo ? musicInfo.metadata.musicInfo.meta.toggleMusicInfo : musicInfo.meta.toggleMusicInfo
@@ -413,11 +419,7 @@ const handleRestorePlay = async(restorePlayInfo: LX.Player.SavedPlayInfo) => {
 }
 
 
-// 切歌后立刻取链。不能再用 debounce：锁屏后台 200ms 定时器偶发不触发，
-// 表现为下一首不加载，点进 App 才开始。封面/歌词仍异步，不挡播放。
-const startPlay = (musicInfo: LX.Player.PlayMusic) => {
-  setMusicUrl(musicInfo)
-
+const loadPicAndLyric = (musicInfo: LX.Player.PlayMusic) => {
   void getPicPath({ musicInfo, listId: playerState.playMusicInfo.listId }).then((url: string) => {
     if (
       musicInfo.id != playerState.playMusicInfo.musicInfo?.id ||
@@ -444,6 +446,13 @@ const startPlay = (musicInfo: LX.Player.PlayMusic) => {
   })
 }
 
+// 切歌后立刻取链。不能再用 debounce：锁屏后台 200ms 定时器偶发不触发，
+// 表现为下一首不加载，点进 App 才开始。封面/歌词仍异步，不挡播放。
+const startPlay = (musicInfo: LX.Player.PlayMusic) => {
+  setMusicUrl(musicInfo)
+  loadPicAndLyric(musicInfo)
+}
+
 // 处理音乐播放
 const handlePlay = async() => {
   if (!isInitialized()) {
@@ -462,6 +471,7 @@ const handlePlay = async() => {
   pausedByUser = false
   waitingPlay = true
   resetRandomNextMusicInfo()
+  clearPreparedNext()
 
   if (global.lx.restorePlayInfo) {
     waitingPlay = false
@@ -756,13 +766,35 @@ export const prewarmNextMusicUrl = () => {
   void getNextPlayMusicInfo().then(async(next) => {
     if (seq !== prewarmSeq || playerState.playMusicInfo.musicInfo?.id !== startedForId) return
     if (!next?.musicInfo || next.musicInfo.id === startedForId) return
-    // 本地/下载歌曲的 URL 是本地路径，无需网络预取
-    if ('progress' in next.musicInfo || next.musicInfo.source === 'local') return
     const nextMusicInfo = next.musicInfo
+    const apply = async(url: string, quality: LX.Quality | null) => {
+      if (seq !== prewarmSeq || playerState.playMusicInfo.musicInfo?.id !== startedForId) return
+      const key = createGettingUrlId(nextMusicInfo)
+      prewarmMusicUrlMap.set(key, {
+        url,
+        expireAt: Date.now() + PREWARM_MUSIC_URL_TTL,
+        quality,
+      })
+      // 预取成功后立刻写入原生队列：当前曲结束时由 ExoPlayer 自己切，不依赖 JS 取链
+      const trackId = await enqueueNextMusic(startedForId, nextMusicInfo, url)
+      if (!trackId || seq !== prewarmSeq || playerState.playMusicInfo.musicInfo?.id !== startedForId) return
+      preparedNext = { playMusicInfo: next, trackId }
+      console.log('enqueue next track', nextMusicInfo.id)
+    }
+
+    // 本地/下载歌曲的 URL 是本地路径，无需网络预取，但仍要入队才能原生切歌
+    if ('progress' in nextMusicInfo || nextMusicInfo.source === 'local') {
+      const localUrl = await getMusicUrl({ musicInfo: nextMusicInfo }).catch(() => '')
+      if (localUrl) await apply(localUrl, null)
+      return
+    }
     const key = createGettingUrlId(nextMusicInfo)
-    // 已存在且未过期则复用，避免重复请求
+    // 已存在且未过期则复用，但仍要入队（上次可能只写了内存、没写进原生队列）
     const caching = prewarmMusicUrlMap.get(key)
-    if (caching && Date.now() < caching.expireAt) return
+    if (caching && Date.now() < caching.expireAt) {
+      await apply(caching.url, caching.quality)
+      return
+    }
     // 失败退避：临播触发器会反复调用，同一 key 的重试间隔至少 PREWARM_RETRY_INTERVAL
     const lastAttemptAt = prewarmAttemptAtMap.get(key)
     if (lastAttemptAt != null && Date.now() - lastAttemptAt < PREWARM_RETRY_INTERVAL) return
@@ -772,12 +804,7 @@ export const prewarmNextMusicUrl = () => {
       const targetQuality = getPlayQuality(settingState.setting['player.playQuality'], nextMusicInfo)
       const cachedUrl = await getStoreMusicUrl(nextMusicInfo, targetQuality).catch(() => '')
       if (cachedUrl && await isPrewarmUrlUsable(cachedUrl)) {
-        if (seq !== prewarmSeq || playerState.playMusicInfo.musicInfo?.id !== startedForId) return
-        prewarmMusicUrlMap.set(key, {
-          url: cachedUrl,
-          expireAt: Date.now() + PREWARM_MUSIC_URL_TTL,
-          quality: targetQuality,
-        })
+        await apply(cachedUrl, targetQuality)
         return
       }
       // 2) 持久缓存缺失/失效 → 强制刷新取新链（绕过持久缓存，避免把旧 URL 当成新预取结果）
@@ -799,12 +826,8 @@ export const prewarmNextMusicUrl = () => {
           reject(error)
         })
       })
-      if (seq !== prewarmSeq || !result?.url) return
-      prewarmMusicUrlMap.set(key, {
-        url: result.url,
-        expireAt: Date.now() + PREWARM_MUSIC_URL_TTL,
-        quality: result.quality,
-      })
+      if (!result?.url) return
+      await apply(result.url, result.quality)
     } catch (e) {
       // 预取失败不打扰当前播放，静默忽略（临播触发器会按退避间隔重试）
       console.log('prewarm next music url fail', e)
@@ -1082,6 +1105,41 @@ export const markPlaybackStarted = () => {
 }
 
 /**
+ * 原生队列已经切到预入队的下一首。只同步 JS 状态，不要再 setMusicUrl / skip，
+ * 否则会把正在播的下一首打断并重新取链。
+ */
+export const consumeNativeNextIfNeeded = (trackId?: string | null): boolean => {
+  if (!preparedNext) return false
+  const id = trackId ?? global.lx.playerTrackId
+  if (!id) return false
+  const musicId = String(id).split('__//')[0]
+  if (id !== preparedNext.trackId && musicId !== preparedNext.playMusicInfo.musicInfo.id) return false
+  const next = preparedNext
+  preparedNext = null
+  if (next.playMusicInfo.isTempPlay &&
+      playerState.tempPlayList[0]?.musicInfo.id === next.playMusicInfo.musicInfo.id) {
+    removeTempPlayList(0)
+  }
+  setPlayMusicInfo(next.playMusicInfo.listId, next.playMusicInfo.musicInfo, next.playMusicInfo.isTempPlay)
+  pausedByUser = false
+  waitingPlay = false
+  playbackRequested = true
+  resetRandomNextMusicInfo()
+  resetFetchFailCount()
+  clearLoadTimeout()
+  if (settingState.setting['player.togglePlayMethod'] == 'random' && !next.playMusicInfo.isTempPlay) {
+    addPlayedList(next.playMusicInfo)
+  }
+  loadPicAndLyric(next.playMusicInfo.musicInfo)
+  prewarmNextMusicUrl()
+  // 切歌瞬间的 Playing 事件可能还按占位轨被丢掉，这里补一次播放态
+  global.app_event.playerPlaying()
+  global.app_event.play()
+  console.log('adopt native next track', next.playMusicInfo.musicInfo.id)
+  return true
+}
+
+/**
  * 应用回到前台时，把后台被挂起的自动切歌/取链补上。
  */
 export const recoverPlaybackIfNeeded = () => {
@@ -1090,14 +1148,21 @@ export const recoverPlaybackIfNeeded = () => {
   if (!playbackRequested) return
   const musicInfo = playerState.playMusicInfo.musicInfo
   if (!musicInfo) return
-  if (!waitingPlay && !global.lx.gettingUrlId && !isEmpty()) return
-  // 占位轨上且还没切到下一首：补一次自动切歌
-  if (isEmpty() && !waitingPlay && !global.lx.gettingUrlId) {
-    void playNextIfAuto()
+  if (consumeNativeNextIfNeeded(global.lx.playerTrackId)) return
+  // 取链进行中：JS 已醒，直接把当前曲刷完
+  if (waitingPlay || global.lx.gettingUrlId) {
+    setMusicUrl(musicInfo, true)
     return
   }
-  // 强制刷新，避免 gettingUrlId 已指向当前曲时 setMusicUrl 直接 return
-  setMusicUrl(musicInfo, true)
+  // playerTrackId 可能仍是上一首（track-changed 在冻结时没跑）。回前台再读一次原生当前轨。
+  void getCurrentTrackId().then((id) => {
+    if (id) global.lx.playerTrackId = id
+    if (consumeNativeNextIfNeeded(global.lx.playerTrackId)) return
+    if (!waitingPlay && !global.lx.gettingUrlId && !isEmpty()) return
+    if (isEmpty()) void playNextIfAuto()
+  }).catch(() => {
+    if (isEmpty()) void playNextIfAuto()
+  })
 }
 
 /**
