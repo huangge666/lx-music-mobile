@@ -7,7 +7,7 @@ import { isTempId, isEmpty } from './utils'
 // import { play as lrcPlay, pause as lrcPause } from '@/core/lyric'
 import { exitApp } from '@/core/common'
 import { getCurrentTrackId, getTrackIdByIndex } from './playList'
-import { consumeNativeNextIfNeeded, isPausedByUser, isWaitingPlay, pause, play, playNext, playNextIfAuto, playPrev } from '@/core/player/player'
+import { consumeNativeNextIfNeeded, isPausedByUser, isPlaybackRequested, isWaitingPlay, pause, play, playNext, playNextIfAuto, playPrev } from '@/core/player/player'
 
 let isInitialized = false
 
@@ -122,8 +122,8 @@ const registerPlaybackService = async() => {
    * 真实轨开始播放时由 handlePlayMusic 把 repeat 重置回 Off，避免新歌被单曲循环。
    */
   const keepDummyAlive = () => {
-    // 用户主动暂停/停止后不能自己复活播放
-    if (isPausedByUser() || global.lx.isPlayedStop) return
+    // 用户主动暂停/停止，或启动后只恢复了播放信息、并未要求播放时，不能自己复活
+    if (isPausedByUser() || !isPlaybackRequested() || global.lx.isPlayedStop) return
     console.log('keep placeholder track alive, repeat=one')
     void TrackPlayer.setRepeatMode(RepeatMode.Track).catch(() => {})
     void TrackPlayer.seekTo(0).catch(() => {})
@@ -134,6 +134,8 @@ const registerPlaybackService = async() => {
       void handleExitApp('Timeout Exit')
       return
     }
+    // 启动恢复占位轨不是「当前曲播完」。用户暂停后同样不能从这里切下一首。
+    if (isPausedByUser() || !isPlaybackRequested()) return
     keepDummyAlive()
     if (isWaitingPlay() || global.lx.gettingUrlId) return
     console.log('auto end: play next')

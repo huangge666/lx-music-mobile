@@ -475,6 +475,10 @@ const handlePlay = async() => {
 
   if (global.lx.restorePlayInfo) {
     waitingPlay = false
+    // 只恢复上次的歌曲信息，并不表示用户要播放。
+    // 占位轨入队后会触发 track-changed / queue-ended；若不拦住，
+    // keepDummyAlive 会把静音轨播起来，playNextIfAuto 再去切下一首真正开播。
+    pausedByUser = true
     void handleRestorePlay(global.lx.restorePlayInfo)
     global.lx.restorePlayInfo = null
     return
@@ -1084,6 +1088,8 @@ export const stop = async() => {
  */
 export const playNextIfAuto = async() => {
   if (pausedByUser || global.lx.isPlayedStop || waitingPlay || autoNextInFlight) return false
+  // 启动只恢复播放信息、用户还没点播放（也没开「启动后自动播放」）时不要当切歌
+  if (!playbackRequested) return false
   const now = Date.now()
   if (now - lastAutoToggleAt < 800) return false
   lastAutoToggleAt = now
@@ -1096,6 +1102,7 @@ export const playNextIfAuto = async() => {
 
 export const isPausedByUser = () => pausedByUser
 export const isWaitingPlay = () => waitingPlay
+export const isPlaybackRequested = () => playbackRequested
 
 export const markPlaybackStarted = () => {
   waitingPlay = false
