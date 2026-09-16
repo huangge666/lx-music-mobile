@@ -6,6 +6,12 @@ Project versioning adheres to [Semantic Versioning](http://semver.org/).
 Commit convention is based on [Conventional Commits](http://conventionalcommits.org).
 Change log format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [2.1.1](https://github.com/huangge666/lx-music-mobile/compare/v2.1.0...v2.1.1) - 2026-09-16
+
+### 修复
+
+- 修复启动时仅恢复上次播放信息（未开启自动播放）的情况下，应用自行把占位轨播放起来并自动切歌的问题，现在启动后保持暂停，等待用户手动播放
+
 ## [2.1.0](https://github.com/huangge666/lx-music-mobile/compare/v2.0.9...v2.1.0) - 2026-09-16
 
 ### 优化
