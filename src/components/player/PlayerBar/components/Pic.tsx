@@ -9,9 +9,9 @@ import Image from '@/components/common/Image'
 import { useCallback } from 'react'
 import { setLoadErrorPicUrl, setMusicInfo } from '@/core/player/playInfo'
 
-// 封面 — 正方形，仅带一点点圆角
-const PIC_SIZE = scaleSizeH(42)
-const PIC_RADIUS = 6
+// 封面做成圆角方块，贴近主流迷你播放器的封面比例
+const PIC_SIZE = scaleSizeH(48)
+const PIC_RADIUS = 14
 
 const styles = StyleSheet.create({
   image: {

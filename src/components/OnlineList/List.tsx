@@ -217,7 +217,7 @@ const List = forwardRef<ListType, ListProps>(({
         break
     }
     return (
-      <View style={{ width: '100%', paddingBottom: visibleMultiSelect ? MULTI_SELECT_BAR_HEIGHT : 0 }} >
+      <View style={{ width: '100%', paddingBottom: visibleMultiSelect ? 168 + MULTI_SELECT_BAR_HEIGHT : 168 }} >
         <Footer label={label} onLoadMore={onLoadMore} />
       </View>
     )

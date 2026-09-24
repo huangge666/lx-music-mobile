@@ -68,10 +68,10 @@ export const buildActiveThemeColors = (theme: LX.Theme): LX.ActiveTheme => {
     theme.config.extInfo[k] = theme.config.themeColors[v.replace(varColorRxp, '$1') as ColorsKey]
   }
 
-  // Apple Music 风格语义色映射
-  // 亮色模式：c-content-background = 系统白 #FFFFFF，c-border-background = #E5E5EA
-  // 暗色模式：c-content-background = 纯黑 #000，c-border-background = #38383A
+  // 液态玻璃语义色：浅色用浅白玻璃，深色用黑玻璃。
+  // 辅色独立于主色，浅色雾青、深色暖沙，避免整屏只剩黑白。
   const isDark = theme.isDark
+  const accent = isDark ? 'rgb(214, 176, 148)' : 'rgb(92, 132, 146)'
   return {
     'id': theme.id,
     'name': theme.name,
@@ -113,39 +113,35 @@ export const buildActiveThemeColors = (theme: LX.Theme): LX.ActiveTheme => {
     'c-button-background-active': isDark
       ? theme.config.themeColors['c-primary-alpha-600']
       : theme.config.themeColors['c-primary-alpha-700'],
-    // 列表分隔线 — Apple 极细半透明
     'c-list-header-border-bottom': isDark
-      ? 'rgba(255, 255, 255, 0.08)'
-      : 'rgba(60, 60, 67, 0.10)',
-    // 内容背景 — 亮色纯白 / 暗色纯黑
-    'c-content-background': isDark ? 'rgb(0, 0, 0)' : 'rgb(255, 255, 255)',
-    // 分隔线/边框 — Apple separator 色
+      ? 'rgba(255, 255, 255, 0.10)'
+      : 'rgba(255, 255, 255, 0.55)',
+    // 页面底色保留轻微渐变感，玻璃层叠在它上面
+    'c-content-background': isDark ? 'rgb(8, 10, 14)' : 'rgb(236, 240, 244)',
     'c-border-background': isDark
-      ? 'rgba(255, 255, 255, 0.08)'
-      : 'rgba(60, 60, 67, 0.10)',
-    // 卡片/分组背景 — Apple secondary system background
-    'c-card-background': isDark ? 'rgb(28, 28, 30)' : 'rgb(242, 242, 247)',
-    // 弥散流体水光玻璃质感令牌体系
-    // 基础水光半透底色（更柔润温润的流体通透感）
+      ? 'rgba(255, 255, 255, 0.10)'
+      : 'rgba(255, 255, 255, 0.62)',
+    'c-card-background': isDark
+      ? 'rgba(255, 255, 255, 0.06)'
+      : 'rgba(255, 255, 255, 0.58)',
+    // 柔和辅色：用于选中描边、图标点缀和进度强调，不替代玻璃主色
+    'c-accent': accent,
+    'c-accent-soft': isDark ? 'rgba(214, 176, 148, 0.18)' : 'rgba(92, 132, 146, 0.16)',
     'c-glass-background': isDark
-      ? 'rgba(16, 18, 27, 0.78)'
-      : 'rgba(255, 255, 255, 0.82)',
-    // 水光漫反射/微光边框（带环境光散射感）
+      ? 'rgba(12, 14, 18, 0.94)'
+      : 'rgba(255, 255, 255, 0.94)',
     'c-glass-border': isDark
-      ? 'rgba(255, 255, 255, 0.12)'
-      : 'rgba(255, 255, 255, 0.70)',
-    // 弥散流体高光反射层（水面流光波纹微光）
+      ? 'rgba(255, 255, 255, 0.16)'
+      : 'rgba(255, 255, 255, 0.82)',
     'c-glass-highlight': isDark
-      ? theme.config.themeColors['c-primary-alpha-800']
-      : theme.config.themeColors['c-primary-alpha-900'],
-    // 弥散主色流体光晕（基于环境主色的水光漫反射光晕）
+      ? 'rgba(255, 255, 255, 0.22)'
+      : 'rgba(255, 255, 255, 0.92)',
     'c-glass-fluid-glow': isDark
-      ? theme.config.themeColors['c-primary-alpha-700']
-      : theme.config.themeColors['c-primary-alpha-800'],
-    // 流体水光卡片/浮层表面层
+      ? 'rgba(214, 176, 148, 0.10)'
+      : 'rgba(92, 132, 146, 0.12)',
     'c-glass-surface': isDark
-      ? 'rgba(255, 255, 255, 0.05)'
-      : 'rgba(255, 255, 255, 0.60)',
+      ? 'rgba(255, 255, 255, 0.12)'
+      : 'rgba(255, 255, 255, 0.82)',
     'bg-image': bgImg,
   } as const
 }
@@ -171,21 +167,11 @@ export const getTheme = async() => {
   //     : settingState.setting['theme.lightId']
   //   // : 'china_ink'
   //   : settingState.setting['theme.id']
-  let themeId = settingState.setting['common.isAutoTheme'] && shouldUseDarkColors
-    ? 'black'
-    : settingState.setting['theme.id']
-  // themeId = 'naruto'
-  // themeId = 'pink'
-  // themeId = 'black'
-  let theme: LocalTheme | LX.Theme | undefined = themes.find(theme => theme.id == themeId)
-  if (!theme) {
-    userThemes = await getUserTheme()
-    theme = userThemes.find(theme => theme.id == themeId)
-    if (!theme) {
-      themeId = settingState.setting['theme.id'] == 'auto' && shouldUseDarkColors ? 'black' : 'green'
-      theme = themes.find(theme => theme.id == themeId) as LX.Theme
-    }
-  }
+  // 只保留浅色 green / 深色 black。跟随系统时按系统深浅切换，旧主题 id 一律回退。
+  const themeId = settingState.setting['common.isAutoTheme']
+    ? (shouldUseDarkColors ? 'black' : 'green')
+    : (settingState.setting['theme.id'] == 'black' ? 'black' : 'green')
+  const theme = themes.find(item => item.id == themeId) as LX.Theme
 
   return theme
 }

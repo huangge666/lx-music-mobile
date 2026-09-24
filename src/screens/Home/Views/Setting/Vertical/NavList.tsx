@@ -147,7 +147,7 @@ export default ({ onChangeId }: {
       showsVerticalScrollIndicator={false}
       style={{
         flex: 1,
-        backgroundColor: theme['c-card-background'],
+        backgroundColor: 'transparent',
       }}
       contentContainerStyle={styles.content}
     >
@@ -194,10 +194,10 @@ export default ({ onChangeId }: {
       {/* 底部品牌签名 — 沉浸式收尾 */}
       <Animated.View style={[styles.footer, { opacity: footerOpacity }]}>
         <View style={[styles.footerBadge, {
-          backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.05)' : theme['c-primary-background'],
-          borderColor: theme.isDark ? 'rgba(255, 255, 255, 0.08)' : theme['c-glass-border'],
+          backgroundColor: theme['c-accent-soft'],
+          borderColor: theme['c-glass-border'],
         }]}>
-          <Icon name="logo" size={18} color={theme['c-primary']} />
+          <Icon name="logo" size={18} color={theme['c-accent']} />
         </View>
         <Text size={12} style={styles.footerName} color={theme['c-font-label']}>LX Music</Text>
         <Text size={10} color={theme['c-font-label']}>v{versionState.versionInfo.version}</Text>

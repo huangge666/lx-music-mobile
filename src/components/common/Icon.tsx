@@ -14,6 +14,7 @@ import ChevronRight from 'lucide-react-native/dist/cjs/icons/chevron-right'
 import ChevronsLeft from 'lucide-react-native/dist/cjs/icons/chevrons-left'
 import ChevronsRight from 'lucide-react-native/dist/cjs/icons/chevrons-right'
 import CircleDot from 'lucide-react-native/dist/cjs/icons/circle-dot'
+import Crosshair from 'lucide-react-native/dist/cjs/icons/crosshair'
 import CirclePlay from 'lucide-react-native/dist/cjs/icons/circle-play'
 import CircleQuestionMark from 'lucide-react-native/dist/cjs/icons/circle-question-mark'
 import Clock3 from 'lucide-react-native/dist/cjs/icons/clock-3'
@@ -82,6 +83,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   'chevron-right-2': ChevronsRight,
   'chevron-down': ChevronDown,
   'close': X,
+  'crosshair': Crosshair,
   'comment': MessageCircle,
   'dots-vertical': EllipsisVertical,
   'download-2': Download,

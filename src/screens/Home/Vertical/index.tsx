@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { View } from 'react-native'
 import Content from './Content'
 import DrawerNav from './DrawerNav'
 import PlayerBar from '@/components/player/PlayerBar'
@@ -45,8 +46,23 @@ export default () => {
       renderNavigationView={() => <DrawerNav />}
     >
       <Content />
-      {!isSettingPage ? <PlayerBar isHome /> : null}
-      {!isDownloadPage && !isSettingPage ? <BottomBar /> : null}
+      {!isDownloadPage && !isSettingPage
+        ? (
+            <View style={styles.dock} pointerEvents="box-none">
+              {!isSettingPage ? <PlayerBar isHome floating /> : null}
+              <BottomBar floating />
+            </View>
+          )
+        : null}
     </DrawerLayoutFixed>
   )
+}
+
+const styles = {
+  dock: {
+    position: 'absolute' as const,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
 }

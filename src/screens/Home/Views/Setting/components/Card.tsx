@@ -20,11 +20,9 @@ export default ({ children, style }: Props) => {
       settingLayout.inset,
       styles.card,
       {
-        backgroundColor: theme.isDark
-          ? 'rgba(255, 255, 255, 0.04)'
-          : 'rgba(118, 118, 128, 0.06)',
+        backgroundColor: theme['c-glass-surface'],
         borderWidth: 0.5,
-        borderColor: theme['c-border-background'],
+        borderColor: theme['c-glass-border'],
       },
       style,
     ]}>

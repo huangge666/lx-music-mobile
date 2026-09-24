@@ -12,13 +12,13 @@ export const useSettingCardStyle = () => {
   const isDark = theme.isDark
 
   return {
-    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.045)' : theme['c-content-background'],
+    backgroundColor: theme['c-glass-background'],
     borderWidth: BorderWidths.hairline,
-    borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : theme['c-glass-border'],
-    shadowColor: isDark ? '#000000' : theme['c-primary'],
+    borderColor: theme['c-glass-border'],
+    shadowColor: isDark ? '#000000' : theme['c-accent'],
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: isDark ? 0.32 : 0.08,
-    shadowRadius: 20,
+    shadowOpacity: isDark ? 0.36 : 0.08,
+    shadowRadius: 22,
     elevation: 4,
   }
 }

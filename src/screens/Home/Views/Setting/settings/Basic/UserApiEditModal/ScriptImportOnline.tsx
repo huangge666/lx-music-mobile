@@ -5,7 +5,6 @@ import { View } from 'react-native'
 import Input, { type InputType } from '@/components/common/Input'
 import { Icon } from '@/components/common/Icon'
 import { createStyle, toast } from '@/utils/tools'
-import { BorderRadius } from '@/theme'
 import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
 import { httpFetch } from '@/utils/request'
@@ -36,8 +35,12 @@ const UrlInput = forwardRef<UrlInputType, { onSubmit: () => void }>((props, ref)
   }))
 
   return (
-    <View style={{ ...styles.inputWrap, backgroundColor: theme['c-primary-input-background'] }}>
-      <Icon name="share" size={16} color={theme['c-font-label']} />
+    <View style={{
+      ...styles.inputWrap,
+      backgroundColor: theme['c-glass-surface'],
+      borderColor: theme['c-glass-border'],
+    }}>
+      <Icon name="share" size={16} color={theme['c-accent']} />
       <Input
         ref={inputRef}
         placeholder={t('user_api_btn_import_online_input_tip')}
@@ -127,20 +130,13 @@ export default forwardRef<ScriptImportOnlineType, {}>((props, ref) => {
           onConfirm={handleImport}
           disabledConfirm={btn.disabled}
           confirmText={btn.text}
+          title={t('user_api_btn_import_online')}
           closeBtn={false}
         >
           <View style={styles.content}>
-            <View style={styles.header}>
-              <View style={{ ...styles.iconBubble, backgroundColor: theme['c-primary-background'] }}>
-                <Icon name="share" size={18} color={theme['c-primary']} />
-              </View>
-              <View style={styles.headerText}>
-                <Text size={17} style={styles.title}>{t('user_api_btn_import_online')}</Text>
-                <Text size={12} color={theme['c-font-label']} style={styles.subtitle}>
-                  {t('user_api_btn_import_online_desc')}
-                </Text>
-              </View>
-            </View>
+            <Text size={13} color={theme['c-font-label']} style={styles.subtitle}>
+              {t('user_api_btn_import_online_desc')}
+            </Text>
             <UrlInput ref={urlInputRef} onSubmit={() => { void handleImport() }} />
           </View>
         </ConfirmAlert>
@@ -154,38 +150,18 @@ const styles = createStyle({
     flexGrow: 1,
     flexShrink: 1,
     flexDirection: 'column',
-    gap: 16,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  iconBubble: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  headerText: {
-    flexGrow: 1,
-    flexShrink: 1,
-    gap: 4,
-  },
-  title: {
-    fontWeight: '700',
+    gap: 14,
   },
   subtitle: {
-    lineHeight: 17,
+    lineHeight: 18,
   },
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
     minHeight: 48,
     paddingLeft: 14,
-    borderRadius: BorderRadius.large,
+    borderRadius: 24,
+    borderWidth: 0.5,
   },
   input: {
     flexGrow: 1,

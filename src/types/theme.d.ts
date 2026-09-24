@@ -280,6 +280,8 @@ declare global {
       'c-content-background': string
       'c-border-background': string
       'c-card-background': string
+      'c-accent': string
+      'c-accent-soft': string
       'c-glass-background': string
       'c-glass-border': string
       'c-glass-highlight': string

@@ -1,164 +1,73 @@
-import { memo, useCallback, useEffect, useMemo, useState } from 'react'
-import { View, TouchableOpacity, StyleSheet, type ImageSourcePropType } from 'react-native'
-import { setTheme } from '@/core/theme'
+import { memo, useCallback } from 'react'
+import { View } from 'react-native'
+
+import { applyTheme } from '@/core/theme'
+import { updateSetting } from '@/core/common'
 import { useI18n } from '@/lang'
 import { useSettingValue } from '@/store/setting/hook'
 import { useTheme } from '@/store/theme/hook'
+import { getTheme } from '@/theme/themes'
+import { createStyle } from '@/utils/tools'
 
 import SubTitle from '../../components/SubTitle'
-import { BG_IMAGES, getAllThemes, type LocalTheme } from '@/theme/themes'
-import Text from '@/components/common/Text'
-import { createStyle } from '@/utils/tools'
-import { Icon } from '@/components/common/Icon'
-import ImageBackground from '@/components/common/ImageBackground'
+import ChoicePills from '../../components/ChoicePills'
 
-const useActive = (id: string) => {
-  const activeThemeId = useSettingValue('theme.id')
-  const isActive = useMemo(() => activeThemeId == id, [activeThemeId, id])
-  return isActive
-}
+type Appearance = 'light' | 'dark' | 'system'
 
-const ThemeItem = ({ id, name, color, image, setTheme, showAll }: {
-  id: string
-  name: string
-  color: string
-  showAll: boolean
-  image?: ImageSourcePropType
-  setTheme: (id: string) => void
-}) => {
-  const theme = useTheme()
-  const isActive = useActive(id)
-
-  return (
-    showAll || isActive ? (
-      <TouchableOpacity style={styles.item} activeOpacity={0.5} onPress={() => { setTheme(id) }}>
-        <View style={{
-          ...styles.colorContent,
-          backgroundColor: color,
-          borderColor: isActive ? theme['c-primary'] : theme['c-border-background'],
-          borderWidth: isActive ? 3 : 1,
-        }}>
-          {
-            image
-              ? <ImageBackground style={styles.imageContent} imageStyle={styles.imageInner} source={image} />
-              : null
-          }
-          {isActive ? <Icon name="checkbox-marked" size={16} color="#ffffff" /> : null}
-        </View>
-        <Text style={styles.name} size={11} color={isActive ? theme['c-primary'] : theme['c-font-label']} numberOfLines={1}>{name}</Text>
-      </TouchableOpacity>
-    ) : null
-  )
-}
-
-const MoreBtn = ({ showAll, setShowAll }: {
-  showAll: boolean
-  setShowAll: (showAll: boolean) => void
-}) => {
-  const theme = useTheme()
-  const t = useI18n()
-
-  return (
-    showAll ? null
-      : (
-          <TouchableOpacity style={styles.moreBtn} activeOpacity={0.5} onPress={() => { setShowAll(!showAll) }}>
-            <Text size={14} color={theme['c-primary-font']} numberOfLines={1}>{t('setting_basic_theme_more_btn_show')}</Text>
-            <Icon name="chevron-right" size={12} color={theme['c-primary-font']} />
-          </TouchableOpacity>
-        )
-
-  )
-}
-
-interface ThemeInfo {
-  themes: Readonly<LocalTheme[]>
-  userThemes: LX.Theme[]
-  dataPath: string
-}
-const initInfo: ThemeInfo = { themes: [], userThemes: [], dataPath: '' }
+/**
+ * 外观只有三档：浅色白玻璃、深色黑玻璃、跟随系统。
+ * 先写入设置，再读取实际主题，保证跟随系统能拿到最新的深浅状态。
+ */
 export default memo(() => {
-  const [showAll, setShowAll] = useState(false)
   const t = useI18n()
-  const [themeInfo, setThemeInfo] = useState(initInfo)
-  const setThemeId = useCallback((id: string) => {
-    requestAnimationFrame(() => {
-      setTheme(id)
-    })
-  }, [])
+  const theme = useTheme()
+  const themeId = useSettingValue('theme.id')
+  const isAutoTheme = useSettingValue('common.isAutoTheme')
+  const appearance: Appearance = isAutoTheme ? 'system' : (themeId == 'black' ? 'dark' : 'light')
 
-  useEffect(() => {
-    void getAllThemes().then(setThemeInfo)
+  const setAppearance = useCallback((next: Appearance) => {
+    if (next == 'system') {
+      updateSetting({ 'common.isAutoTheme': true })
+    } else {
+      updateSetting({
+        'common.isAutoTheme': false,
+        'theme.id': next == 'dark' ? 'black' : 'green',
+      })
+    }
+    void getTheme().then(applyTheme)
   }, [])
 
   return (
     <SubTitle title={t('setting_basic_theme')}>
-      <View style={styles.list}>
-        {
-          themeInfo.themes.map(({ id, config }) => {
-            return <ThemeItem
-              key={id}
-              color={config.themeColors['c-theme']}
-              image={config.extInfo['bg-image'] ? BG_IMAGES[config.extInfo['bg-image']] : undefined}
-              showAll={showAll}
-              id={id}
-              name={t(`theme_${id}`)}
-              setTheme={setThemeId} />
-          })
-        }
-        {
-          themeInfo.userThemes.map(({ id, name, config }) => {
-            return <ThemeItem
-              key={id}
-              color={config.themeColors['c-theme']}
-              // image={undefined}
-              showAll={showAll}
-              id={id}
-              name={name}
-              setTheme={setThemeId} />
-          })
-        }
-        <MoreBtn showAll={showAll} setShowAll={setShowAll} />
+      <View style={styles.preview}>
+        <View style={[styles.orb, { backgroundColor: theme['c-glass-highlight'] }]} />
+        <View style={[styles.orbSoft, { backgroundColor: theme['c-accent-soft'] }]} />
       </View>
+      <ChoicePills
+        value={appearance}
+        options={[
+          { id: 'light', label: t('theme_green') },
+          { id: 'dark', label: t('theme_black') },
+          { id: 'system', label: t('setting_basic_theme_auto_theme') },
+        ]}
+        onChange={setAppearance}
+      />
     </SubTitle>
   )
 })
 
 const styles = createStyle({
-  list: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 14,
-    marginTop: 4,
-    alignItems: 'center',
-  },
-  item: {
-    width: 56,
-    alignItems: 'center',
-  },
-  colorContent: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
+  preview: {
+    height: 8,
+    marginBottom: 12,
+    borderRadius: 8,
     overflow: 'hidden',
-  },
-  imageContent: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  imageInner: {
-    borderRadius: 22,
-  },
-  name: {
-    marginTop: 6,
-    fontWeight: '500',
-  },
-  moreBtn: {
-    marginLeft: 4,
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+  },
+  orb: {
+    flex: 1,
+  },
+  orbSoft: {
+    width: 72,
   },
 })

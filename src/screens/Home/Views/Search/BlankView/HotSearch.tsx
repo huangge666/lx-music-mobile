@@ -32,7 +32,7 @@ const ListItem = ({ keyword, onSearch }: {
   const theme = useTheme()
   return (
     <Button
-      style={{ ...styles.button, backgroundColor: theme['c-card-background'] }}
+      style={{ ...styles.button, backgroundColor: theme['c-glass-surface'], borderWidth: 0.5, borderColor: theme['c-glass-border'] }}
       onPress={() => { onSearch(keyword) }}
     >
       <Text color={theme['c-font']} size={14}>{keyword}</Text>

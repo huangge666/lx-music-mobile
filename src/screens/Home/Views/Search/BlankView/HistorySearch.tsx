@@ -19,7 +19,7 @@ const ListItem = ({ keyword, onSearch, onRemove }: {
 }) => {
   const theme = useTheme()
   return (
-    <View style={{ ...styles.chip, backgroundColor: theme['c-card-background'] }}>
+    <View style={{ ...styles.chip, backgroundColor: theme['c-glass-surface'], borderWidth: 0.5, borderColor: theme['c-glass-border'] }}>
       <TouchableOpacity
         style={styles.chipLabel}
         activeOpacity={0.7}

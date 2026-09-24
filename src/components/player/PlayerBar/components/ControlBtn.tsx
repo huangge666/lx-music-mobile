@@ -44,13 +44,12 @@ const TogglePlayBtn = () => {
   const theme = useTheme()
   return (
     <TouchableOpacity
-      style={styles.playBtn}
+      style={[styles.playBtn, { backgroundColor: theme['c-accent'] }]}
       activeOpacity={0.6}
       onPress={togglePlay}
     >
       <View style={styles.playInner}>
-        {/* 透明背景 + 次要色图标，线性、轻量、克制 */}
-        <Icon name={isPlay ? 'pause' : 'play'} color={theme['c-font-label']} size={PLAY_ICON_SIZE} />
+        <Icon name={isPlay ? 'pause' : 'play'} color={theme.isDark ? 'rgb(18, 16, 14)' : 'rgb(255, 255, 255)'} size={PLAY_ICON_SIZE} />
       </View>
     </TouchableOpacity>
   )
@@ -78,9 +77,9 @@ const styles = createStyle({
   },
   // 播放/暂停 — 透明背景 + 次要色图标，线性、克制
   playBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     justifyContent: 'center',
     alignItems: 'center',
     // 与两侧按钮拉开少量间距，制造呼吸感

@@ -1,5 +1,6 @@
 import { memo } from 'react'
-import { Platform, TouchableOpacity, View } from 'react-native'
+import { Platform, TouchableOpacity } from 'react-native'
+import { Icon } from '@/components/common/Icon'
 import { useI18n } from '@/lang'
 import { usePlayMusicInfo } from '@/store/player/hook'
 import { useTheme } from '@/store/theme/hook'
@@ -29,19 +30,11 @@ export default memo(({ onPress }: LocatePlayingBtnProps) => {
       onPress={onPress}
       style={{
         ...styles.btn,
-        backgroundColor: theme['c-primary'],
-        borderColor: theme['c-primary-alpha-700'],
+        backgroundColor: theme['c-glass-background'],
+        borderColor: theme['c-glass-border'],
       }}
     >
-      <View style={styles.locateIcon}>
-        <View style={styles.locateRing}>
-          <View style={styles.locateDot} />
-        </View>
-        <View style={styles.locateLineTop} />
-        <View style={styles.locateLineRight} />
-        <View style={styles.locateLineBottom} />
-        <View style={styles.locateLineLeft} />
-      </View>
+      <Icon name="crosshair" size={18} color={theme['c-accent']} />
     </TouchableOpacity>
   )
 })
@@ -65,55 +58,5 @@ const styles = createStyle({
         elevation: 8,
       },
     }),
-  },
-  locateIcon: {
-    position: 'relative',
-    width: 22,
-    height: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  locateRing: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    borderWidth: 1.5,
-    borderColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  locateDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#fff',
-  },
-  locateLineTop: {
-    position: 'absolute',
-    top: 0,
-    width: 1.5,
-    height: 5,
-    backgroundColor: '#fff',
-  },
-  locateLineRight: {
-    position: 'absolute',
-    right: 0,
-    width: 5,
-    height: 1.5,
-    backgroundColor: '#fff',
-  },
-  locateLineBottom: {
-    position: 'absolute',
-    bottom: 0,
-    width: 1.5,
-    height: 5,
-    backgroundColor: '#fff',
-  },
-  locateLineLeft: {
-    position: 'absolute',
-    left: 0,
-    width: 5,
-    height: 1.5,
-    backgroundColor: '#fff',
   },
 })

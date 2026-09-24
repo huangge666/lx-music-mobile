@@ -5,7 +5,8 @@ import { Icon } from '@/components/common/Icon'
 import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
 import { createStyle } from '@/utils/tools'
-import { BorderRadius, BorderWidths } from '@/theme'
+import { BorderRadius } from '@/theme'
+import GlassSurface from '@/components/common/GlassSurface'
 import { scaleSizeH } from '@/utils/pixelRatio'
 
 export type SelectMode = 'single' | 'range'
@@ -163,7 +164,6 @@ export default forwardRef<MultipleModeBarType, MultipleModeBarProps>(({
   }, [isSelectAll, onSelectAll])
 
   const actionsDisabled = selectedCount === 0
-  const drawerBg = theme.isDark ? 'rgba(16, 18, 27, 0.98)' : 'rgba(255, 255, 255, 0.98)'
 
   const bar = useMemo(() => (
     <Animated.View
@@ -171,37 +171,36 @@ export default forwardRef<MultipleModeBarType, MultipleModeBarProps>(({
       style={[
         styles.container,
         {
-          backgroundColor: drawerBg,
-          borderTopColor: theme['c-border-background'],
           opacity: animFade,
           transform: [{ translateY: animTranslateY }],
         },
       ]}
     >
+      <GlassSurface style={styles.glass}>
       <View style={styles.header}>
         <Text style={styles.countText} size={16} color={theme['c-font']} numberOfLines={1}>
           {t('list_select_count', { num: selectedCount })}
         </Text>
         <TouchableOpacity onPress={handleSelectAll} style={styles.headerBtn} activeOpacity={0.6}>
-          <Text size={13} color={theme['c-primary']}>
+          <Text size={13} color={theme['c-accent']}>
             {t(isSelectAll ? 'list_select_unall' : 'list_select_all')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={onExitSelectMode} style={styles.headerBtn} activeOpacity={0.6}>
-          <Text size={13} color={theme['c-primary']}>{t('list_select_cancel')}</Text>
+          <Text size={13} color={theme['c-accent']}>{t('list_select_cancel')}</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={[styles.modeSwitch, { backgroundColor: theme['c-card-background'] }]}>
+      <View style={[styles.modeSwitch, { backgroundColor: theme['c-glass-surface'], borderWidth: 0.5, borderColor: theme['c-glass-border'] }]}>
         <TouchableOpacity
           onPress={() => { onSwitchMode('single') }}
           style={[
             styles.modeBtn,
-            selectMode == 'single' && { backgroundColor: theme['c-button-background'] },
+            selectMode == 'single' && { backgroundColor: theme['c-accent-soft'] },
           ]}
           activeOpacity={0.7}
         >
-          <Text size={12} color={selectMode == 'single' ? theme['c-primary'] : theme['c-font-label']}>
+          <Text size={12} color={selectMode == 'single' ? theme['c-accent'] : theme['c-font-label']}>
             {t('list_select_single')}
           </Text>
         </TouchableOpacity>
@@ -209,11 +208,11 @@ export default forwardRef<MultipleModeBarType, MultipleModeBarProps>(({
           onPress={() => { onSwitchMode('range') }}
           style={[
             styles.modeBtn,
-            selectMode == 'range' && { backgroundColor: theme['c-button-background'] },
+            selectMode == 'range' && { backgroundColor: theme['c-accent-soft'] },
           ]}
           activeOpacity={0.7}
         >
-          <Text size={12} color={selectMode == 'range' ? theme['c-primary'] : theme['c-font-label']}>
+          <Text size={12} color={selectMode == 'range' ? theme['c-accent'] : theme['c-font-label']}>
             {t('list_select_range')}
           </Text>
         </TouchableOpacity>
@@ -227,8 +226,8 @@ export default forwardRef<MultipleModeBarType, MultipleModeBarProps>(({
                   icon="nextMusic"
                   label={t('play_later')}
                   color={theme['c-font']}
-                  iconColor={theme['c-primary']}
-                  iconBg={theme['c-primary-background']}
+                  iconColor={theme['c-accent']}
+                  iconBg={theme['c-accent-soft']}
                   disabled={actionsDisabled}
                   onPress={onPlayLater}
                 />
@@ -242,8 +241,8 @@ export default forwardRef<MultipleModeBarType, MultipleModeBarProps>(({
                   icon="add-music"
                   label={t('add_to')}
                   color={theme['c-font']}
-                  iconColor={theme['c-primary']}
-                  iconBg={theme['c-primary-background']}
+                  iconColor={theme['c-accent']}
+                  iconBg={theme['c-accent-soft']}
                   disabled={actionsDisabled}
                   onPress={onAdd}
                 />
@@ -257,8 +256,8 @@ export default forwardRef<MultipleModeBarType, MultipleModeBarProps>(({
                   icon="add_folder"
                   label={t('move_to')}
                   color={theme['c-font']}
-                  iconColor={theme['c-primary']}
-                  iconBg={theme['c-primary-background']}
+                  iconColor={theme['c-accent']}
+                  iconBg={theme['c-accent-soft']}
                   disabled={actionsDisabled}
                   onPress={onMove}
                 />
@@ -281,12 +280,12 @@ export default forwardRef<MultipleModeBarType, MultipleModeBarProps>(({
             : null
         }
       </View>
+      </GlassSurface>
     </Animated.View>
   ), [
     actionsDisabled,
     animFade,
     animTranslateY,
-    drawerBg,
     handleSelectAll,
     isSelectAll,
     onAdd,
@@ -362,17 +361,19 @@ const styles = createStyle({
   },
   container: {
     width: '100%',
-    borderTopLeftRadius: BorderRadius.xlarge,
-    borderTopRightRadius: BorderRadius.xlarge,
-    borderTopWidth: BorderWidths.hairline,
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 18,
     elevation: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.18,
     shadowRadius: 16,
+  },
+  glass: {
+    borderTopLeftRadius: BorderRadius.xlarge,
+    borderTopRightRadius: BorderRadius.xlarge,
+    borderWidth: 0.5,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 18,
   },
   header: {
     flexDirection: 'row',

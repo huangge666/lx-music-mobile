@@ -14,8 +14,8 @@ export default memo(({ disabled, size = 14, onPress, children }: ButtonProps) =>
   const theme = useTheme()
 
   return (
-    <Button style={{ ...styles.button, backgroundColor: theme['c-button-background'] }} onPress={onPress} disabled={disabled}>
-      <Text size={size} color={theme['c-button-font']}>{children}</Text>
+    <Button style={{ ...styles.button, backgroundColor: theme['c-accent'], borderWidth: 0.5, borderColor: theme['c-glass-border'] }} onPress={onPress} disabled={disabled}>
+      <Text size={size} color={theme.isDark ? 'rgb(18, 16, 14)' : 'rgb(255, 255, 255)'}>{children}</Text>
     </Button>
   )
 })

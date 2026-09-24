@@ -13,16 +13,12 @@ export default ({ name }: { name: string }) => {
     <View style={[
       settingLayout.iconBubble,
       {
-        backgroundColor: theme.isDark
-          ? 'rgba(255, 255, 255, 0.06)'
-          : theme['c-primary-background'],
-        borderColor: theme.isDark
-          ? 'rgba(255, 255, 255, 0.08)'
-          : theme['c-glass-border'],
+        backgroundColor: theme['c-accent-soft'],
+        borderColor: theme['c-glass-border'],
         marginRight: 14,
       },
     ]}>
-      <Icon name={name} size={18} color={theme['c-primary']} />
+      <Icon name={name} size={18} color={theme['c-accent']} />
     </View>
   )
 }

@@ -53,7 +53,7 @@ export default forwardRef<SortTabType, SortTabProps>(({ onSortChange }, ref) => 
           const active = activeId == s.id
           return (
             <TouchableOpacity
-              style={{ ...styles.button, backgroundColor: active ? theme['c-primary-background'] : theme['c-card-background'], borderColor: active ? theme['c-primary-alpha-700'] : theme['c-border-background'] }}
+              style={{ ...styles.button, backgroundColor: active ? theme['c-accent-soft'] : theme['c-glass-surface'], borderColor: active ? theme['c-glass-border'] : theme['c-border-background'] }}
               activeOpacity={0.72}
               onPress={() => { handleSortChange(s.id) }}
               key={s.id}

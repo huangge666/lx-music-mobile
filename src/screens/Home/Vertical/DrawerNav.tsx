@@ -11,6 +11,7 @@ import { exitApp, setNavActiveId } from '@/core/common'
 import Text from '@/components/common/Text'
 import { useSettingValue } from '@/store/setting/hook'
 import { BorderRadius, BorderWidths } from '@/theme'
+import GlassSurface from '@/components/common/GlassSurface'
 import versionState from '@/store/version/state'
 
 const styles = createStyle({
@@ -137,11 +138,11 @@ const MenuItem = ({ id, icon, onPress }: {
   const content = isActive
     ? (
       <>
-        <View style={{ ...styles.iconTile, backgroundColor: theme['c-primary'] }}>
-          <Icon name={icon} size={17} color="rgb(255, 255, 255)" />
+        <View style={{ ...styles.iconTile, backgroundColor: theme['c-accent'] }}>
+          <Icon name={icon} size={17} color={theme.isDark ? 'rgb(18, 16, 14)' : 'rgb(255, 255, 255)'} />
         </View>
-        <Text style={{ ...styles.text, fontWeight: '600' }} color={theme['c-primary']}>{t(id)}</Text>
-        <Icon name="chevron-right" size={13} color={theme['c-primary-alpha-500']} />
+        <Text style={{ ...styles.text, fontWeight: '600' }} color={theme['c-accent']}>{t(id)}</Text>
+        <Icon name="chevron-right" size={13} color={theme['c-accent']} />
       </>
       )
     : (
@@ -158,7 +159,7 @@ const MenuItem = ({ id, icon, onPress }: {
       <View
         style={{
           ...styles.menuItem,
-          backgroundColor: theme['c-primary-alpha-800'],
+          backgroundColor: theme['c-accent-soft'],
           borderColor: theme['c-glass-border'],
         }}
       >
@@ -204,10 +205,8 @@ export default memo(() => {
   }
 
 
-  const drawerBg = theme.isDark ? 'rgba(16, 18, 27, 0.98)' : 'rgba(255, 255, 255, 0.98)'
-
   return (
-    <View style={{ ...styles.container, backgroundColor: drawerBg }}>
+    <GlassSurface highlight="none" style={styles.container}>
       <Header />
       <ScrollView style={styles.menus}>
         <View style={styles.list}>
@@ -215,10 +214,10 @@ export default memo(() => {
         </View>
       </ScrollView>
 
-      <View style={{ ...styles.footer, borderTopWidth: BorderWidths.hairline, borderTopColor: theme['c-border-background'] }}>
+      <View style={{ ...styles.footer, borderTopWidth: BorderWidths.hairline, borderTopColor: theme['c-glass-border'] }}>
         {showBackBtn ? <MenuItem id="back_home" icon="home" onPress={handlePress} /> : null}
         {showExitBtn ? <MenuItem id="nav_exit" icon="exit2" onPress={handlePress} /> : null}
       </View>
-    </View>
+    </GlassSurface>
   )
 })

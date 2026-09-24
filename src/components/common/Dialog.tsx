@@ -8,6 +8,7 @@ import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import Text from './Text'
 import { BorderRadius } from '@/theme'
+import GlassSurface from '@/components/common/GlassSurface'
 
 /**
  * Apple Music 风格 Dialog 弹窗
@@ -31,7 +32,7 @@ const styles = createStyle({
     maxWidth: 420,
     minWidth: 280,
     maxHeight: '78%',
-    borderRadius: BorderRadius.xlarge,
+    borderRadius: 28,
     elevation: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 16 },
@@ -46,8 +47,9 @@ const styles = createStyle({
     borderTopLeftRadius: BorderRadius.xlarge,
     borderTopRightRadius: BorderRadius.xlarge,
     minHeight: HEADER_HEIGHT,
-    paddingLeft: 18,
+    paddingLeft: 22,
     paddingRight: CLOSE_SIZE + 16,
+    paddingTop: 16,
   },
   title: {
     flexGrow: 1,
@@ -64,6 +66,10 @@ const styles = createStyle({
     borderRadius: CLOSE_SIZE / 2,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  dialogBody: {
+    width: '100%',
+    maxHeight: '100%',
   },
   body: {
     flexGrow: 1,
@@ -115,7 +121,9 @@ export default forwardRef<DialogType, DialogProps>(({
             style={{
               ...styles.closeBtn,
               top: hasTitle ? (HEADER_HEIGHT - CLOSE_SIZE) / 2 : 10,
-              backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(118, 118, 128, 0.12)',
+              backgroundColor: theme['c-glass-surface'],
+              borderWidth: 0.5,
+              borderColor: theme['c-glass-border'],
             }}
             activeOpacity={0.7}
             onPress={() => modalRef.current?.setVisible(false)}
@@ -131,21 +139,19 @@ export default forwardRef<DialogType, DialogProps>(({
   return (
     <Modal onHide={onHide} keyHide={keyHide} bgHide={bgHide} bgColor="rgba(0,0,0,.52)" ref={modalRef}>
       <View style={{ ...styles.centeredView, paddingBottom: keyboardShown ? keyboardHeight : 0 }}>
-        <View
+        <GlassSurface
+          highlight="none"
           style={{
             ...styles.modalView,
             height,
-            backgroundColor: theme['c-content-background'],
             borderWidth: 0.5,
-            borderColor: theme['c-border-background'],
-            overflow: 'hidden',
           }}
-          onStartShouldSetResponder={() => true}
         >
+          <View onStartShouldSetResponder={() => true} style={styles.dialogBody}>
           {hasTitle
             ? (
-                <View style={{ ...styles.header, backgroundColor: theme['c-content-background'], borderBottomWidth: 0.5, borderBottomColor: theme['c-border-background'] }}>
-                  <Text style={styles.title} size={16} color={theme['c-font']} numberOfLines={1}>{title}</Text>
+                <View style={styles.header}>
+                  <Text style={styles.title} size={18} color={theme['c-font']} numberOfLines={1}>{title}</Text>
                 </View>
               )
             : null}
@@ -153,7 +159,8 @@ export default forwardRef<DialogType, DialogProps>(({
           <View style={!hasTitle && closeBtn ? { ...styles.body, ...styles.bodyWithClose } : styles.body}>
             {children}
           </View>
-        </View>
+          </View>
+        </GlassSurface>
       </View>
     </Modal>
   )

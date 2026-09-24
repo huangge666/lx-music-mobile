@@ -6,6 +6,7 @@ import { handleDislikeMusic, handleDownload, handlePlay, handlePlayLater, handle
 import List, { type ListType } from './List'
 import ListMusicAdd, { type MusicAddModalType as ListMusicAddType } from '@/components/MusicAddModal'
 import ListMusicMultiAdd, { type MusicMultiAddModalType as ListAddMultiType } from '@/components/MusicMultiAddModal'
+import { scaleSizeH } from '@/utils/pixelRatio'
 import { createStyle } from '@/utils/tools'
 import { type LayoutChangeEvent, View } from 'react-native'
 import MultipleModeBar, { type SelectMode, type MultipleModeBarType } from './MultipleModeBar'
@@ -215,8 +216,8 @@ const styles = createStyle({
   },
   fabWrap: {
     position: 'absolute',
-    right: 16,
-    bottom: 16,
+    right: 14,
+    bottom: scaleSizeH(168),
     zIndex: 8,
   },
 })

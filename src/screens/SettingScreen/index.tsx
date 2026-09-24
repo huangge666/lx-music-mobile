@@ -27,8 +27,8 @@ const Header = memo(({ componentId, title, transparent }: { componentId: string,
     <View style={[styles.headerWrap, {
       height: HEADER_HEIGHT + statusBarHeight,
       paddingTop: statusBarHeight,
-      backgroundColor: transparent ? theme['c-glass-background'] : theme['c-content-background'],
-      borderBottomColor: theme['c-border-background'],
+      backgroundColor: transparent ? 'transparent' : theme['c-glass-background'],
+      borderBottomColor: theme['c-glass-border'],
     }]}>
       <StatusBar />
       <View style={styles.header}>
@@ -37,9 +37,9 @@ const Header = memo(({ componentId, title, transparent }: { componentId: string,
           activeOpacity={0.7}
           accessibilityRole="button"
           accessibilityLabel={t('back')}
-          style={[styles.backButton, { backgroundColor: theme['c-primary-background'] }]}
+          style={[styles.backButton, { backgroundColor: theme['c-accent-soft'], borderWidth: 0.5, borderColor: theme['c-glass-border'] }]}
         >
-          <Icon name="chevron-left" size={19} color={theme['c-primary']} />
+          <Icon name="chevron-left" size={19} color={theme['c-accent']} />
         </TouchableOpacity>
         <Text numberOfLines={1} size={22} style={styles.title}>{title}</Text>
       </View>
@@ -63,7 +63,7 @@ export default ({ componentId, settingScreenId }: { componentId: string, setting
       <ScrollView
         keyboardShouldPersistTaps="always"
         showsVerticalScrollIndicator={false}
-        style={[styles.scroll, { backgroundColor: hasDynamicBg ? 'transparent' : theme['c-card-background'] }]}
+        style={[styles.scroll, { backgroundColor: hasDynamicBg ? 'transparent' : theme['c-content-background'] }]}
         contentContainerStyle={styles.content}
       >
         <View style={styles.contentInner}>

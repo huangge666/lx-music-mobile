@@ -10,7 +10,6 @@ import { useSettingActiveScreenId, useSettingValue } from '@/store/setting/hook'
 import { scaleSizeH } from '@/utils/pixelRatio'
 import { HEADER_HEIGHT } from '@/config/constant'
 import { type InitState as CommonState } from '@/store/common/state'
-import SearchTypeSelector from '@/screens/Home/Views/Search/SearchTypeSelector'
 import DetailNav from '@/screens/Home/Views/Mylist/DetailNav'
 import ImportSonglist from '@/screens/Home/Views/Mylist/MyList/ImportSonglist'
 import { useMylistPlaylistsVisible } from '@/store/list/uiHook'
@@ -19,7 +18,6 @@ import { type SettingScreenIds } from '@/screens/Home/Views/Setting'
 
 // Apple Music 各页面对应的大标题文案
 const headerComponents: Partial<Record<CommonState['navActiveId'], React.ReactNode>> = {
-  nav_search: <SearchTypeSelector />,
   // “我的”页头部提供导入歌单入口（歌单页“打开歌单”的同款交互，改为直接导入）
   nav_love: <ImportSonglist />,
 }
@@ -83,20 +81,20 @@ const LeftHeader = () => {
   return (
     <View style={{
       ...styles.container,
-      height: scaleSizeH(HEADER_HEIGHT) + statusBarHeight,
+      height: scaleSizeH(HEADER_HEIGHT + 18) + statusBarHeight,
       paddingTop: statusBarHeight,
-      backgroundColor: theme['c-content-background'],
+      backgroundColor: 'transparent',
     }}>
       {isMylistDetail
         ? <DetailNav />
         : (
             <>
               <View style={styles.left}>
-                <TouchableOpacity style={styles.menuBtn} onPress={openMenu} activeOpacity={0.6}>
-                  <Icon color={theme['c-primary']} name="menu" size={20} />
+                <TouchableOpacity style={[styles.menuBtn, styles.menuBubble, { backgroundColor: theme['c-glass-surface'], borderColor: theme['c-glass-border'] }]} onPress={openMenu} activeOpacity={0.6}>
+                  <Icon color={theme['c-accent']} name="menu" size={18} />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.titleBtn} onPress={openMenu} activeOpacity={0.6}>
-                  <Text style={styles.title} size={22} color={theme['c-font']}>{t(id)}</Text>
+                  <Text style={styles.title} size={30} color={theme['c-font']}>{t(id)}</Text>
                 </TouchableOpacity>
               </View>
               {headerComponents[id] ?? null}
@@ -123,9 +121,9 @@ const RightHeader = () => {
   return (
     <View style={{
       ...styles.container,
-      height: scaleSizeH(HEADER_HEIGHT) + statusBarHeight,
+      height: scaleSizeH(HEADER_HEIGHT + 18) + statusBarHeight,
       paddingTop: statusBarHeight,
-      backgroundColor: theme['c-content-background'],
+      backgroundColor: 'transparent',
     }}>
       {isMylistDetail
         ? <DetailNav />
@@ -133,12 +131,12 @@ const RightHeader = () => {
             <>
               <View style={styles.rightLeft}>
                 <TouchableOpacity style={styles.titleBtn} onPress={openMenu} activeOpacity={0.6}>
-                  <Text style={styles.titleRight} size={22} color={theme['c-font']}>{t(id)}</Text>
+                  <Text style={styles.titleRight} size={30} color={theme['c-font']}>{t(id)}</Text>
                 </TouchableOpacity>
               </View>
               {headerComponents[id] ?? null}
-              <TouchableOpacity style={styles.menuBtn} onPress={openMenu} activeOpacity={0.6}>
-                <Icon color={theme['c-primary']} name="menu" size={20} />
+              <TouchableOpacity style={[styles.menuBtn, styles.menuBubble, { backgroundColor: theme['c-glass-surface'], borderColor: theme['c-glass-border'] }]} onPress={openMenu} activeOpacity={0.6}>
+                <Icon color={theme['c-accent']} name="menu" size={18} />
               </TouchableOpacity>
             </>
           )}
@@ -169,7 +167,7 @@ export default Header
 
 const styles = createStyle({
   container: {
-    paddingRight: 8,
+    paddingRight: 16,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
@@ -190,10 +188,15 @@ const styles = createStyle({
     height: '100%',
   },
   menuBtn: {
-    width: HEADER_HEIGHT,
+    width: 40,
+    height: 40,
+    marginLeft: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    height: '100%',
+  },
+  menuBubble: {
+    borderRadius: 20,
+    borderWidth: 0.5,
   },
   backBtn: {
     width: 34,
@@ -216,7 +219,7 @@ const styles = createStyle({
   },
   // Apple Music 风格标题 — 粗体、左对齐
   title: {
-    paddingLeft: 10,
+    paddingLeft: 12,
     paddingRight: 12,
     fontWeight: '700',
   },

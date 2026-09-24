@@ -15,14 +15,14 @@ export default memo(({ disabled, onPress, children }: ButtonProps) => {
     <Button
       style={{
         ...styles.button,
-        backgroundColor: theme['c-button-background'],
+        backgroundColor: theme['c-glass-surface'],
         borderWidth: 0.5,
-        borderColor: theme.isDark ? 'rgba(255, 255, 255, 0.12)' : theme['c-glass-border'],
+        borderColor: theme['c-glass-border'],
       }}
       onPress={onPress}
       disabled={disabled}
     >
-      <Text size={13} color={theme['c-button-font']} style={styles.text}>{children}</Text>
+      <Text size={13} color={theme['c-accent']} style={styles.text}>{children}</Text>
     </Button>
   )
 })

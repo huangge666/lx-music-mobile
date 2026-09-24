@@ -7,53 +7,35 @@ import Title from './components/Title'
 import PlayInfo from './components/PlayInfo'
 import ControlBtn from './components/ControlBtn'
 import { createStyle } from '@/utils/tools'
-import { useTheme } from '@/store/theme/hook'
 import { useSettingValue } from '@/store/setting/hook'
 import { useNavActiveId } from '@/store/common/hook'
-
+import GlassSurface from '@/components/common/GlassSurface'
 
 /**
- * 弥散流体水光玻璃 — 浮动迷你播放器
- *
- * 核心视觉特征：
- * — 水润通透底色 (Fluid Translucency)
- * — 双层水光漫反射光晕 (Diffuse Fluid Glow + Ambient Light)
- * — 水面流光微反射折射层
+ * 迷你播放器。
+ * 首页竖屏是悬浮胶囊，其他页面仍贴在内容底部，避免详情页被左右留白截断。
  */
-export default memo(({ isHome = false }: { isHome?: boolean }) => {
+export default memo(({ isHome = false, floating = false }: { isHome?: boolean, floating?: boolean }) => {
   const { keyboardShown } = useKeyboard()
-  const theme = useTheme()
   const autoHidePlayBar = useSettingValue('common.autoHidePlayBar')
   const navActiveId = useNavActiveId()
 
   const playerComponent = useMemo(() => (
-    <View style={{
-      ...styles.container,
-      // 与 TabBar 共用同一套玻璃底色，避免底部组合栏出现色差
-      backgroundColor: theme['c-glass-background'],
-      borderTopColor: theme['c-glass-border'],
-      borderTopWidth: 0.5,
-    }}>
-      {/* 柔光层透明度与 TabBar 保持一致 */}
-      <View
-        pointerEvents="none"
-        style={{
-          ...styles.fluidGlowBackdrop,
-          backgroundColor: theme['c-glass-fluid-glow'],
-        }}
-      />
-      <View style={styles.left}>
-        <Pic isHome={isHome} />
-      </View>
-      <View style={styles.center}>
-        <Title isHome={isHome} />
-        <PlayInfo isHome={isHome} />
-      </View>
-      <View style={styles.right}>
-        <ControlBtn />
-      </View>
+    <View style={floating ? styles.floatWrap : null}>
+      <GlassSurface style={floating ? styles.floating : styles.docked}>
+        <View style={styles.left}>
+          <Pic isHome={isHome} />
+        </View>
+        <View style={styles.center}>
+          <Title isHome={isHome} />
+          <PlayInfo isHome={isHome} />
+        </View>
+        <View style={styles.right}>
+          <ControlBtn />
+        </View>
+      </GlassSurface>
     </View>
-  ), [theme, isHome])
+  ), [floating, isHome])
 
   if (isHome && navActiveId == 'nav_setting') return null
   return autoHidePlayBar && keyboardShown ? null : playerComponent
@@ -61,23 +43,32 @@ export default memo(({ isHome = false }: { isHome?: boolean }) => {
 
 
 const styles = createStyle({
-  container: {
+  floatWrap: {
+    paddingHorizontal: 14,
+    paddingBottom: 8,
+  },
+  floating: {
+    minHeight: 64,
+    paddingVertical: 8,
+    paddingLeft: 8,
+    paddingRight: 10,
+    borderRadius: 22,
+    borderWidth: 0.5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.16,
+    shadowRadius: 18,
+    elevation: 8,
+  },
+  docked: {
     width: 'auto',
     paddingVertical: 6,
     paddingHorizontal: 16,
-    borderBottomWidth: 0,
+    borderTopWidth: 0.5,
     flexDirection: 'row',
     alignItems: 'center',
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  fluidGlowBackdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    opacity: 0.2,
   },
   left: {
     flexGrow: 0,

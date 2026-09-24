@@ -3,6 +3,7 @@ import { View, TouchableOpacity } from 'react-native'
 import Text from '@/components/common/Text'
 import Badge, { type BadgeType } from '@/components/common/Badge'
 import { Icon } from '@/components/common/Icon'
+import Image from '@/components/common/Image'
 import { useI18n } from '@/lang'
 import { useTheme } from '@/store/theme/hook'
 import { scaleSizeH } from '@/utils/pixelRatio'
@@ -29,14 +30,8 @@ const useQualityTag = (musicInfo: LX.Music.MusicInfoOnline) => {
 }
 
 /**
- * Apple Music 风格列表项
- *
- * 视觉特征：
- * — 左侧序号（次要色、较小字体）
- * — 歌名 15pt + 歌手/专辑 12pt 次要色
- * — 右侧时长 + 更多按钮
- * — 选中态：圆角浅色背景
- * — 行间无分隔线，靠间距区分（Apple Music 风格）
+ * 通栏歌曲行：小封面、歌名、歌手、时长和更多操作。
+ * 不给每一行单独套卡片，避免列表被切成一块一块。
  */
 export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu, selectedList, rowInfo, isShowAlbumName, isShowInterval }: {
   item: LX.Music.MusicInfoOnline
@@ -65,12 +60,23 @@ export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu
   const tagInfo = useQualityTag(item)
 
   const singer = `${item.singer}${isShowAlbumName && item.meta.albumName ? ` · ${item.meta.albumName}` : ''}`
+  const coverUrl = item.meta.picUrl
 
   return (
-    <View style={{ ...styles.listItem, width: rowInfo.rowWidth, height: ITEM_HEIGHT, backgroundColor: isSelected ? theme['c-primary-background-hover'] : 'rgba(0,0,0,0)' }}>
+    <View style={{
+      ...styles.listItem,
+      width: rowInfo.rowWidth,
+      height: ITEM_HEIGHT,
+      backgroundColor: isSelected ? theme['c-accent-soft'] : 'transparent',
+    }}>
       <TouchableOpacity style={styles.listItemLeft} onPress={() => { onPress(item, index) }} onLongPress={() => { onLongPress(item, index) }} activeOpacity={0.6}>
-        {/* Apple Music 风格序号 — 居中、次要色 */}
-        <Text style={styles.sn} size={15} color={theme['c-font-label']} numberOfLines={1}>{index + 1}</Text>
+        {coverUrl
+          ? (
+              <View style={styles.coverWrap}>
+                <Image url={coverUrl} style={styles.cover} />
+              </View>
+            )
+          : null}
         <View style={styles.itemInfo}>
           {/* 歌名 — 主文字色 */}
           <Text numberOfLines={1} color={theme['c-font']}>{item.name}</Text>
@@ -105,8 +111,21 @@ const styles = createStyle({
   listItem: {
     flexDirection: 'row',
     flexWrap: 'nowrap',
+    paddingLeft: 16,
     paddingRight: 4,
     alignItems: 'center',
+  },
+  coverWrap: {
+    width: 40,
+    height: 40,
+    marginRight: 12,
+    flexGrow: 0,
+    flexShrink: 0,
+  },
+  cover: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
   },
   listItemLeft: {
     flex: 1,
@@ -114,13 +133,6 @@ const styles = createStyle({
     flexShrink: 1,
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  // Apple Music 风格序号 — 固定宽度、居中对齐，宽度足够容纳4位数序号
-  sn: {
-    width: 44,
-    textAlign: 'center',
-    paddingLeft: 4,
-    paddingRight: 4,
   },
   itemInfo: {
     flexGrow: 1,

@@ -101,7 +101,14 @@ export default forwardRef<InputType, InputProps>(({ onChangeText, onClearText, c
         autoCapitalize="none"
         onChangeText={changeText}
         autoComplete="off"
-        style={StyleSheet.compose({ ...styles.input, color: theme['c-font'], fontSize: setSpText(size) }, style)}
+        style={StyleSheet.compose({
+          ...styles.input,
+          color: theme['c-font'],
+          fontSize: setSpText(size),
+          backgroundColor: theme['c-glass-surface'],
+          borderWidth: 0.5,
+          borderColor: theme['c-glass-border'],
+        }, style)}
         placeholderTextColor={theme['c-font-label']}
         selectionColor={theme['c-primary']}
         ref={inputRef} {...props} />

@@ -31,7 +31,7 @@ function ChoicePills<T extends string>({
       <View style={[
         styles.track,
         {
-          backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(118, 118, 128, 0.08)',
+          backgroundColor: theme['c-glass-surface'],
           borderColor: theme['c-glass-border'],
           borderWidth: 0.5,
         },
@@ -45,7 +45,7 @@ function ChoicePills<T extends string>({
                 styles.segment,
                 selected
                   ? {
-                      backgroundColor: theme['c-primary-background'],
+                      backgroundColor: theme['c-accent-soft'],
                       borderWidth: 0.5,
                       borderColor: theme['c-glass-border'],
                     }
@@ -56,7 +56,7 @@ function ChoicePills<T extends string>({
             >
               <Text
                 size={12}
-                color={selected ? theme['c-primary'] : theme['c-font-label']}
+                color={selected ? theme['c-accent'] : theme['c-font-label']}
                 style={selected ? styles.selectedText : styles.text}
                 numberOfLines={1}
               >
@@ -80,8 +80,8 @@ function ChoicePills<T extends string>({
               styles.chip,
               {
                 backgroundColor: selected
-                  ? theme['c-primary-background']
-                  : (theme.isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(118, 118, 128, 0.08)'),
+                  ? theme['c-accent-soft']
+                  : theme['c-glass-surface'],
                 borderWidth: 0.5,
                 borderColor: selected ? theme['c-glass-border'] : theme['c-border-background'],
               },
@@ -91,7 +91,7 @@ function ChoicePills<T extends string>({
           >
             <Text
               size={13}
-              color={selected ? theme['c-primary'] : theme['c-font-label']}
+              color={selected ? theme['c-accent'] : theme['c-font-label']}
               style={selected ? styles.selectedText : styles.text}
               numberOfLines={1}
             >

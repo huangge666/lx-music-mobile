@@ -6,9 +6,9 @@ import SourceSelector, {
   type SourceSelectorProps as _SourceSelectorProps,
 } from '@/components/SourceSelector'
 import SearchInput, { type SearchInputType, type SearchInputProps } from './SearchInput'
+import SearchTypeSelector from '../SearchTypeSelector'
 import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
-import { BorderRadius } from '@/theme'
 import { type Source as MusicSource } from '@/store/search/music/state'
 import { type Source as SonglistSource } from '@/store/search/songlist/state'
 
@@ -57,31 +57,45 @@ export default forwardRef<HeaderBarType, HeaderBarProps>(({ onSourceChange, onTi
 
 
   return (
-    <View style={{ ...styles.searchBar, backgroundColor: theme['c-primary-input-background'] }}>
-      <View style={styles.selector}>
-        <SourceSelector ref={sourceSelectorRef} onSourceChange={onSourceChange} center />
+    <View style={styles.wrap}>
+      <View style={{
+        ...styles.searchBar,
+        backgroundColor: theme['c-glass-background'],
+        borderColor: theme['c-glass-border'],
+      }}>
+        <View style={styles.selector}>
+          <SourceSelector ref={sourceSelectorRef} onSourceChange={onSourceChange} center />
+        </View>
+        <SearchInput
+          ref={searchInputRef}
+          onChangeText={onTipSearch}
+          onSubmit={onSearch}
+          onBlur={onHideTipList}
+          onTouchStart={onShowTipList}
+        />
+        <SearchTypeSelector />
       </View>
-      <SearchInput
-        ref={searchInputRef}
-        onChangeText={onTipSearch}
-        onSubmit={onSearch}
-        onBlur={onHideTipList}
-        onTouchStart={onShowTipList}
-      />
     </View>
   )
 })
 
 const styles = createStyle({
-  searchBar: {
-    flexDirection: 'row',
-    height: 44,
-    marginHorizontal: 16,
-    marginVertical: 8,
-    borderRadius: BorderRadius.medium,
-    paddingHorizontal: 4,
-    alignItems: 'center',
+  wrap: {
+    paddingHorizontal: 16,
+    paddingTop: 4,
+    paddingBottom: 10,
     zIndex: 2,
   },
-  selector: {},
+  searchBar: {
+    flexDirection: 'row',
+    height: 52,
+    borderRadius: 26,
+    borderWidth: 0.5,
+    paddingHorizontal: 6,
+    alignItems: 'center',
+  },
+  selector: {
+    flexGrow: 0,
+    flexShrink: 0,
+  },
 })

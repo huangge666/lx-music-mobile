@@ -15,6 +15,7 @@ import Text from '@/components/common/Text'
 import { useTheme } from '@/store/theme/hook'
 import { createStyle } from '@/utils/tools'
 import { BorderRadius, BorderWidths } from '@/theme'
+import GlassSurface from '@/components/common/GlassSurface'
 
 export interface ActionSheetItem {
   action: string
@@ -115,8 +116,7 @@ export default forwardRef<ActionSheetType, ActionSheetProps>(({ onPress, onHide 
     inputRange: [0, 1],
     outputRange: [SCREEN_HEIGHT * 0.7, 0],
   })
-  const drawerBg = theme.isDark ? 'rgba(16, 18, 27, 0.98)' : 'rgba(255, 255, 255, 0.98)'
-  const headerCoverBg = header.iconBg ?? theme['c-card-background']
+  const headerCoverBg = header.iconBg ?? theme['c-glass-surface']
   const headerCoverColor = header.iconColor ?? theme['c-font-label']
 
   return (
@@ -136,16 +136,11 @@ export default forwardRef<ActionSheetType, ActionSheetProps>(({ onPress, onHide 
         <Animated.View
           style={[
             styles.drawerSheet,
-            {
-              backgroundColor: drawerBg,
-              borderColor: theme['c-border-background'],
-              borderTopColor: theme['c-border-background'],
-              borderTopWidth: BorderWidths.hairline,
-              transform: [{ translateY: sheetTranslateY }],
-            },
+            { transform: [{ translateY: sheetTranslateY }] },
           ]}
           onStartShouldSetResponder={() => true}
         >
+          <GlassSurface highlight="none" style={styles.drawerFill}>
           <View style={styles.grabberContainer}>
             <View style={[styles.grabber, { backgroundColor: theme['c-font-label'], opacity: 0.3 }]} />
           </View>
@@ -173,7 +168,7 @@ export default forwardRef<ActionSheetType, ActionSheetProps>(({ onPress, onHide 
               }
             </View>
             <TouchableOpacity
-              style={[styles.closeBtn, { backgroundColor: theme['c-card-background'] }]}
+              style={[styles.closeBtn, { backgroundColor: theme['c-glass-surface'], borderWidth: 0.5, borderColor: theme['c-glass-border'] }]}
               activeOpacity={0.7}
               onPress={() => { closeDrawer() }}
             >
@@ -187,7 +182,7 @@ export default forwardRef<ActionSheetType, ActionSheetProps>(({ onPress, onHide 
             showsVerticalScrollIndicator={false}
             bounces={false}
           >
-            <View style={[styles.menuGroup, { backgroundColor: theme['c-card-background'] }]}>
+            <View style={[styles.menuGroup, { backgroundColor: theme['c-glass-surface'], borderWidth: 0.5, borderColor: theme['c-glass-border'] }]}>
               {items.map((item, index) => {
                 const isLast = index === items.length - 1
                 const itemColor = item.danger
@@ -195,13 +190,13 @@ export default forwardRef<ActionSheetType, ActionSheetProps>(({ onPress, onHide 
                   : item.disabled
                     ? theme['c-font-label']
                     : item.selected
-                      ? theme['c-primary-font']
+                      ? theme['c-accent']
                       : theme['c-font']
                 const iconColor = item.danger
                   ? DANGER_COLOR
                   : item.disabled
                     ? theme['c-font-label']
-                    : theme['c-primary']
+                    : theme['c-accent']
 
                 return (
                   <TouchableOpacity
@@ -222,7 +217,7 @@ export default forwardRef<ActionSheetType, ActionSheetProps>(({ onPress, onHide 
                             ? 'rgba(255, 69, 58, 0.12)'
                             : item.disabled
                               ? 'transparent'
-                              : theme['c-primary-background'],
+                              : theme['c-accent-soft'],
                         },
                       ]}
                     >
@@ -239,7 +234,7 @@ export default forwardRef<ActionSheetType, ActionSheetProps>(({ onPress, onHide 
                     <Icon
                       name={item.selected ? 'checkbox-marked' : 'chevron-right'}
                       size={item.selected ? 16 : 12}
-                      color={item.selected ? theme['c-primary'] : theme['c-font-label']}
+                      color={item.selected ? theme['c-accent'] : theme['c-font-label']}
                       style={[styles.chevron, item.disabled && { opacity: 0.3 }]}
                     />
                   </TouchableOpacity>
@@ -247,6 +242,7 @@ export default forwardRef<ActionSheetType, ActionSheetProps>(({ onPress, onHide 
               })}
             </View>
           </ScrollView>
+          </GlassSurface>
         </Animated.View>
       </View>
     </Modal>
@@ -267,15 +263,17 @@ const styles = createStyle({
   drawerSheet: {
     width: '100%',
     maxHeight: '82%',
-    borderTopLeftRadius: BorderRadius.xlarge,
-    borderTopRightRadius: BorderRadius.xlarge,
-    borderTopWidth: BorderWidths.hairline,
-    paddingBottom: 28,
     elevation: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.18,
     shadowRadius: 16,
+  },
+  drawerFill: {
+    borderTopLeftRadius: BorderRadius.xlarge,
+    borderTopRightRadius: BorderRadius.xlarge,
+    borderWidth: 0.5,
+    paddingBottom: 28,
   },
   grabberContainer: {
     alignItems: 'center',

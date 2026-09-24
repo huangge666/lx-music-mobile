@@ -37,12 +37,12 @@ export default forwardRef<CurrentTagBtnType, CurrentTagBtnProps>(({ onShowList }
       onPress={onShowList}
       style={{
         ...styles.btn,
-        backgroundColor: theme['c-primary'],
-        borderColor: theme['c-primary-alpha-700'],
+        backgroundColor: theme['c-glass-background'],
+        borderColor: theme['c-glass-border'],
       }}
     >
-      <Icon name="slider" size={15} color="#fff" />
-      <Text style={styles.label} size={13} color="#fff" numberOfLines={1}>
+      <Icon name="slider" size={15} color={theme['c-accent']} />
+      <Text style={styles.label} size={13} color={theme['c-font']} numberOfLines={1}>
         {name}
       </Text>
     </TouchableOpacity>
@@ -54,7 +54,7 @@ const styles = createStyle({
     maxWidth: 168,
     minHeight: 44,
     paddingHorizontal: 14,
-    borderRadius: 4,
+    borderRadius: 22,
     borderWidth: 0.5,
     flexDirection: 'row',
     alignItems: 'center',

@@ -8,17 +8,11 @@ import { NAV_MENUS } from '@/config/constant'
 import type { InitState } from '@/store/common/state'
 import { exitApp, setNavActiveId } from '@/core/common'
 import { BorderWidths } from '@/theme'
+import GlassSurface from '@/components/common/GlassSurface'
 import { useSettingValue } from '@/store/setting/hook'
 
 /**
- * Apple Music iPad 风格侧边栏导航
- *
- * 视觉特征：
- * — 毛玻璃半透明背景
- * — 图标居中的窄侧边栏（68pt）
- * — 选中态使用主色高亮 + 圆角背景
- * — Logo 居顶
- * — 极细分隔线右侧
+ * 横屏液态玻璃侧栏：窄栏只放图标，选中态用辅色玻璃底。
  */
 const NAV_WIDTH = 68
 
@@ -88,9 +82,9 @@ const MenuItem = ({ id, icon, onPress }: {
   const isActive = activeId == id
 
   return isActive
-    ? <View style={{ ...styles.menuItem, backgroundColor: theme['c-primary-background'] }}>
+    ? <View style={{ ...styles.menuItem, backgroundColor: theme['c-accent-soft'], borderColor: theme['c-glass-border'], borderWidth: 0.5 }}>
         <View style={styles.iconContent}>
-          <Icon name={icon} size={20} color={theme['c-primary-font-active']} />
+          <Icon name={icon} size={20} color={theme['c-accent']} />
         </View>
       </View>
     : <TouchableOpacity style={styles.menuItem} onPress={() => { onPress(id) }} activeOpacity={0.6}>
@@ -126,7 +120,7 @@ export default memo(() => {
   }
 
   return (
-    <View style={{ ...styles.container, borderRightColor: theme['c-border-background'], backgroundColor: theme['c-glass-background'] }}>
+    <GlassSurface highlight="none" style={{ ...styles.container, borderRightColor: theme['c-glass-border'] }}>
       <Header />
       <ScrollView style={styles.menus}>
         <View style={styles.list}>
@@ -139,6 +133,6 @@ export default memo(() => {
       {
         showExitBtn ? <MenuItem id="nav_exit" icon="exit2" onPress={handlePress} /> : null
       }
-    </View>
+    </GlassSurface>
   )
 })

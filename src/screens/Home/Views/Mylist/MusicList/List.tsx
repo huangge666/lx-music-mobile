@@ -299,7 +299,7 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
       keyExtractor={getkey}
       extraData={activeIndex}
       getItemLayout={getItemLayout}
-      contentContainerStyle={{ paddingBottom: visibleMultiSelect ? 64 + MULTI_SELECT_BAR_HEIGHT : 64 }}
+      contentContainerStyle={{ paddingBottom: visibleMultiSelect ? 168 + MULTI_SELECT_BAR_HEIGHT : 168 }}
     />
   )
 })

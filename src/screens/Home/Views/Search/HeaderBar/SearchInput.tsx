@@ -59,7 +59,7 @@ export default forwardRef<SearchInputType, SearchInputProps>(({ onChangeText, on
       placeholder={t('search_input_placeholder')}
       value={text}
       onChangeText={handleChangeText}
-      // style={{ ...styles.input, backgroundColor: theme['c-primary-input-background'] }}
+      style={styles.input}
       onBlur={onBlur}
       onSubmitEditing={handleSubmit}
       onClearText={handleClearText}
@@ -68,3 +68,10 @@ export default forwardRef<SearchInputType, SearchInputProps>(({ onChangeText, on
     />
   )
 })
+
+const styles = {
+  input: {
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+  },
+}

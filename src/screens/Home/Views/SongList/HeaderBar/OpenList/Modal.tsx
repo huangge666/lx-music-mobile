@@ -7,7 +7,6 @@ import { Icon } from '@/components/common/Icon'
 import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
-import { BorderRadius } from '@/theme'
 import { type Source } from '@/store/songlist/state'
 import { parseSonglistInput } from './utils'
 
@@ -35,8 +34,12 @@ const IdInput = forwardRef<IdInputType, { onSubmit: () => void }>((props, ref) =
   }))
 
   return (
-    <View style={{ ...styles.inputWrap, backgroundColor: theme['c-primary-input-background'] }}>
-      <Icon name="search-2" size={16} color={theme['c-font-label']} />
+    <View style={{
+      ...styles.inputWrap,
+      backgroundColor: theme['c-glass-surface'],
+      borderColor: theme['c-glass-border'],
+    }}>
+      <Icon name="search-2" size={16} color={theme['c-accent']} />
       <Input
         ref={inputRef}
         placeholder={t('songlist_open_input_placeholder')}
@@ -65,10 +68,10 @@ const TipList = ({ text }: { text: string }) => {
     <View style={styles.tips}>
       {tips.map((tip, index) => (
         <View key={tip} style={styles.tipRow}>
-          <View style={{ ...styles.tipIndex, backgroundColor: theme['c-primary-background'] }}>
-            <Text size={11} color={theme['c-primary']} style={styles.tipIndexText}>{index + 1}</Text>
+          <View style={{ ...styles.tipIndex, backgroundColor: theme['c-accent-soft'] }}>
+            <Text size={11} color={theme['c-accent']} style={styles.tipIndexText}>{index + 1}</Text>
           </View>
-          <Text size={12} color={theme['c-font-label']} style={styles.tipText}>{tip}</Text>
+          <Text size={13} color={theme['c-font']} style={styles.tipText}>{tip}</Text>
         </View>
       ))}
     </View>
@@ -128,19 +131,18 @@ export default forwardRef<ModalType, ModalProps>(({ onOpenId }, ref) => {
       ? <ConfirmAlert
           ref={alertRef}
           onConfirm={handleConfirm}
+          title={t('songlist_open_title')}
           closeBtn={false}
         >
           <View style={styles.content}>
-            <View style={styles.header}>
-              <View style={{ ...styles.iconBubble, backgroundColor: theme['c-primary-background'] }}>
-                <Icon name="album" size={18} color={theme['c-primary']} />
-              </View>
-              <View style={styles.headerText}>
-                <Text size={17} style={styles.title}>{t('songlist_open_title')}</Text>
-              </View>
-            </View>
             <IdInput ref={inputRef} onSubmit={handleConfirm} />
-            <TipList text={t('songlist_open_input_tip')} />
+            <View style={{
+              ...styles.tipCard,
+              backgroundColor: theme['c-glass-surface'],
+              borderColor: theme['c-glass-border'],
+            }}>
+              <TipList text={t('songlist_open_input_tip')} />
+            </View>
           </View>
         </ConfirmAlert>
       : null
@@ -155,33 +157,13 @@ const styles = createStyle({
     flexDirection: 'column',
     gap: 16,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  iconBubble: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  headerText: {
-    flexGrow: 1,
-    flexShrink: 1,
-    gap: 4,
-  },
-  title: {
-    fontWeight: '700',
-  },
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
     minHeight: 48,
     paddingLeft: 14,
-    borderRadius: BorderRadius.large,
+    borderRadius: 24,
+    borderWidth: 0.5,
   },
   input: {
     flexGrow: 1,
@@ -190,6 +172,12 @@ const styles = createStyle({
     height: 48,
     backgroundColor: 'transparent',
     paddingLeft: 8,
+  },
+  tipCard: {
+    borderRadius: 18,
+    borderWidth: 0.5,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
   },
   tips: {
     gap: 10,

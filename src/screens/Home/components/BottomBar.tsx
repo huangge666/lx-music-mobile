@@ -8,22 +8,22 @@ import { useTheme } from '@/store/theme/hook'
 import { Icon } from '@/components/common/Icon'
 import Text from '@/components/common/Text'
 import { createStyle, isAndroid } from '@/utils/tools'
+import GlassSurface from '@/components/common/GlassSurface'
 
 /** 底栏内容底边距。iOS 另有系统 Home Indicator；Android 需在栏内留出贴底安全距离。 */
-const TAB_BAR_PADDING_BOTTOM = isAndroid ? 16 : 8
+const TAB_BAR_PADDING_BOTTOM = isAndroid ? 12 : 6
 const TAB_BAR_MENUS = NAV_MENUS.filter(item => item.id != 'nav_download' && item.id != 'nav_setting')
 
 interface BarItemProps {
   id: typeof NAV_MENUS[number]['id']
   icon: typeof NAV_MENUS[number]['icon']
+  floating?: boolean
 }
 
 /**
- * Apple Music 风格底部 Tab 项
- * 选中态：主色图标 + 主色文字
- * 默认态：灰色图标 + 灰色文字
+ * 底栏页签：选中态用辅色胶囊，未选中只保留图标和文字。
  */
-const BarItem = ({ id, icon }: BarItemProps) => {
+const BarItem = ({ id, icon, floating }: BarItemProps) => {
   const theme = useTheme()
   const t = useI18n()
   const activeId = useNavActiveId()
@@ -39,19 +39,26 @@ const BarItem = ({ id, icon }: BarItemProps) => {
 
   return (
     <TouchableOpacity
-      style={styles.item}
+      style={[
+        floating ? styles.floatItem : styles.item,
+        isActive
+          ? {
+              backgroundColor: theme['c-accent-soft'],
+            }
+          : null,
+      ]}
       onPress={handlePress}
       activeOpacity={0.6}
     >
       <Icon
         name={icon}
-        size={22}
-        color={isActive ? theme['c-primary'] : theme['c-font-label']}
+        size={floating ? 20 : 22}
+        color={isActive ? theme['c-accent'] : theme['c-font-label']}
       />
       <Text
         style={styles.label}
         size={10}
-        color={isActive ? theme['c-primary'] : theme['c-font-label']}
+        color={isActive ? theme['c-accent'] : theme['c-font-label']}
         numberOfLines={1}
       >
         {t(id)}
@@ -61,39 +68,47 @@ const BarItem = ({ id, icon }: BarItemProps) => {
 }
 
 /**
- * 弥散流体水光底部导航栏
- * — 柔润通透的水光玻璃背景
- * — 柔和弥散发光层与水光流体色调衬托
- * — 图标 + 文字垂直排列
+ * 底部导航。竖屏悬浮成胶囊，横屏仍贴底，避免和窄侧栏抢宽度。
  */
-export default memo(() => {
-  const theme = useTheme()
+export default memo(({ floating = false }: { floating?: boolean }) => {
+  const items = TAB_BAR_MENUS.map(item => <BarItem key={item.id} id={item.id} icon={item.icon} floating={floating} />)
+
+  if (!floating) {
+    return (
+      <GlassSurface style={styles.container}>
+        {items}
+      </GlassSurface>
+    )
+  }
+
   return (
-    <View style={[
-      styles.container,
-      {
-        backgroundColor: theme['c-glass-background'],
-      },
-    ]}>
-      {/* 底部弥散流体柔光层 */}
-      <View
-        pointerEvents="none"
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: theme['c-glass-fluid-glow'],
-          opacity: 0.2,
-        }}
-      />
-      {TAB_BAR_MENUS.map(item => <BarItem key={item.id} id={item.id} icon={item.icon} />)}
+    <View style={styles.floatWrap}>
+      <GlassSurface style={styles.floating}>
+        {items}
+      </GlassSurface>
     </View>
   )
 })
 
 const styles = createStyle({
+  floatWrap: {
+    paddingHorizontal: 18,
+    paddingBottom: TAB_BAR_PADDING_BOTTOM,
+  },
+  floating: {
+    flexDirection: 'row',
+    paddingHorizontal: 6,
+    paddingVertical: 6,
+    borderRadius: 28,
+    borderWidth: 0.5,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.16,
+    shadowRadius: 20,
+    elevation: 10,
+  },
   container: {
     flexDirection: 'row',
     paddingHorizontal: 4,
@@ -105,13 +120,21 @@ const styles = createStyle({
   item: {
     flex: 1,
     minHeight: 48,
-    marginHorizontal: 1,
-    borderRadius: 10,
+    marginHorizontal: 2,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  floatItem: {
+    flex: 1,
+    minHeight: 52,
+    marginHorizontal: 2,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
   label: {
-    marginTop: 3,
-    fontWeight: '500',
+    marginTop: 2,
+    fontWeight: '600',
   },
 })

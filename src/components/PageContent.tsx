@@ -48,7 +48,7 @@ export default ({ children }: Props) => {
           blurRadius={BLUR_RADIUS}
         >
           {/* 半透明遮罩层 — 保证内容可读性 */}
-          <View style={{ flex: 1, backgroundColor: theme.isDark ? 'rgba(0,0,0,0.72)' : 'rgba(255,255,255,0.78)' }}></View>
+          <View style={{ flex: 1, backgroundColor: theme.isDark ? 'rgba(8, 10, 14, 0.62)' : 'rgba(236, 240, 244, 0.58)' }}></View>
         </ImageBackground>
         <View style={{ flex: 1, flexDirection: 'column' }}>
           {children}

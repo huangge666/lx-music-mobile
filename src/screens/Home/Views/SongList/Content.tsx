@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { StyleSheet, View } from 'react-native'
+import { scaleSizeH } from '@/utils/pixelRatio'
 
 import HeaderBar, { type HeaderBarProps, type HeaderBarType } from './HeaderBar'
 import Tag, { type TagProps, type TagType } from './HeaderBar/Tag'
@@ -80,8 +81,8 @@ const styles = StyleSheet.create({
   },
   fabWrap: {
     position: 'absolute',
-    right: 16,
-    bottom: 16,
+    right: 18,
+    bottom: scaleSizeH(168),
     zIndex: 8,
   },
 })

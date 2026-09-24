@@ -13,6 +13,9 @@ const SEARCH_TYPE_LIST = [
   'songlist',
 ] as const
 
+/**
+ * 搜索类型放在搜索栏里，做成滑动胶囊，不再占用标题栏右侧。
+ */
 export default () => {
   const t = useI18n()
   const theme = useTheme()
@@ -25,43 +28,40 @@ export default () => {
   }, [])
 
   const list = useMemo(() => {
-    return SEARCH_TYPE_LIST.map(type => ({ label: t(`search_type_${type}`), id: type }))
+    return SEARCH_TYPE_LIST.map(item => ({ label: t(`search_type_${item}`), id: item }))
   }, [t])
 
-  const handleTypeChange = (type: SearchType) => {
-    setType(type)
-    global.app_event.searchTypeChanged(type)
+  const handleTypeChange = (next: SearchType) => {
+    setType(next)
+    global.app_event.searchTypeChanged(next)
   }
 
   return (
-    <View style={styles.container}>
-      {
-        list.map(item => {
-          const active = type == item.id
-          return (
-            <TouchableOpacity
-              key={item.id}
-              activeOpacity={0.76}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: active }}
-              onPress={() => { handleTypeChange(item.id) }}
-              style={{
-                ...styles.tab,
-                backgroundColor: active ? theme['c-primary-background'] : theme['c-card-background'],
-                borderColor: active ? theme['c-primary-alpha-700'] : theme['c-border-background'],
-              }}
+    <View style={[styles.container, { backgroundColor: theme['c-glass-surface'] }]}>
+      {list.map(item => {
+        const active = type == item.id
+        return (
+          <TouchableOpacity
+            key={item.id}
+            activeOpacity={0.76}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: active }}
+            onPress={() => { handleTypeChange(item.id) }}
+            style={[
+              styles.tab,
+              active ? { backgroundColor: theme['c-accent'] } : null,
+            ]}
+          >
+            <Text
+              size={12}
+              style={styles.tabText}
+              color={active ? (theme.isDark ? 'rgb(18, 16, 14)' : 'rgb(255, 255, 255)') : theme['c-font-label']}
             >
-              <Text
-                size={13}
-                style={styles.tabText}
-                color={active ? theme['c-primary-font'] : theme['c-font-label']}
-              >
-                {item.label}
-              </Text>
-            </TouchableOpacity>
-          )
-        })
-      }
+              {item.label}
+            </Text>
+          </TouchableOpacity>
+        )
+      })}
     </View>
   )
 }
@@ -70,18 +70,19 @@ const styles = createStyle({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingRight: 8,
-    gap: 6,
+    marginRight: 2,
+    padding: 3,
+    borderRadius: 18,
+    flexShrink: 0,
   },
   tab: {
     height: 30,
-    paddingHorizontal: 12,
-    borderRadius: 4,
-    borderWidth: 0.5,
+    paddingHorizontal: 10,
+    borderRadius: 13,
     alignItems: 'center',
     justifyContent: 'center',
   },
   tabText: {
-    fontWeight: '600',
+    fontWeight: '700',
   },
 })

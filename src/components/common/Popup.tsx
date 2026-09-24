@@ -17,6 +17,7 @@ import { useTheme } from '@/store/theme/hook'
 import Text from './Text'
 import { useStatusbarHeight } from '@/store/common/hook'
 import { BorderRadius, BorderWidths } from '@/theme'
+import GlassSurface from '@/components/common/GlassSurface'
 
 const ANIMATION_DURATION = 260
 const DISMISS_DISTANCE = 100
@@ -183,7 +184,7 @@ export default forwardRef<PopupType, PopupProps>(({
   const closeBtnComponent = useMemo(() => closeBtn
     ? (
         <TouchableOpacity
-          style={[styles.closeBtn, { backgroundColor: theme['c-card-background'] }]}
+          style={[styles.closeBtn, { backgroundColor: theme['c-glass-surface'], borderWidth: 0.5, borderColor: theme['c-glass-border'] }]}
           activeOpacity={0.7}
           onPress={() => { closeDrawer() }}
         >
@@ -270,13 +271,10 @@ export default forwardRef<PopupType, PopupProps>(({
           style={[
             styles.sheet,
             sheetStyle,
-            {
-              backgroundColor: theme['c-content-background'],
-              borderColor: theme['c-border-background'],
-              transform,
-            },
+            { transform },
           ]}
         >
+          <GlassSurface highlight="none" style={styles.sheetFill}>
           <View {...(isBottom ? panResponder.panHandlers : {})}>
             {
               isBottom
@@ -327,6 +325,7 @@ export default forwardRef<PopupType, PopupProps>(({
           <View style={styles.body}>
             {children}
           </View>
+          </GlassSurface>
         </Animated.View>
       </View>
     </Modal>
@@ -360,13 +359,17 @@ const styles = createStyle({
   sheet: {
     flexGrow: 0,
     flexShrink: 1,
-    overflow: 'hidden',
     elevation: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.18,
     shadowRadius: 16,
-    borderTopWidth: BorderWidths.hairline,
+  },
+  sheetFill: {
+    flexGrow: 0,
+    flexShrink: 1,
+    borderWidth: 0.5,
+    minHeight: 0,
   },
   grabberContainer: {
     alignItems: 'center',

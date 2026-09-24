@@ -46,7 +46,7 @@ const ListItem = memo(({ id, activeId, onPress }: {
         style={[
           styles.activeIndicator,
           {
-            backgroundColor: active ? theme['c-primary'] : 'transparent',
+            backgroundColor: active ? theme['c-accent'] : 'transparent',
           },
         ]}
       />
@@ -55,22 +55,22 @@ const ListItem = memo(({ id, activeId, onPress }: {
         style={[
           styles.iconWrapper,
           {
-            backgroundColor: active
-              ? (theme.isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.65)')
-              : (theme.isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.03)'),
+            backgroundColor: active ? theme['c-accent-soft'] : theme['c-glass-surface'],
+            borderWidth: 0.5,
+            borderColor: theme['c-glass-border'],
           },
         ]}
       >
         <Icon
           name={iconName}
           size={16}
-          color={active ? theme['c-primary'] : theme['c-font-label']}
+          color={active ? theme['c-accent'] : theme['c-font-label']}
         />
       </View>
       <Text
         numberOfLines={1}
         size={14}
-        color={active ? theme['c-primary'] : theme['c-font']}
+        color={active ? theme['c-accent'] : theme['c-font']}
         style={active ? styles.textActive : styles.text}
       >
         {t(`setting_${id}`)}

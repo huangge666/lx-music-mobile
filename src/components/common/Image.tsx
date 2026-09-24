@@ -27,7 +27,7 @@ const EmptyPic = memo(({ style, nativeID }: { style: ImageProps['style'], native
   const size = width * 0.36
 
   return (
-    <View style={StyleSheet.compose({ ...styles.emptyPic, backgroundColor: theme['c-card-background'], gap: size * 0.1 }, style)} onLayout={onLayout} nativeID={nativeID}>
+    <View style={StyleSheet.compose({ ...styles.emptyPic, backgroundColor: theme['c-glass-surface'], borderWidth: 0.5, borderColor: theme['c-glass-border'], gap: size * 0.1 }, style)} onLayout={onLayout} nativeID={nativeID}>
       <Text size={size} color={theme['c-font-label']}>L</Text>
       <Text size={size} color={theme['c-font-label']} style={styles.text}>X</Text>
     </View>
@@ -49,8 +49,9 @@ const Image = memo(({ url, cache, resizeMode = 'cover', style, onError, nativeID
       ? 'file://' + url
       : url
   const showDefault = useMemo(() => !uri || isError, [isError, uri])
+  // 没有地址或加载失败时不渲染占位图，由调用方决定是否留出封面位置。
   return (
-    showDefault ? <EmptyPic style={style} nativeID={nativeID} />
+    showDefault ? null
       : (
           <FastImage
             style={style}

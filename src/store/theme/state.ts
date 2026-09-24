@@ -277,6 +277,8 @@ const state: InitState = {
     'c-content-background': 'rgb(255, 255, 255)',
     'c-border-background': 'rgba(60, 60, 67, 0.10)',
     'c-card-background': 'rgb(242, 242, 247)',
+    'c-accent': 'rgb(92, 132, 146)',
+    'c-accent-soft': 'rgba(92, 132, 146, 0.16)',
     'c-glass-background': 'rgba(255, 255, 255, 0.82)',
     'c-glass-border': 'rgba(255, 255, 255, 0.70)',
     'c-glass-highlight': theme['c-primary-alpha-900'],

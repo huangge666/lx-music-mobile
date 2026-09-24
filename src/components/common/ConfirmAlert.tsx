@@ -11,9 +11,9 @@ import { BorderRadius } from '@/theme'
 const styles = createStyle({
   main: {
     flexShrink: 1,
-    marginTop: 16,
+    marginTop: 8,
     marginHorizontal: 6,
-    marginBottom: 18,
+    marginBottom: 16,
   },
   content: {
     flexGrow: 0,
@@ -25,7 +25,7 @@ const styles = createStyle({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingBottom: 16,
-    gap: 10,
+    gap: 12,
   },
   btnsDirection: {},
   btnsReversedDirection: {
@@ -33,9 +33,9 @@ const styles = createStyle({
   },
   btn: {
     flex: 1,
-    minHeight: 44,
-    paddingTop: 11,
-    paddingBottom: 11,
+    minHeight: 46,
+    paddingTop: 12,
+    paddingBottom: 12,
     paddingHorizontal: 12,
     alignItems: 'center',
     justifyContent: 'center',
@@ -99,7 +99,8 @@ export default forwardRef<ConfirmAlertType, ConfirmAlertProps>(({
     dialogRef.current?.setVisible(false)
   }
 
-  const cancelBg = theme.isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(118, 118, 128, 0.12)'
+  const cancelBg = theme['c-glass-surface']
+  const confirmColor = theme.isDark ? 'rgb(18, 16, 14)' : 'rgb(255, 255, 255)'
 
   return (
     <Dialog onHide={onHide} keyHide={keyHide} bgHide={bgHide} closeBtn={closeBtn} title={title} ref={dialogRef}>
@@ -109,17 +110,17 @@ export default forwardRef<ConfirmAlertType, ConfirmAlertProps>(({
         </ScrollView>
       </View>
       <View style={{ ...styles.btns, ...(reverseBtn ? styles.btnsReversedDirection : styles.btnsDirection) }}>
-        <Button style={{ ...styles.btn, backgroundColor: cancelBg }} onPress={handleCancel}>
+        <Button style={{ ...styles.btn, backgroundColor: cancelBg, borderWidth: 0.5, borderColor: theme['c-glass-border'] }} onPress={handleCancel}>
           <Text style={styles.btnText} color={theme['c-font']}>{cancelText || t('cancel')}</Text>
         </Button>
         {showConfirm
           ? (
               <Button
-                style={{ ...styles.btn, backgroundColor: theme['c-primary'] }}
+                style={{ ...styles.btn, backgroundColor: theme['c-accent'] }}
                 onPress={onConfirm}
                 disabled={disabledConfirm}
               >
-                <Text style={styles.btnText} color="#fff">{confirmText || t('confirm')}</Text>
+                <Text style={styles.btnText} color={confirmColor}>{confirmText || t('confirm')}</Text>
               </Button>
             )
           : null}
