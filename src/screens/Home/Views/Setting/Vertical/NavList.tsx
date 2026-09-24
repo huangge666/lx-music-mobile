@@ -199,7 +199,7 @@ export default ({ onChangeId }: {
         }]}>
           <Icon name="logo" size={18} color={theme['c-accent']} />
         </View>
-        <Text size={12} style={styles.footerName} color={theme['c-font-label']}>LX Music</Text>
+        <Text size={12} style={styles.footerName} color={theme['c-font-label']}>音乐YY</Text>
         <Text size={10} color={theme['c-font-label']}>v{versionState.versionInfo.version}</Text>
       </Animated.View>
     </ScrollView>

@@ -5,6 +5,5 @@ export const COMMENT_SCREEN = 'lxm.CommentScreen'
 export const SOURCE_MANAGER_SCREEN = 'lxm.SourceManagerScreen'
 export const SETTING_SCREEN = 'lxm.SettingScreen'
 export const VERSION_MODAL = 'lxm.VersionModal'
-export const PACT_MODAL = 'lxm.PactModal'
 export const SYNC_MODE_MODAL = 'lxm.SyncModeModal'
 

@@ -5,11 +5,9 @@ import Section from '../components/Section'
 // import Button from './components/Button'
 
 import { createStyle, openUrl } from '@/utils/tools'
-// import { showPactModal } from '@/navigation'
 import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
 import Text from '@/components/common/Text'
-import { showPactModal } from '@/core/common'
 
 // const qqGroupUrl = 'mqqopensdkapi://bizAgent/qm/qr?url=http%3A%2F%2Fqm.qq.com%2Fcgi-bin%2Fqm%2Fqr%3Ffrom%3Dapp%26p%3Dandroid%26jump_from%3Dwebapi%26k%3Du1zyxek8roQAwic44nOkBXtG9CfbAxFw'
 // const qqGroupUrl2 = 'mqqopensdkapi://bizAgent/qm/qr?url=http%3A%2F%2Fqm.qq.com%2Fcgi-bin%2Fqm%2Fqr%3Ffrom%3Dapp%26p%3Dandroid%26jump_from%3Dwebapi%26k%3D-l4kNZ2bPQAuvfCQFFhl1UoibvF5wcrQ'
@@ -30,9 +28,6 @@ export default memo(() => {
   }
   const openFAQPage = () => {
     void openUrl('https://github.com/huangge666/lx-music-mobile/blob/master/FAQ.md')
-  }
-  const openPactModal = () => {
-    showPactModal()
   }
   const openPartPage = () => {
     void openUrl('https://github.com/huangge666/lx-music-mobile#%E9%A1%B9%E7%9B%AE%E5%8D%8F%E8%AE%AE')
@@ -108,9 +103,7 @@ export default memo(() => {
 
       <View style={styles.footerInfo}>
         <View style={styles.part}>
-          <Text style={styles.text}>你已签署本软件的</Text>
-          <TouchableOpacity onPress={openPactModal}><Text style={styles.text} color={theme['c-primary-font']}>许可协议</Text></TouchableOpacity>
-          <Text style={styles.text}>，协议在线版本在</Text>
+          <Text style={styles.text}>项目说明见</Text>
           <TouchableOpacity onPress={openPartPage}><Text style={textLinkStyle}>这里</Text></TouchableOpacity>
           <Text style={styles.text}>。</Text>
         </View>

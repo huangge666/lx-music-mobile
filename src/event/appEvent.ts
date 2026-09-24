@@ -179,6 +179,16 @@ export class AppEvent extends Event {
     this.emit('searchTypeChanged', type)
   }
 
+  showUserApiUpdate(info: {
+    title: string
+    log: string
+    updateUrl?: string
+    confirmText: string
+    cancelText: string
+  }) {
+    this.emit('showUserApiUpdate', info)
+  }
+
   jumpListPosition() {
     if (commonState.navActiveId == 'nav_love') {
       this.emit('jumpListPosition')

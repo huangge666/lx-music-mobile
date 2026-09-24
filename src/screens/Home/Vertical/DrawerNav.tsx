@@ -108,7 +108,7 @@ const Header = () => {
           <Icon name="logo" color="rgb(255, 255, 255)" size={22} />
         </View>
         <View style={styles.headerInfo}>
-          <Text style={styles.headerName} size={20} color={theme['c-font']}>LX Music</Text>
+          <Text style={styles.headerName} size={20} color={theme['c-font']}>音乐YY</Text>
           <Text style={styles.headerVersion} size={11} color={theme['c-font-label']}>
             v{versionState.versionInfo.version}
           </Text>
