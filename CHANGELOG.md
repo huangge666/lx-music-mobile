@@ -6,6 +6,15 @@ Project versioning adheres to [Semantic Versioning](http://semver.org/).
 Commit convention is based on [Conventional Commits](http://conventionalcommits.org).
 Change log format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [2.1.2](https://github.com/huangge666/lx-music-mobile/compare/v2.1.1...v2.1.2) - 2026-09-24
+
+### 优化
+
+- 整体界面改为液态玻璃，外观只保留浅色、深色和跟随系统
+- 应用名称改为「音乐YY」
+- 启动时不再弹出开源许可协议
+- 自定义源更新提示改为玻璃弹窗，更新说明按行显示
+
 ## [2.1.1](https://github.com/huangge666/lx-music-mobile/compare/v2.1.0...v2.1.1) - 2026-09-16
 
 ### 修复
