@@ -4,7 +4,9 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.view.Display;
 import android.view.Gravity;
+import android.view.WindowManager;
 import android.widget.TextView;
 
 // https://github.com/Block-Network/StatusBarLyric/blob/main/app/src/main/java/statusbar/lyric/view/LyricTextView.kt
@@ -34,7 +36,10 @@ public class LyricTextView extends TextView {
     invalidateRunnable = LyricTextView.this::invalidate;
     mPaint = getPaint();
     speed = SPEED_LIMIT * getTextSize();
-    float refreshRate = context.getResources().getDisplayMetrics().refreshRate;
+    // DisplayMetrics.refreshRate 是隐藏字段，Release 的公共 SDK 编译不到
+    WindowManager windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+    Display display = windowManager == null ? null : windowManager.getDefaultDisplay();
+    float refreshRate = display == null ? 0F : display.getRefreshRate();
     if (refreshRate > 0F) scrollFrameDelay = Math.max(8, Math.round(1000F / refreshRate));
   }
 
