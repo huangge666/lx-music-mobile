@@ -11,6 +11,7 @@ import Section from '../components/Section'
 import SettingIcon from '../components/SettingIcon'
 import { settingLayout } from '../components/style'
 import {
+  SETTING_NAV_DESC,
   SETTING_NAV_GROUPS,
   SETTING_NAV_ICONS,
   type SettingScreenIds,
@@ -80,13 +81,9 @@ const NavRow = memo(({
           <Text size={16} style={settingLayout.rowTitle} numberOfLines={1}>
             {t(`setting_${id}`)}
           </Text>
-          {id == 'source'
-            ? (
-                <Text size={12} color={theme['c-font-label']} style={settingLayout.rowSubtitle} numberOfLines={1}>
-                  {t('setting_source_desc')}
-                </Text>
-              )
-            : null}
+          <Text size={12} color={theme['c-font-label']} style={settingLayout.rowSubtitle} numberOfLines={1}>
+            {t(SETTING_NAV_DESC[id])}
+          </Text>
         </View>
         <Animated.View
           style={[styles.chevron, {

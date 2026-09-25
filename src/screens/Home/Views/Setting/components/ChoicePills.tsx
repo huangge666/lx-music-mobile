@@ -115,7 +115,7 @@ const styles = createStyle({
   },
   segment: {
     flex: 1,
-    height: 36,
+    height: 40,
     borderRadius: BorderRadius.round,
     alignItems: 'center',
     justifyContent: 'center',
@@ -127,8 +127,8 @@ const styles = createStyle({
     gap: 8,
   },
   chip: {
-    height: 36,
-    paddingHorizontal: 14,
+    height: 40,
+    paddingHorizontal: 16,
     borderRadius: BorderRadius.round,
     alignItems: 'center',
     justifyContent: 'center',

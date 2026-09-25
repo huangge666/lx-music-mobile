@@ -18,9 +18,9 @@ export default memo(({ value, minimumValue, maximumValue, onSlidingStart, onSlid
       style={styles.slider}
       minimumValue={minimumValue}
       maximumValue={maximumValue}
-      minimumTrackTintColor={theme['c-button-background-active']}
-      maximumTrackTintColor={theme['c-button-background']}
-      thumbTintColor={theme['c-primary']}
+      minimumTrackTintColor={theme['c-accent']}
+      maximumTrackTintColor={theme.isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(120, 120, 128, 0.18)'}
+      thumbTintColor={theme['c-accent']}
       onSlidingStart={onSlidingStart}
       onSlidingComplete={onSlidingComplete}
       onValueChange={onValueChange}
@@ -35,8 +35,7 @@ const styles = createStyle({
     flexShrink: 0,
     flexGrow: 1,
     // width: '100%',
-    maxWidth: 300,
-    height: 40,
-    marginTop: -6,
+    maxWidth: 420,
+    height: 44,
   },
 })

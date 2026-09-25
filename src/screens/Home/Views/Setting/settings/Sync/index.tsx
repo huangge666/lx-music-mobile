@@ -12,7 +12,7 @@ export default memo(() => {
   const [host, setHost] = useState('')
 
   return (
-    <Section title={t('setting_sync')}>
+    <Section title={t('setting_section_sync')}>
       <IsEnable host={host} setHost={setHost} />
       <History setHost={setHost} />
     </Section>

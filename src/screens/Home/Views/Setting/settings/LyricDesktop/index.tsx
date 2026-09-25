@@ -13,24 +13,29 @@ import TextPositionX from './TextPositionX'
 import TextPositionY from './TextPositionY'
 import { useI18n } from '@/lang'
 import Theme from './Theme'
-// import { useTranslation } from '@/plugins/i18n'
 
 export default memo(() => {
   const t = useI18n()
 
   return (
-    <Section title={t('setting_lyric_desktop')}>
-      <IsShowLyric />
-      <IsLockLyric />
-      <IsShowToggleAnima />
-      <IsSingleLine />
-      <Theme />
-      <TextSize />
-      <ViewWidth />
-      <MaxLineNum />
-      <TextOpacity />
-      <TextPositionX />
-      <TextPositionY />
-    </Section>
+    <>
+      <Section title={t('setting_section_lyric_show')}>
+        <IsShowLyric />
+        <IsLockLyric />
+        <IsShowToggleAnima />
+        <IsSingleLine />
+      </Section>
+      <Section title={t('setting_section_lyric_look')}>
+        <Theme />
+        <TextSize />
+        <TextOpacity />
+        <MaxLineNum />
+      </Section>
+      <Section title={t('setting_section_lyric_layout')}>
+        <ViewWidth />
+        <TextPositionX />
+        <TextPositionY />
+      </Section>
+    </>
   )
 })

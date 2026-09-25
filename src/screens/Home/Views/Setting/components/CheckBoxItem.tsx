@@ -82,10 +82,10 @@ export default memo(({
         onValueChange={handleChange}
         disabled={isDisabled}
         trackColor={{
-          false: theme.isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(120, 120, 128, 0.16)',
-          true: theme['c-accent-soft'],
+          false: theme.isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(120, 120, 128, 0.18)',
+          true: theme['c-accent'],
         }}
-        thumbColor={check ? theme['c-accent'] : theme.isDark ? '#d1d1d6' : '#ffffff'}
+        thumbColor={theme.isDark ? '#f2f2f7' : '#ffffff'}
         ios_backgroundColor={theme.isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(120, 120, 128, 0.16)'}
       />
     </View>

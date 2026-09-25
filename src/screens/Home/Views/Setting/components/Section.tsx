@@ -43,7 +43,7 @@ export default ({ title, style, children }: Props) => {
         }}
       />
       {title
-        ? <Text style={settingLayout.cardTitle} size={11} color={theme['c-font-label']}>{title}</Text>
+        ? <Text style={settingLayout.cardTitle} size={13} color={theme['c-font-label']}>{title}</Text>
         : null}
       <View style={styles.content}>
         {children}

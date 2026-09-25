@@ -1,132 +1,96 @@
-import { memo, useRef, useState } from 'react'
-import { TouchableOpacity, FlatList, View, type FlatListProps } from 'react-native'
+import { memo } from 'react'
+import { ScrollView, TouchableOpacity, View } from 'react-native'
 
 import { useTheme } from '@/store/theme/hook'
 import { createStyle } from '@/utils/tools'
 import Text from '@/components/common/Text'
 import { Icon } from '@/components/common/Icon'
-import { scaleSizeH } from '@/utils/pixelRatio'
-import { SETTING_SCREENS, SETTING_NAV_ICONS, type SettingScreenIds } from '../Main'
+import {
+  SETTING_NAV_DESC,
+  SETTING_NAV_GROUPS,
+  SETTING_NAV_ICONS,
+  type SettingScreenIds,
+} from '../Main'
 import { useI18n } from '@/lang'
 import { BorderRadius } from '@/theme'
 
-type FlatListType = FlatListProps<SettingScreenIds>
-
-const ITEM_HEIGHT = scaleSizeH(46)
-
-const ListItem = memo(({ id, activeId, onPress }: {
+/**
+ * 横屏目录沿用竖屏的分组卡片，只是行高更紧，方便在窄栏里扫读。
+ */
+const ListItem = memo(({ id, onPress }: {
   onPress: (item: SettingScreenIds) => void
-  activeId: string
   id: SettingScreenIds
 }) => {
   const theme = useTheme()
   const t = useI18n()
 
-  const active = activeId == id
-  const iconName = SETTING_NAV_ICONS[id]
-
-  const handlePress = () => {
-    onPress(id)
-  }
-
   return (
     <TouchableOpacity
-      style={[
-        styles.listItem,
-        {
-          height: ITEM_HEIGHT,
-          backgroundColor: active ? theme['c-primary-background'] : 'transparent',
-        },
-      ]}
-      onPress={handlePress}
+      style={styles.listItem}
+      onPress={() => { onPress(id) }}
       activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={t(`setting_${id}`)}
     >
-      {/* 激活指示小条 */}
-      <View
-        style={[
-          styles.activeIndicator,
-          {
-            backgroundColor: active ? theme['c-accent'] : 'transparent',
-          },
-        ]}
-      />
-      {/* 图标微徽章 */}
       <View
         style={[
           styles.iconWrapper,
           {
-            backgroundColor: active ? theme['c-accent-soft'] : theme['c-glass-surface'],
-            borderWidth: 0.5,
+            backgroundColor: theme['c-accent-soft'],
             borderColor: theme['c-glass-border'],
           },
         ]}
       >
         <Icon
-          name={iconName}
+          name={SETTING_NAV_ICONS[id]}
           size={16}
-          color={active ? theme['c-accent'] : theme['c-font-label']}
+          color={theme['c-accent']}
         />
       </View>
-      <Text
-        numberOfLines={1}
-        size={14}
-        color={active ? theme['c-accent'] : theme['c-font']}
-        style={active ? styles.textActive : styles.text}
-      >
-        {t(`setting_${id}`)}
-      </Text>
+      <View style={styles.textWrap}>
+        <Text numberOfLines={1} size={15} color={theme['c-font']} style={styles.text}>
+          {t(`setting_${id}`)}
+        </Text>
+        <Text numberOfLines={1} size={11} color={theme['c-font-label']}>
+          {t(SETTING_NAV_DESC[id])}
+        </Text>
+      </View>
+      <Icon name="chevron-right" size={15} color={theme['c-font-label']} />
     </TouchableOpacity>
   )
-}, (prevProps, nextProps) => {
-  return !!(prevProps.id === nextProps.id &&
-    prevProps.activeId != nextProps.id &&
-    nextProps.activeId != nextProps.id
-  )
 })
-
 
 export default ({ onChangeId }: {
   onChangeId: (id: SettingScreenIds) => void
 }) => {
-  const flatListRef = useRef<FlatList>(null)
-  const [activeId, setActiveId] = useState(global.lx.settingActiveId)
-
-  const handleChangeId = (id: SettingScreenIds) => {
-    onChangeId(id)
-    setActiveId(id)
-    global.lx.settingActiveId = id
-  }
-
-  const renderItem: FlatListType['renderItem'] = ({ item }) => (
-    <ListItem
-      key={item}
-      id={item}
-      activeId={activeId}
-      onPress={handleChangeId}
-    />
-  )
-  const getkey: FlatListType['keyExtractor'] = item => item
-  const getItemLayout: FlatListType['getItemLayout'] = (data, index) => {
-    return { length: ITEM_HEIGHT, offset: ITEM_HEIGHT * index, index }
-  }
+  const theme = useTheme()
+  const t = useI18n()
 
   return (
-    <FlatList
-      ref={flatListRef}
+    <ScrollView
       style={styles.container}
       contentContainerStyle={styles.listContent}
-      data={SETTING_SCREENS}
-      maxToRenderPerBatch={9}
-      windowSize={9}
-      removeClippedSubviews={true}
-      initialNumToRender={18}
-      renderItem={renderItem}
-      keyExtractor={getkey}
-      getItemLayout={getItemLayout}
-    />
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="always"
+    >
+      {SETTING_NAV_GROUPS.map(group => (
+        <View key={group.titleKey} style={styles.group}>
+          <Text size={12} color={theme['c-font-label']} style={styles.groupTitle}>
+            {t(group.titleKey)}
+          </Text>
+          <View style={[styles.card, {
+            backgroundColor: theme['c-glass-background'],
+            borderColor: theme['c-glass-border'],
+          }]}>
+            {group.items.map(id => (
+              <ListItem key={id} id={id} onPress={onChangeId} />
+            ))}
+          </View>
+        </View>
+      ))}
+    </ScrollView>
   )
 }
-
 
 const styles = createStyle({
   container: {
@@ -135,40 +99,45 @@ const styles = createStyle({
   },
   listContent: {
     paddingVertical: 12,
+    paddingHorizontal: 12,
+    paddingBottom: 32,
+  },
+  group: {
+    marginBottom: 12,
+  },
+  groupTitle: {
     paddingHorizontal: 8,
+    paddingBottom: 6,
+    fontWeight: '600',
+  },
+  card: {
+    borderRadius: BorderRadius.large,
+    borderWidth: 0.5,
+    paddingVertical: 4,
+    paddingHorizontal: 6,
   },
   listItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
-    paddingRight: 12,
-    paddingLeft: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
     borderRadius: BorderRadius.medium,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  activeIndicator: {
-    width: 3,
-    height: 18,
-    borderRadius: 1.5,
-    marginRight: 6,
   },
   iconWrapper: {
-    width: 28,
-    height: 28,
-    borderRadius: BorderRadius.normal,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 8,
+    marginRight: 10,
+    borderWidth: 0.5,
+  },
+  textWrap: {
+    flex: 1,
+    paddingRight: 8,
   },
   text: {
-    fontWeight: '500',
-    flex: 1,
-  },
-  textActive: {
     fontWeight: '600',
-    flex: 1,
+    marginBottom: 1,
   },
 })
-
-

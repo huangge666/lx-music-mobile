@@ -16,10 +16,10 @@ export const useSettingCardStyle = () => {
     borderWidth: BorderWidths.hairline,
     borderColor: theme['c-glass-border'],
     shadowColor: isDark ? '#000000' : theme['c-accent'],
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: isDark ? 0.36 : 0.08,
-    shadowRadius: 22,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: isDark ? 0.28 : 0.06,
+    shadowRadius: 18,
+    elevation: 2,
   }
 }
 
@@ -27,18 +27,17 @@ export const settingLayout = createStyle({
   card: {
     borderRadius: BorderRadius.xlarge,
     paddingHorizontal: 18,
-    paddingTop: 18,
-    paddingBottom: 16,
-    marginBottom: 20,
+    paddingTop: 16,
+    paddingBottom: 14,
+    marginBottom: 16,
     overflow: 'hidden',
     position: 'relative',
   },
   cardTitle: {
     paddingHorizontal: 2,
-    marginBottom: 12,
-    fontWeight: '700',
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
+    marginBottom: 6,
+    fontWeight: '600',
+    letterSpacing: 0.2,
   },
   iconBubble: {
     width: 38,
@@ -56,8 +55,8 @@ export const settingLayout = createStyle({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 11,
-    minHeight: 52,
+    paddingVertical: 12,
+    minHeight: 56,
   },
   rowBody: {
     flexGrow: 1,

@@ -12,11 +12,15 @@ export default memo(() => {
   const t = useI18n()
 
   return (
-    <Section title={t('setting_list')}>
-      <IsClickPlayList />
-      <IsShowAlbumName />
-      <IsShowInterval />
-      <AddMusicLocationType />
-    </Section>
+    <>
+      <Section title={t('setting_section_list_play')}>
+        <IsClickPlayList />
+        <AddMusicLocationType />
+      </Section>
+      <Section title={t('setting_section_list_info')}>
+        <IsShowAlbumName />
+        <IsShowInterval />
+      </Section>
+    </>
   )
 })

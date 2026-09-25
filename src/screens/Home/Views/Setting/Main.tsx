@@ -1,5 +1,7 @@
 import { forwardRef, useImperativeHandle, useMemo, useState } from 'react'
 
+import type { Message } from '@/lang'
+
 import Basic from './settings/Basic'
 import Source from './settings/Source'
 import Player from './settings/Player'
@@ -50,6 +52,21 @@ export const SETTING_NAV_GROUPS = [
     items: ['other', 'version', 'about'],
   },
 ] as const
+
+/** 目录行副标题，让人在进入页面前就知道里面能做什么。 */
+export const SETTING_NAV_DESC: Record<SettingScreenIds, keyof Message> = {
+  basic: 'setting_nav_desc_basic',
+  source: 'setting_source_desc',
+  player: 'setting_nav_desc_player',
+  lyric_desktop: 'setting_nav_desc_lyric_desktop',
+  search: 'setting_nav_desc_search',
+  list: 'setting_nav_desc_list',
+  sync: 'setting_nav_desc_sync',
+  backup: 'setting_nav_desc_backup',
+  other: 'setting_nav_desc_other',
+  version: 'setting_nav_desc_version',
+  about: 'setting_nav_desc_about',
+}
 
 export const SETTING_NAV_ICONS: Record<SettingScreenIds, string> = {
   basic: 'setting',

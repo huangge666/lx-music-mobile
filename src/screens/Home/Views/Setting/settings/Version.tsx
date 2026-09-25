@@ -73,7 +73,7 @@ export default memo(() => {
   }, [t, versionInfo, progress])
 
   return (
-    <Section title={t('setting_version')}>
+    <Section title={t('setting_section_version')}>
       <SubTitle title={title}>
         <View style={styles.cardContainer}>
           <View style={styles.versionRow}>

@@ -53,7 +53,7 @@ export default memo(() => {
 
 
   return (
-    <Section title={t('setting_about')}>
+    <Section title={t('setting_section_about')}>
       <View style={styles.cardSection}>
         <View style={styles.part}>
           <Text style={styles.text}>本软件完全免费，代码已开源。开源地址：</Text>

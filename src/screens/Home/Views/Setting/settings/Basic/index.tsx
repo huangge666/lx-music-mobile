@@ -18,27 +18,38 @@ import IsShowExitBtn from './IsShowExitBtn'
 import DrawerLayoutPosition from './DrawerLayoutPosition'
 import { useI18n } from '@/lang/i18n'
 
+/**
+ * 基本设置按「启动 / 外观 / 操作 / 显示」拆开。
+ * 页面标题已在导航里，卡片只保留分组名，避免重复。
+ */
 export default memo(() => {
   const t = useI18n()
 
-
   return (
-    <Section title={t('setting_basic')}>
-      <IsStartupAutoPlay />
-      <IsStartupPushPlayDetailScreen />
-      <IsShowBackBtn />
-      <IsShowExitBtn />
-      <IsAutoHidePlayBar />
-      <IsHomePageScroll />
-      <IsAllowProgressBarSeek />
-      <IsUseSystemFileSelector />
-      <IsAlwaysKeepStatusbarHeight />
-      <Theme />
-      <DrawerLayoutPosition />
-      <Language />
-      <FontSize />
-      <ShareType />
-      <SourceName />
-    </Section>
+    <>
+      <Section title={t('setting_section_startup')}>
+        <IsStartupAutoPlay />
+        <IsStartupPushPlayDetailScreen />
+      </Section>
+      <Section title={t('setting_section_appearance')}>
+        <Theme />
+        <Language />
+        <FontSize />
+      </Section>
+      <Section title={t('setting_section_interaction')}>
+        <DrawerLayoutPosition />
+        <IsHomePageScroll />
+        <IsAllowProgressBarSeek />
+        <IsAutoHidePlayBar />
+        <IsUseSystemFileSelector />
+        <ShareType />
+      </Section>
+      <Section title={t('setting_section_display')}>
+        <IsAlwaysKeepStatusbarHeight />
+        <IsShowBackBtn />
+        <IsShowExitBtn />
+        <SourceName />
+      </Section>
+    </>
   )
 })

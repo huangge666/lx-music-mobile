@@ -17,24 +17,35 @@ import { useI18n } from '@/lang'
 import Download from '../Download'
 
 
+/**
+ * 播放页拆成听感、歌词、设备与下载，避免一长串开关挤在同一张卡里。
+ */
 export default memo(() => {
   const t = useI18n()
 
   return (
-    <Section title={t('setting_player')}>
-      <IsSavePlayTime />
-      <IsAutoCleanPlayedList />
-      <IsHandleAudioFocus />
-      <IsEnableAudioOffload />
-      <IsShowBluetoothLyric />
-      <IsShowBluetoothFullLyric />
-      <IsShowNotificationImage />
-      <IsShowLyricTranslation />
-      <IsShowLyricRoma />
-      <IsS2T />
-      <MaxCache />
-      <PlayHighQuality />
-      <Download />
-    </Section>
+    <>
+      <Section title={t('setting_section_listen')}>
+        <IsSavePlayTime />
+        <IsAutoCleanPlayedList />
+        <PlayHighQuality />
+        <MaxCache />
+      </Section>
+      <Section title={t('setting_section_lyric')}>
+        <IsShowLyricTranslation />
+        <IsShowLyricRoma />
+        <IsS2T />
+      </Section>
+      <Section title={t('setting_section_device')}>
+        <IsHandleAudioFocus />
+        <IsEnableAudioOffload />
+        <IsShowBluetoothLyric />
+        <IsShowBluetoothFullLyric />
+        <IsShowNotificationImage />
+      </Section>
+      <Section title={t('setting_section_download')}>
+        <Download />
+      </Section>
+    </>
   )
 })
