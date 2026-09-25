@@ -14,8 +14,8 @@ const DownloadBtn = () => {
     const musicInfo = playerState.playMusicInfo.musicInfo
     if (!musicInfo) return
     const target = 'progress' in musicInfo ? musicInfo.metadata.musicInfo : musicInfo
-    // 本地歌曲不支持下载
-    if (target.source == 'local') {
+    // 下载项可能还没有原始歌曲信息，本地歌曲也不支持下载
+    if (!target || target.source == 'local') {
       toast(global.i18n.t('download_failed'), 'long')
       return
     }

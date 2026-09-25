@@ -20,7 +20,7 @@ export default ({ componentId, info }: { componentId: string, info: ListInfoItem
 
     isUnmountedRef.current = false
 
-    musicListRef.current?.loadList(info.source, info.id)
+    if (info) musicListRef.current?.loadList(info.source, info.id)
 
 
     return () => {
@@ -34,9 +34,14 @@ export default ({ componentId, info }: { componentId: string, info: ListInfoItem
     <PageContent>
       <MultipleModeBarHost>
         <StatusBar />
-        <ListInfoContext.Provider value={info}>
-          <MusicList ref={musicListRef} componentId={componentId} />
-        </ListInfoContext.Provider>
+        {info
+          ? (
+            <ListInfoContext.Provider value={info}>
+              <MusicList ref={musicListRef} componentId={componentId} />
+            </ListInfoContext.Provider>
+            )
+          : null}
+
         <PlayerBar />
       </MultipleModeBarHost>
     </PageContent>

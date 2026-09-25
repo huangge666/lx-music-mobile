@@ -1,5 +1,6 @@
 import { forwardRef, memo, useEffect, useImperativeHandle, useState } from 'react'
-import { Platform, View } from 'react-native'
+import { Platform, TouchableOpacity, View, type NativeSyntheticEvent, type TextLayoutEventData } from 'react-native'
+import { useI18n } from '@/lang'
 import { BorderRadius } from '@/theme'
 import ButtonBar from './ActionBar'
 import { useNavigationComponentDidAppear } from '@/navigation'
@@ -11,9 +12,16 @@ import { createStyle } from '@/utils/tools'
 import Image from '@/components/common/Image'
 import { useListInfo } from './state'
 import { useAnimateOnecNumber } from '@/utils/hooks/useAnimateNumber'
-import { useStatusbarHeight } from '@/store/common/hook'
 
-const IMAGE_WIDTH = scaleSizeW(148)
+const IMAGE_WIDTH = scaleSizeW(168)
+
+/** 接口简介里的换行标签按真实换行展示，避免页面直接露出 br 标签。 */
+const formatDescription = (desc: string) => desc
+  .replace(/<br\s*\/?>/gi, '\n')
+  .replace(/<\/p>\s*<p[^>]*>/gi, '\n')
+  .replace(/<\/?p[^>]*>/gi, '')
+  .replace(/&nbsp;/gi, ' ')
+  .trim()
 
 const CountText = memo(({ count }: { count: string }) => {
   const [animFade] = useAnimateOnecNumber(0, 1, 250, false)
@@ -51,7 +59,7 @@ const Pic = ({ componentId, playCount, imgUrl }: {
   return (
     <View style={styles.coverFrame}>
       <View style={{ ...styles.listItemImg, width: IMAGE_WIDTH, height: IMAGE_WIDTH, backgroundColor: theme['c-card-background'] }}>
-        <Image nativeID={`${NAV_SHEAR_NATIVE_IDS.songlistDetail_pic}_to_${info.id}`} url={pic} style={{ flex: 1, borderRadius: BorderRadius.large }} />
+        <Image nativeID={`${NAV_SHEAR_NATIVE_IDS.songlistDetail_pic}_to_${info?.id ?? ''}`} url={pic} style={{ flex: 1, borderRadius: BorderRadius.large }} />
         {
           playCount && animated
             ? (
@@ -63,7 +71,6 @@ const Pic = ({ componentId, playCount, imgUrl }: {
             : null
         }
       </View>
-      <View style={{ ...styles.coverGlow, backgroundColor: theme['c-primary-alpha-800'] }} />
     </View>
   )
 }
@@ -80,22 +87,29 @@ export interface DetailInfo {
   desc: string
   playCount: string
   imgUrl?: string
+  total?: number
 }
 
 export default forwardRef<HeaderType, HeaderProps>(({ componentId }: { componentId: string }, ref) => {
-  const statusBarHeight = useStatusbarHeight()
   const theme = useTheme()
+  const t = useI18n()
   const info = useListInfo()
-  const [detailInfo, setDetailInfo] = useState<DetailInfo>({ name: '', desc: '', playCount: '', imgUrl: info.img })
+  const [detailInfo, setDetailInfo] = useState<DetailInfo>({ name: '', desc: '', playCount: '', imgUrl: info?.img, total: 0 })
+  const [descExpanded, setDescExpanded] = useState(false)
+  const [descOverflow, setDescOverflow] = useState(false)
+  const songCount = detailInfo.total || Number(info?.total) || 0
+  const description = formatDescription(detailInfo.desc || info?.desc || '')
 
   useImperativeHandle(ref, () => ({
     setInfo(info) {
       setDetailInfo(info)
+      setDescExpanded(false)
+      setDescOverflow(false)
     },
   }), [])
 
   return (
-    <View style={{ ...styles.container, paddingTop: statusBarHeight + 16 }}>
+    <View style={styles.container}>
       <View style={styles.ambientContent} pointerEvents="none">
         <View style={{ ...styles.ambientPrimary, backgroundColor: theme['c-primary-alpha-800'] }} />
         <View style={{ ...styles.ambientSecondary, backgroundColor: theme['c-primary-alpha-900'] }} />
@@ -103,12 +117,34 @@ export default forwardRef<HeaderType, HeaderProps>(({ componentId }: { component
       <View style={styles.hero}>
         <Pic componentId={componentId} playCount={detailInfo.playCount} imgUrl={detailInfo.imgUrl} />
         <View style={styles.info} nativeID={NAV_SHEAR_NATIVE_IDS.songlistDetail_title}>
-          <View style={{ ...styles.eyebrow, backgroundColor: theme['c-primary-background'], borderColor: theme['c-primary-alpha-700'] }}>
-            <View style={{ ...styles.eyebrowDot, backgroundColor: theme['c-primary'] }} />
-            <Text size={11} color={theme['c-primary-font']}>{info.source.toUpperCase()} · PLAYLIST</Text>
-          </View>
-          <Text style={styles.title} numberOfLines={2}>{detailInfo.name || info.name}</Text>
-          <Text style={styles.description} size={13} color={theme['c-font-label']} numberOfLines={3}>{detailInfo.desc || info.desc}</Text>
+          <Text style={styles.title} numberOfLines={2}>{detailInfo.name || info?.name}</Text>
+          {songCount > 0
+            ? <Text style={styles.count} size={13} color={theme['c-font-label']}>{t('list_music_count', { num: songCount })}</Text>
+            : null}
+          {description
+            ? (
+                <TouchableOpacity
+                  activeOpacity={descOverflow ? 0.7 : 1}
+                  disabled={!descOverflow}
+                  onPress={() => { setDescExpanded(expanded => !expanded) }}
+                >
+                  <Text
+                    style={styles.description}
+                    size={13}
+                    color={theme['c-font-label']}
+                    numberOfLines={descExpanded ? undefined : 2}
+                    onTextLayout={(event: NativeSyntheticEvent<TextLayoutEventData>) => {
+                      if (!descExpanded && event.nativeEvent.lines.length > 2) setDescOverflow(true)
+                    }}
+                  >
+                    {description}
+                    {descOverflow
+                      ? <Text size={13} color={theme['c-primary']}>{'  '}{t(descExpanded ? 'collapse' : 'expand')}</Text>
+                      : null}
+                  </Text>
+                </TouchableOpacity>
+              )
+            : null}
         </View>
       </View>
       <ButtonBar />
@@ -120,7 +156,8 @@ const styles = createStyle({
   container: {
     position: 'relative',
     paddingHorizontal: 20,
-    paddingBottom: 24,
+    paddingTop: 8,
+    paddingBottom: 18,
     overflow: 'hidden',
   },
   ambientContent: {
@@ -128,7 +165,7 @@ const styles = createStyle({
     top: 0,
     left: 0,
     right: 0,
-    height: 260,
+    height: 220,
     overflow: 'hidden',
   },
   ambientPrimary: {
@@ -136,7 +173,7 @@ const styles = createStyle({
     width: 260,
     height: 260,
     borderRadius: 130,
-    top: -120,
+    top: -140,
     right: -70,
     opacity: 0.7,
   },
@@ -145,33 +182,21 @@ const styles = createStyle({
     width: 190,
     height: 190,
     borderRadius: 95,
-    top: 70,
+    top: 40,
     left: -100,
     opacity: 0.55,
   },
   hero: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    paddingTop: 12,
+    alignItems: 'center',
+    paddingTop: 6,
   },
   coverFrame: {
-    position: 'relative',
     width: IMAGE_WIDTH,
-    height: IMAGE_WIDTH + 8,
+    height: IMAGE_WIDTH,
     flexGrow: 0,
     flexShrink: 0,
   },
-  coverGlow: {
-    position: 'absolute',
-    left: 15,
-    right: 15,
-    bottom: 0,
-    height: 24,
-    borderRadius: 18,
-    opacity: 0.9,
-  },
   listItemImg: {
-    zIndex: 1,
     borderRadius: BorderRadius.large,
     overflow: 'hidden',
     ...Platform.select({
@@ -210,35 +235,24 @@ const styles = createStyle({
     color: '#fff',
   },
   info: {
-    flexGrow: 1,
-    flexShrink: 1,
-    paddingLeft: 18,
-    paddingBottom: 4,
-    alignItems: 'flex-start',
-  },
-  eyebrow: {
-    minHeight: 25,
-    borderRadius: 13,
-    borderWidth: 0.5,
-    paddingHorizontal: 9,
-    flexDirection: 'row',
+    width: '100%',
+    paddingTop: 16,
     alignItems: 'center',
-    marginBottom: 10,
-  },
-  eyebrowDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 3,
-    marginRight: 6,
   },
   title: {
-    fontSize: 25,
-    lineHeight: 31,
+    fontSize: 22,
+    lineHeight: 28,
     fontWeight: '700',
-    letterSpacing: -0.4,
+    letterSpacing: -0.3,
+    textAlign: 'center',
+  },
+  count: {
+    marginTop: 4,
+    fontWeight: '600',
   },
   description: {
     lineHeight: 19,
-    marginTop: 8,
+    marginTop: 6,
+    textAlign: 'center',
   },
 })

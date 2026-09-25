@@ -4,9 +4,7 @@ import Text from '@/components/common/Text'
 import { Icon } from '@/components/common/Icon'
 
 import { createStyle } from '@/utils/tools'
-import { pop } from '@/navigation'
 import { useTheme } from '@/store/theme/hook'
-import commonState from '@/store/common/state'
 import { useMyList } from '@/store/list/hook'
 import { handleCollect, handlePlay } from './listAction'
 import songlistState from '@/store/songlist/state'
@@ -18,48 +16,36 @@ export default memo(() => {
   const t = useI18n()
   const info = useListInfo()
   const lists = useMyList()
-  const listId = `${info.source}__${info.id}`
-  const isCollected = lists.some(list => 'sourceListId' in list && (list.sourceListId == listId || list.sourceListId == info.id))
-
-  const back = () => {
-    void pop(commonState.componentIds.songlistDetail!)
-  }
+  const listId = info ? `${info.source}__${info.id}` : ''
+  const isCollected = !!info && lists.some(list => 'sourceListId' in list && (list.sourceListId == listId || list.sourceListId == info.id))
 
   const handlePlayAll = () => {
-    if (!songlistState.listDetailInfo.info.name) return
+    if (!info || !songlistState.listDetailInfo.info.name) return
     void handlePlay(info.id, info.source, songlistState.listDetailInfo.list)
   }
 
   const handleCollection = () => {
-    if (!songlistState.listDetailInfo.info.name) return
+    if (!info || !songlistState.listDetailInfo.info.name) return
     void handleCollect(info.id, info.source, songlistState.listDetailInfo.info.name || info.name)
   }
 
   return (
     <View style={styles.container}>
       <TouchableOpacity
-        onPress={handlePlayAll}
-        activeOpacity={0.78}
-        style={{ ...styles.primaryBtn, backgroundColor: theme['c-primary'] }}
-      >
-        <Icon name="play" color="#fff" size={15} />
-        <Text style={styles.primaryBtnText} color="#fff">{t('play_all')}</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
         onPress={handleCollection}
         activeOpacity={0.72}
         style={{ ...styles.secondaryBtn, backgroundColor: theme['c-card-background'], borderColor: theme['c-border-background'] }}
       >
-        <Icon name="love" color={theme['c-primary']} size={15} />
-        <Text style={styles.secondaryBtnText} color={theme['c-font']}>{t(isCollected ? 'collected_songlist' : 'collect_songlist')}</Text>
+        <Icon name="love" color={theme['c-primary']} size={14} />
+        <Text style={styles.secondaryBtnText} color={theme['c-font']} numberOfLines={1}>{t(isCollected ? 'collected_songlist' : 'collect_songlist')}</Text>
       </TouchableOpacity>
       <TouchableOpacity
-        accessibilityLabel={t('back')}
-        onPress={back}
-        activeOpacity={0.72}
-        style={{ ...styles.backBtn, backgroundColor: theme['c-card-background'], borderColor: theme['c-border-background'] }}
+        onPress={handlePlayAll}
+        activeOpacity={0.78}
+        style={{ ...styles.primaryBtn, backgroundColor: theme['c-primary'] }}
       >
-        <Icon name="chevron-left" color={theme['c-font']} size={17} />
+        <Icon name="play" color="#fff" size={14} />
+        <Text style={styles.primaryBtnText} color="#fff" numberOfLines={1}>{t('play_all')}</Text>
       </TouchableOpacity>
     </View>
   )
@@ -67,47 +53,40 @@ export default memo(() => {
 
 const styles = createStyle({
   container: {
-    flexDirection: 'row',
     width: '100%',
-    alignItems: 'center',
-    paddingTop: 16,
-    gap: 10,
-  },
-  primaryBtn: {
-    minHeight: 46,
-    paddingHorizontal: 18,
-    borderRadius: 23,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    flexGrow: 1,
-    gap: 8,
+    gap: 10,
+    paddingTop: 16,
+  },
+  primaryBtn: {
+    minHeight: 36,
+    paddingHorizontal: 14,
+    borderRadius: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
   },
   primaryBtnText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
   },
   secondaryBtn: {
-    minHeight: 46,
-    paddingHorizontal: 16,
-    borderRadius: 23,
+    minHeight: 36,
+    paddingHorizontal: 12,
+    borderRadius: 18,
     borderWidth: 0.5,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 7,
+    gap: 6,
+    flexShrink: 1,
   },
   secondaryBtnText: {
     fontSize: 13,
     fontWeight: '600',
-  },
-  backBtn: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    borderWidth: 0.5,
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexShrink: 1,
   },
 })
-

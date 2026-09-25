@@ -1,6 +1,6 @@
 import { useRef, forwardRef, useImperativeHandle } from 'react'
-// import { Icon } from '@/components/common/Icon'
 import Button from '@/components/common/Button'
+import { Icon } from '@/components/common/Icon'
 // import { navigations } from '@/navigation'
 import Modal, { type ModalType } from './Modal'
 import { type Source } from '@/store/songlist/state'
@@ -51,8 +51,9 @@ export default forwardRef<OpenListType, {}>((props, ref) => {
 
   return (
     <>
-      <Button style={{ ...styles.button, backgroundColor: theme['c-card-background'], borderColor: theme['c-border-background'] }} onPress={() => modalRef.current?.show(songlistInfoRef.current.source)}>
-        <Text color={theme['c-font']}>{t('songlist_open')}</Text>
+      <Button style={{ ...styles.button, backgroundColor: theme['c-glass-surface'], borderColor: theme['c-glass-border'] }} onPress={() => modalRef.current?.show(songlistInfoRef.current.source)}>
+        <Icon name="playlist" size={14} color={theme['c-font']} />
+        <Text color={theme['c-font']} size={13} style={styles.buttonText}>{t('songlist_open')}</Text>
       </Button>
       <Modal ref={modalRef} onOpenId={handleOpenSonglist} />
     </>
@@ -61,11 +62,16 @@ export default forwardRef<OpenListType, {}>((props, ref) => {
 
 const styles = createStyle({
   button: {
-    minHeight: 32,
-    paddingHorizontal: 13,
-    borderRadius: 4,
+    minHeight: 30,
+    paddingHorizontal: 12,
+    borderRadius: 8,
     borderWidth: 0.5,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 5,
+  },
+  buttonText: {
+    fontWeight: '600',
   },
 })

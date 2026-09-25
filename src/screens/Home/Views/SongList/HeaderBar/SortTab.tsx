@@ -1,5 +1,5 @@
 import { forwardRef, useImperativeHandle, useMemo, useRef, useState } from 'react'
-import { ScrollView, TouchableOpacity, View } from 'react-native'
+import { ScrollView, TouchableOpacity } from 'react-native'
 import songlistState, { type SortInfo, type Source } from '@/store/songlist/state'
 import { useI18n } from '@/lang'
 import { useTheme } from '@/store/theme/hook'
@@ -53,13 +53,12 @@ export default forwardRef<SortTabType, SortTabProps>(({ onSortChange }, ref) => 
           const active = activeId == s.id
           return (
             <TouchableOpacity
-              style={{ ...styles.button, backgroundColor: active ? theme['c-accent-soft'] : theme['c-glass-surface'], borderColor: active ? theme['c-glass-border'] : theme['c-border-background'] }}
+              style={{ ...styles.button, backgroundColor: active ? theme['c-accent-soft'] : 'transparent' }}
               activeOpacity={0.72}
               onPress={() => { handleSortChange(s.id) }}
               key={s.id}
             >
-              <View style={{ ...styles.dot, backgroundColor: active ? theme['c-primary'] : theme['c-font-label'] }} />
-              <Text style={styles.buttonText} size={13} color={active ? theme['c-primary-font'] : theme['c-font']}>{s.label}</Text>
+              <Text style={styles.buttonText} size={13} color={active ? theme['c-font'] : theme['c-font-label']}>{s.label}</Text>
             </TouchableOpacity>
           )
         })
@@ -80,19 +79,11 @@ const styles = createStyle({
     gap: 8,
   },
   button: {
-    height: 32,
-    borderRadius: 4,
-    borderWidth: 0.5,
+    height: 30,
+    borderRadius: 8,
     paddingHorizontal: 12,
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  dot: {
-    width: 5,
-    height: 5,
-    borderRadius: 1,
-    marginRight: 7,
-    opacity: 0.9,
   },
   buttonText: {
     fontWeight: '600',

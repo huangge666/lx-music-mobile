@@ -36,7 +36,7 @@ export default forwardRef<HeaderBarType, HeaderBarProps>(({ onSortChange, onSour
 
   return (
     <View style={styles.container}>
-      <View style={{ ...styles.sourceRow, borderBottomColor: theme['c-border-background'] }}>
+      <View style={{ ...styles.sourceRow, backgroundColor: theme['c-glass-surface'], borderColor: theme['c-glass-border'] }}>
         <SourceSelector ref={sourceSelectorRef} onSourceChange={onSourceChange} />
       </View>
       <View style={styles.controlsRow}>
@@ -51,12 +51,17 @@ export default forwardRef<HeaderBarType, HeaderBarProps>(({ onSortChange, onSour
 
 const styles = createStyle({
   container: {
-    paddingBottom: 6,
+    paddingTop: 4,
+    paddingBottom: 2,
     zIndex: 2,
   },
   sourceRow: {
     height: 44,
-    borderBottomWidth: 0.5,
+    marginHorizontal: 12,
+    marginBottom: 6,
+    borderRadius: 12,
+    borderWidth: 0.5,
+    overflow: 'hidden',
   },
   controlsRow: {
     minHeight: 44,

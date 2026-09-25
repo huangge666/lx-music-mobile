@@ -31,7 +31,7 @@ const getAvailableQualitys = (musicInfo: LX.Music.MusicInfo | LX.Download.ListIt
   // 下载列表项的原始歌曲信息存放在 metadata.musicInfo 中
   const onlineInfo = 'progress' in musicInfo ? musicInfo.metadata.musicInfo : musicInfo
   if (!onlineInfo || onlineInfo.source == 'local') return []
-  const qualitys = onlineInfo.meta._qualitys
+  const qualitys = onlineInfo.meta?._qualitys
   return QUALITY_ORDER.filter(q => qualitys?.[q])
 }
 

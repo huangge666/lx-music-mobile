@@ -14,8 +14,8 @@ import Text from '@/components/common/Text'
 type FlatListType = FlatListProps<ListInfoItem>
 
 // const MAX_WIDTH = scaleSizeW(110)
-const MIN_WIDTH = scaleSizeW(110)
-const GAP = scaleSizeW(20)
+const MIN_WIDTH = scaleSizeW(120)
+const GAP = scaleSizeW(12)
 
 export interface ListProps {
   onRefresh: () => void
@@ -153,7 +153,8 @@ export default forwardRef<ListType, ListProps>(({ onRefresh, onLoadMore, onOpenD
                 key={String(rowInfo.num)}
                 ref={flatListRef}
                 style={styles.list}
-                columnWrapperStyle={{ justifyContent: 'space-evenly' }}
+                contentContainerStyle={styles.listContent}
+                columnWrapperStyle={styles.row}
                 numColumns={rowInfo.num}
                 data={list}
                 maxToRenderPerBatch={4}
@@ -207,8 +208,14 @@ const styles = createStyle({
   },
   list: {
     flex: 1,
-    paddingLeft: 10,
-    paddingRight: 10,
+  },
+  listContent: {
+    paddingTop: 6,
+    paddingBottom: 12,
+  },
+  row: {
+    justifyContent: 'space-evenly',
+    paddingHorizontal: 8,
   },
   footer: {
     textAlign: 'center',
