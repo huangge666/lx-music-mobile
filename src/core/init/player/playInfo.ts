@@ -2,6 +2,14 @@ import { getPlayInfo } from '@/utils/data'
 import { getListMusics } from '@/core/list'
 import { playList, play } from '@/core/player/player'
 
+let pendingStartupAutoPlay = false
+
+// 首页显示后再自动播放，避免启动阶段的在线取链挡住首屏。歌曲和进度已在 playList 中恢复。
+export const startPendingAutoPlay = () => {
+  if (!pendingStartupAutoPlay) return
+  pendingStartupAutoPlay = false
+  setTimeout(play)
+}
 
 export default async(setting: LX.AppSetting) => {
   const info = await getPlayInfo()
@@ -14,7 +22,7 @@ export default async(setting: LX.AppSetting) => {
 
   await playList(info.listId, info.index)
 
-  if (setting['player.startupAutoPlay']) setTimeout(play)
+  pendingStartupAutoPlay = setting['player.startupAutoPlay']
 
 
   // if (!info.list || !info.list[info.index]) {

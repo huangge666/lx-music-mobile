@@ -4,7 +4,6 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.util.Log;
 import android.view.Gravity;
 import android.widget.TextView;
 
@@ -26,7 +25,8 @@ public class LyricTextView extends TextView {
   private final Runnable mStartScrollRunnable;
   private final Runnable invalidateRunnable;
   public static final int startScrollDelay = 1500;
-  public static final int invalidateDelay = 10;
+  // 滚动帧间隔跟随屏幕刷新周期，静止时不再持续 invalidate
+  private int scrollFrameDelay = 16;
 
   public LyricTextView(Context context) {
     super(context);
@@ -34,6 +34,8 @@ public class LyricTextView extends TextView {
     invalidateRunnable = LyricTextView.this::invalidate;
     mPaint = getPaint();
     speed = SPEED_LIMIT * getTextSize();
+    float refreshRate = context.getResources().getDisplayMetrics().refreshRate;
+    if (refreshRate > 0F) scrollFrameDelay = Math.max(8, Math.round(1000F / refreshRate));
   }
 
   private void init() {
@@ -45,6 +47,7 @@ public class LyricTextView extends TextView {
   @Override
   protected void onDetachedFromWindow() {
     removeCallbacks(mStartScrollRunnable);
+    removeCallbacks(invalidateRunnable);
     super.onDetachedFromWindow();
   }
 
@@ -108,8 +111,6 @@ public class LyricTextView extends TextView {
     gravityHorizontal = gravity & Gravity.RELATIVE_HORIZONTAL_GRAVITY_MASK;
 
     y = getDrawY();
-    // Log.d("Lyric", "gravityVertical: " + gravityVertical + " gravityHorizontal: " + gravityHorizontal);
-
     if (text == null) return;
     post(mStartScrollRunnable);
   }
@@ -117,8 +118,8 @@ public class LyricTextView extends TextView {
   @Override
   protected void onDraw(Canvas canvas) {
     float mSpeed = speed;
+    boolean scrolling = false;
     if (text != null) {
-      Log.d("Lyric", "getHeight: " + getHeight() + " y: " + y);
       canvas.drawText(text, getDrawX(), y, mPaint);
       if (getText().length() >= 20) {
         mSpeed += mSpeed;
@@ -131,16 +132,16 @@ public class LyricTextView extends TextView {
         stopScroll();
       } else {
         xx -= mSpeed;
+        scrolling = true;
       }
-
-      invalidateAfter();
     }
-
+    // 只有还在滚动才预约下一帧，短歌词和滚完后保持静止
+    if (scrolling) invalidateAfter();
   }
 
   private void invalidateAfter() {
     removeCallbacks(invalidateRunnable);
-    postDelayed(invalidateRunnable, invalidateDelay);
+    postDelayed(invalidateRunnable, scrollFrameDelay);
   }
 
   private void startScroll() {
@@ -152,6 +153,7 @@ public class LyricTextView extends TextView {
   private void stopScroll() {
     isStop = true;
     removeCallbacks(mStartScrollRunnable);
+    removeCallbacks(invalidateRunnable);
     postInvalidate();
   }
 

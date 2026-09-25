@@ -31,6 +31,18 @@ type CacheValue = Map<string, PageCache | ListDetailInfo['list']>
 
 const cache = new Map<string, CacheValue>()
 const LIST_LOAD_LIMIT = 30
+const DETAIL_CACHE_LIMIT = 12
+
+// 淘汰最旧的排行详情。正在写入的这份不能删，否则分页的 sourcePage 会断掉
+const setDetailCache = (key: string, value: CacheValue, pinned?: CacheValue) => {
+  cache.delete(key)
+  cache.set(key, value)
+  while (cache.size > DETAIL_CACHE_LIMIT) {
+    const oldest = cache.keys().next().value
+    if (oldest == null || cache.get(oldest) === pinned) break
+    cache.delete(oldest)
+  }
+}
 
 export const getBoardsList = async(source: LX.OnlineSource) => {
   // const source = (await getLeaderboardSetting()).source as LX.OnlineSource
@@ -53,7 +65,7 @@ const getListLimit = async(source: LX.OnlineSource, bangId: string, page: number
   const tempListKey = `${source}__${bangId}__temp`
 
   let listCache = cache.get(listKey)!
-  if (!listCache) cache.set(listKey, listCache = new Map<string, PageCache | LX.Music.MusicInfoOnline[]>())
+  if (!listCache) setDetailCache(listKey, listCache = new Map<string, PageCache | LX.Music.MusicInfoOnline[]>(), listCache)
   let sourcePage = 0
   {
     const prevPageData = listCache.get(prevPageKey) as PageCache
@@ -113,7 +125,10 @@ export const getListDetail = async(id: string, page: number, isRefresh = false):
 
   let listCache = cache.get(listKey)
   if (!listCache || isRefresh) {
-    cache.set(listKey, listCache = new Map<string, PageCache | LX.Music.MusicInfoOnline[]>())
+    setDetailCache(listKey, listCache = new Map<string, PageCache | LX.Music.MusicInfoOnline[]>(), listCache)
+  } else {
+    cache.delete(listKey)
+    cache.set(listKey, listCache)
   }
 
   let pageCache = listCache.get(pageKey) as PageCache
@@ -134,7 +149,10 @@ export const getListDetailAll = async(id: string, isRefresh = false): Promise<LX
   const listKey = `${source}__${bangId}`
   let listCache = cache.get(listKey)!
   if (!listCache || isRefresh) {
-    cache.set(listKey, listCache = new Map<string, PageCache | LX.Music.MusicInfoOnline[]>())
+    setDetailCache(listKey, listCache = new Map<string, PageCache | LX.Music.MusicInfoOnline[]>(), listCache)
+  } else {
+    cache.delete(listKey)
+    cache.set(listKey, listCache)
   }
 
   const loadData = async(page: number): Promise<ListDetailInfo> => {

@@ -10,6 +10,18 @@ type CacheValue = LimitDetailCache | ListInfo
 
 const cache = new Map<string, CacheValue>()
 const LIST_LOAD_LIMIT = 30
+const DETAIL_CACHE_LIMIT = 12
+
+// 淘汰最旧的歌单详情。正在写入的这份不能删，否则分页的 sourcePage 会断掉
+const setDetailCache = (key: string, value: CacheValue, pinned?: CacheValue) => {
+  cache.delete(key)
+  cache.set(key, value)
+  while (cache.size > DETAIL_CACHE_LIMIT) {
+    const oldest = cache.keys().next().value
+    if (oldest == null || cache.get(oldest) === pinned) break
+    cache.delete(oldest)
+  }
+}
 
 
 /**
@@ -74,11 +86,15 @@ export const getList = async(source: LX.OnlineSource, tabId: string, sortId: str
   let listCache = cache.get(pageKey) as ListInfo
   if (listCache) {
     if (isRefresh) cache.delete(pageKey)
-    else return listCache
+    else {
+      cache.delete(pageKey)
+      cache.set(pageKey, listCache)
+      return listCache
+    }
   }
 
   return musicSdk[source]?.songList.getList(sortId, tabId, page).then((result: ListInfo) => {
-    cache.set(pageKey, result)
+    setDetailCache(pageKey, result)
     return result
     // if (pageKey != listInfo.key) return
     // setList(result, tabId, sortId, page)
@@ -99,7 +115,7 @@ const getListDetailLimit = async(source: LX.OnlineSource, id: string, page: numb
   const tempListKey = `sdetail__${source}__${id}__temp`
 
   let listCache = cache.get(listKey) as LimitDetailCache
-  if (!listCache) cache.set(listKey, listCache = new Map())
+  if (!listCache) setDetailCache(listKey, listCache = new Map(), listCache)
   let sourcePage = 0
   {
     const prevPageData = listCache.get(prevPageKey) as DetailPageCache
@@ -176,7 +192,10 @@ export const getListDetail = async(id: string, source: LX.OnlineSource, page: nu
 
   let listCache = cache.get(listKey) as LimitDetailCache
   if (!listCache || isRefresh) {
-    cache.set(listKey, listCache = new Map())
+    setDetailCache(listKey, listCache = new Map(), listCache)
+  } else {
+    cache.delete(listKey)
+    cache.set(listKey, listCache)
   }
 
   let pageCache = listCache.get(pageKey) as DetailPageCache
@@ -197,7 +216,10 @@ export const getListDetailAll = async(source: LX.OnlineSource, id: string, isRef
   const listKey = `sdetail__${source}__${id}`
   let listCache = cache.get(listKey) as LimitDetailCache
   if (!listCache || isRefresh) {
-    cache.set(listKey, listCache = new Map())
+    setDetailCache(listKey, listCache = new Map(), listCache)
+  } else {
+    cache.delete(listKey)
+    cache.set(listKey, listCache)
   }
 
   const loadData = async(page: number): Promise<ListDetailInfo> => {

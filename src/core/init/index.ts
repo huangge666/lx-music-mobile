@@ -13,9 +13,11 @@ import commonActions from '@/store/common/action'
 import { checkUpdate } from '@/core/version'
 import { bootLog } from '@/utils/bootLog'
 import { cheatTip } from '@/utils/tools'
+import { startPendingAutoPlay } from './player/playInfo'
 
 let isFirstPush = true
 const handlePushedHomeScreen = async() => {
+  startPendingAutoPlay()
   await cheatTip()
   if (isFirstPush) {
     isFirstPush = false

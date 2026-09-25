@@ -64,6 +64,8 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
   const prevSelectIndexRef = useRef(-1)
   const [selectedList, setSelectedList] = useState<LX.List.ListMusics>([])
   const selectedListRef = useRef<LX.List.ListMusics>([])
+  // 渲染和 memo 比较按 ID 判断，避免每个可见项都扫描选中数组
+  const selectedIdSet = useMemo(() => new Set(selectedList.map(item => item.id)), [selectedList])
   const [visibleMultiSelect, setVisibleMultiSelect] = useState(false)
   const currentListIdRef = useRef('')
   const waitJumpListPositionRef = useRef(false)
@@ -272,7 +274,7 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
       onPress={handlePress}
       onLongPress={handleLongPress}
       onShowMenu={onShowMenu}
-      selectedList={selectedList}
+      selectedIdSet={selectedIdSet}
       rowInfo={rowInfo.current}
       isShowAlbumName={isShowAlbumName}
       isShowInterval={isShowInterval}

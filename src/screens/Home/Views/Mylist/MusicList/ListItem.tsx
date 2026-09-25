@@ -22,14 +22,14 @@ export const ITEM_HEIGHT = scaleSizeH(LIST_ITEM_HEIGHT)
  * — 圆角选中态
  * — 更多按钮用次要色图标
  */
-export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPress, selectedList, rowInfo, isShowAlbumName, isShowInterval, snWidth }: {
+export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPress, selectedIdSet, rowInfo, isShowAlbumName, isShowInterval, snWidth }: {
   item: LX.Music.MusicInfo
   index: number
   activeIndex: number
   onPress: (item: LX.Music.MusicInfo, index: number) => void
   onLongPress: (item: LX.Music.MusicInfo, index: number) => void
   onShowMenu: (item: LX.Music.MusicInfo, index: number, position: { x: number, y: number, w: number, h: number }) => void
-  selectedList: LX.Music.MusicInfo[]
+  selectedIdSet: ReadonlySet<string>
   rowInfo: RowInfo
   isShowAlbumName: boolean
   isShowInterval: boolean
@@ -37,7 +37,7 @@ export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPres
 }) => {
   const theme = useTheme()
 
-  const isSelected = selectedList.includes(item)
+  const isSelected = selectedIdSet.has(item.id)
   const moreButtonRef = useRef<TouchableOpacity>(null)
   const handleShowMenu = () => {
     if (moreButtonRef.current?.measure) {
@@ -89,7 +89,7 @@ export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPres
     prevProps.isShowInterval === nextProps.isShowInterval &&
     prevProps.activeIndex != nextProps.index &&
     nextProps.activeIndex != nextProps.index &&
-    nextProps.selectedList.includes(nextProps.item) == prevProps.selectedList.includes(nextProps.item)
+    nextProps.selectedIdSet.has(nextProps.item.id) == prevProps.selectedIdSet.has(nextProps.item.id)
   )
 })
 
