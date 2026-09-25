@@ -57,7 +57,6 @@ export default forwardRef<BlankViewType, BlankViewProps>(({ onSearch }, ref) => 
           )
         : (
             <View style={styles.welcome}>
-              <View style={[styles.welcomeMark, { backgroundColor: theme['c-accent-soft'], borderColor: theme['c-glass-border'] }]} />
               <Text size={28} color={theme['c-font']} style={styles.welcomeTitle}>{t('search__welcome')}</Text>
               <Text size={14} color={theme['c-font-label']}>{t('search_input_placeholder')}</Text>
             </View>
@@ -80,13 +79,6 @@ const styles = createStyle({
     alignItems: 'center',
     justifyContent: 'center',
     paddingBottom: 120,
-  },
-  welcomeMark: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    borderWidth: 0.5,
-    marginBottom: 18,
   },
   welcomeTitle: {
     fontWeight: '700',
