@@ -6,6 +6,20 @@ Project versioning adheres to [Semantic Versioning](http://semver.org/).
 Commit convention is based on [Conventional Commits](http://conventionalcommits.org).
 Change log format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [2.1.4](https://github.com/huangge666/lx-music-mobile/compare/v2.1.3...v2.1.4) - 2026-09-25
+
+### 优化
+
+- 播放进度和小数据保存不再每次先读取再删除，减少播放时的存储读写
+- 歌单列表直接显示歌曲数量，不再为了统计数量读取整份歌单
+- 播放时补上的歌曲时长先记在内存里，切歌、退出或空闲后再保存
+- 我的歌单多选按歌曲判断，长列表多选更顺畅
+- 桌面歌词静止时不再持续刷新，滚动结束后自动停止
+- 在线歌单和排行详情只保留最近使用的内容，减少长时间浏览占用的内存
+- 开启自动播放时，首页显示后再开始播放，启动不再被取播放地址挡住
+- 下一首已有本地缓存时直接使用，不再等待网络检查
+- 正式版不再输出调试日志
+
 ## [2.1.3](https://github.com/huangge666/lx-music-mobile/compare/v2.1.2...v2.1.3) - 2026-09-25
 
 ### 优化
