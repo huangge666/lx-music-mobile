@@ -9,6 +9,7 @@ import { openUrl, createStyle } from '@/utils/tools'
 import { USER_API_SOURCE_LIMIT } from '@/core/apiSource'
 import ImportBtn from './ImportBtn'
 import SourceList from './SourceList'
+import BuiltinList from './BuiltinList'
 
 /**
  * 音源管理页的内容区：导入动作、启用计数和音源列表保持同一条视觉路径。
@@ -26,6 +27,11 @@ export default memo(() => {
   return (
     <View style={styles.container}>
       <ImportBtn />
+
+      <View style={styles.sectionHeader}>
+        <Text size={16} style={styles.sectionTitle}>{t('setting_source_builtin')}</Text>
+      </View>
+      <BuiltinList />
 
       <View style={styles.sectionHeader}>
         <Text size={16} style={styles.sectionTitle}>{t('setting_source_list')}</Text>
