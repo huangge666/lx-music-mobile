@@ -6,6 +6,7 @@ import {
   Home,
   PlayDetail,
   SonglistDetail,
+  MylistDetail,
   Comment,
   SourceManager,
   SettingScreen,
@@ -16,6 +17,7 @@ import {
   HOME_SCREEN,
   PLAY_DETAIL_SCREEN,
   SONGLIST_DETAIL_SCREEN,
+  MYLIST_DETAIL_SCREEN,
   COMMENT_SCREEN,
   SOURCE_MANAGER_SCREEN,
   SETTING_SCREEN,
@@ -44,6 +46,7 @@ export default () => {
   Navigation.registerComponent(HOME_SCREEN, () => WrappedComponent(Home))
   Navigation.registerComponent(PLAY_DETAIL_SCREEN, () => WrappedComponent(PlayDetail))
   Navigation.registerComponent(SONGLIST_DETAIL_SCREEN, () => WrappedComponent(SonglistDetail))
+  Navigation.registerComponent(MYLIST_DETAIL_SCREEN, () => WrappedComponent(MylistDetail))
   Navigation.registerComponent(COMMENT_SCREEN, () => WrappedComponent(Comment))
   Navigation.registerComponent(SOURCE_MANAGER_SCREEN, () => WrappedComponent(SourceManager))
   Navigation.registerComponent(SETTING_SCREEN, () => WrappedComponent(SettingScreen))

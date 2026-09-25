@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState, forwardRef, useImperativeHandle } from 'react'
-import { FlatList, type FlatListProps, RefreshControl, View } from 'react-native'
+import { FlatList, type FlatListProps, type NativeScrollEvent, type NativeSyntheticEvent, RefreshControl, View } from 'react-native'
 
 // import { useMusicList } from '@/store/list/hook'
 import ListItem, { ITEM_HEIGHT } from './ListItem'
@@ -31,6 +31,7 @@ export interface ListProps {
   ListHeaderComponent?: FlatListType['ListEmptyComponent']
   checkHomePagerIdle: boolean
   rowType?: RowInfoType
+  onScroll?: (offset: number) => void
 }
 export interface ListType {
   setList: (list: LX.Music.MusicInfoOnline[], isAppend: boolean, showSource: boolean) => void
@@ -40,6 +41,7 @@ export interface ListType {
   getSelectedList: () => LX.Music.MusicInfoOnline[]
   getList: () => LX.Music.MusicInfoOnline[]
   setStatus: (val: Status) => void
+  scrollToTop: () => void
 }
 export type Status = 'loading' | 'refreshing' | 'end' | 'error' | 'idle'
 
@@ -55,10 +57,12 @@ const List = forwardRef<ListType, ListProps>(({
   ListHeaderComponent,
   checkHomePagerIdle,
   rowType,
+  onScroll,
 }, ref) => {
   // const t = useI18n()
   const theme = useTheme()
   const flatListRef = useRef<FlatList>(null)
+  const scrollOffsetRef = useRef(0)
   const [currentList, setList] = useState<LX.Music.MusicInfoOnline[]>([])
   const [showSource, setShowSource] = useState(false)
   const isMultiSelectModeRef = useRef(false)
@@ -105,7 +109,16 @@ const List = forwardRef<ListType, ListProps>(({
     setStatus(val) {
       setStatus(val)
     },
+    scrollToTop() {
+      // 距离较远时直接跳回顶部，避免长歌单带动画滚动过慢
+      const animated = scrollOffsetRef.current < ITEM_HEIGHT * 20
+      flatListRef.current?.scrollToOffset({ offset: 0, animated })
+    },
   }))
+  const handleScroll = ({ nativeEvent }: NativeSyntheticEvent<NativeScrollEvent>) => {
+    scrollOffsetRef.current = nativeEvent.contentOffset.y
+    onScroll?.(nativeEvent.contentOffset.y)
+  }
 
 
   const handleUpdateSelectedList = (newList: LX.Music.MusicInfoOnline[]) => {
@@ -246,6 +259,8 @@ const List = forwardRef<ListType, ListProps>(({
       ListHeaderComponent={ListHeaderComponent}
       refreshControl={refreshControl}
       ListFooterComponent={footerComponent}
+      onScroll={handleScroll}
+      scrollEventThrottle={16}
     />
   )
 })

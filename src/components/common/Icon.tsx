@@ -9,6 +9,7 @@ import AudioLines from 'lucide-react-native/dist/cjs/icons/audio-lines'
 import Captions from 'lucide-react-native/dist/cjs/icons/captions'
 import CaptionsOff from 'lucide-react-native/dist/cjs/icons/captions-off'
 import ChevronDown from 'lucide-react-native/dist/cjs/icons/chevron-down'
+import ChevronUp from 'lucide-react-native/dist/cjs/icons/chevron-up'
 import ChevronLeft from 'lucide-react-native/dist/cjs/icons/chevron-left'
 import ChevronRight from 'lucide-react-native/dist/cjs/icons/chevron-right'
 import ChevronsLeft from 'lucide-react-native/dist/cjs/icons/chevrons-left'
@@ -82,6 +83,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   'chevron-right': ChevronRight,
   'chevron-right-2': ChevronsRight,
   'chevron-down': ChevronDown,
+  'chevron-up': ChevronUp,
   'close': X,
   'crosshair': Crosshair,
   'comment': MessageCircle,

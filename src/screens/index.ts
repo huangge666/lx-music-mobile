@@ -1,6 +1,7 @@
 export { default as Home } from './Home'
 export { default as PlayDetail } from './PlayDetail'
 export { default as SonglistDetail } from './SonglistDetail'
+export { default as MylistDetail } from './MylistDetail'
 export { default as Comment } from './Comment'
 export { default as SourceManager } from './SourceManager'
 export { default as SettingScreen } from './SettingScreen'

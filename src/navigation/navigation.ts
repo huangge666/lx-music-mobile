@@ -5,6 +5,7 @@ import {
   HOME_SCREEN,
   PLAY_DETAIL_SCREEN,
   SONGLIST_DETAIL_SCREEN,
+  MYLIST_DETAIL_SCREEN,
   COMMENT_SCREEN,
   SOURCE_MANAGER_SCREEN,
   SETTING_SCREEN,
@@ -307,6 +308,61 @@ export function pushSonglistDetailScreen(componentId: string, info: ListInfoItem
     })
   })
 }
+/**
+ * 打开我的歌单详情。
+ * 独立入栈，盖住首页底部标签栏，只保留页面底部的小播放器。
+ */
+export function pushMylistDetailScreen(componentId: string) {
+  requestAnimationFrame(() => {
+    const theme = themeState.theme
+
+    void Navigation.push(componentId, {
+      component: {
+        name: MYLIST_DETAIL_SCREEN,
+        options: {
+          topBar: {
+            visible: false,
+            height: 0,
+            drawBehind: false,
+          },
+          statusBar: {
+            drawBehind: true,
+            visible: true,
+            style: getStatusBarStyle(theme.isDark),
+            backgroundColor: 'transparent',
+          },
+          navigationBar: {
+            backgroundColor: theme['c-content-background'],
+          },
+          layout: {
+            componentBackgroundColor: theme['c-content-background'],
+          },
+          animations: {
+            push: {
+              content: {
+                translationX: {
+                  from: windowSizeTools.getSize().width,
+                  to: 0,
+                  duration: 260,
+                },
+              },
+            },
+            pop: {
+              content: {
+                translationX: {
+                  from: 0,
+                  to: windowSizeTools.getSize().width,
+                  duration: 260,
+                },
+              },
+            },
+          },
+        },
+      },
+    })
+  })
+}
+
 export function pushSourceManagerScreen(componentId: string) {
   requestAnimationFrame(() => {
     const theme = themeState.theme

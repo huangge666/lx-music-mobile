@@ -9,6 +9,8 @@ import { createStyle } from '@/utils/tools'
 import { LIST_IDS, LIST_SCROLL_POSITION_KEY } from '@/config/constant'
 import { getListPosition, saveListPosition } from '@/utils/data'
 import { setActiveList } from '@/core/list'
+import { navigations } from '@/navigation'
+import commonState from '@/store/common/state'
 import Text from '@/components/common/Text'
 import { type Position } from './ListMenu'
 import { scaleSizeH, scaleSizeW } from '@/utils/pixelRatio'
@@ -102,7 +104,8 @@ export default ({ onShowMenu }: {
 
   const handleToggleList = (item: LX.List.MyListInfo) => {
     setActiveList(item.id)
-    global.app_event.changeLoveListVisible(false)
+    const componentId = commonState.componentIds.home
+    if (componentId) navigations.pushMylistDetailScreen(componentId)
   }
 
 

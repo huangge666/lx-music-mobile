@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import listState from '@/store/list/state'
 import ListMenu, { type ListMenuType, type Position, type SelectInfo } from './ListMenu'
@@ -6,7 +6,6 @@ import { handleDislikeMusic, handleDownload, handlePlay, handlePlayLater, handle
 import List, { type ListType } from './List'
 import ListMusicAdd, { type MusicAddModalType as ListMusicAddType } from '@/components/MusicAddModal'
 import ListMusicMultiAdd, { type MusicMultiAddModalType as ListAddMultiType } from '@/components/MusicMultiAddModal'
-import { scaleSizeH } from '@/utils/pixelRatio'
 import { createStyle } from '@/utils/tools'
 import { type LayoutChangeEvent, View } from 'react-native'
 import MultipleModeBar, { type SelectMode, type MultipleModeBarType } from './MultipleModeBar'
@@ -16,6 +15,7 @@ import MusicPositionModal, { type MusicPositionModalType } from './MusicPosition
 import MetadataEditModal, { type MetadataEditType, type MetadataEditProps } from '@/components/MetadataEditModal'
 import MusicToggleModal, { type MusicToggleModalType } from './MusicToggleModal'
 import LocatePlayingBtn from './LocatePlayingBtn'
+import ScrollTopBtn from '@/components/common/ScrollTopBtn'
 
 
 export default () => {
@@ -32,6 +32,8 @@ export default () => {
   const musicToggleModalRef = useRef<MusicToggleModalType>(null)
   const layoutHeightRef = useRef<number>(0)
   const selectedInfoRef = useRef<SelectInfo>()
+  const [showScrollTop, setShowScrollTop] = useState(false)
+  const showScrollTopRef = useRef(false)
   // console.log('render index list')
 
   const hancelMultiSelect = useCallback(() => {
@@ -71,6 +73,15 @@ export default () => {
     listRef.current?.scrollToInfo(info)
     handleExitSearch()
   }, [handleExitSearch])
+  const handleScroll = useCallback((offset: number) => {
+    const visible = offset > 640
+    if (visible == showScrollTopRef.current) return
+    showScrollTopRef.current = visible
+    setShowScrollTop(visible)
+  }, [])
+  const handleScrollTop = useCallback(() => {
+    listRef.current?.scrollToTop()
+  }, [])
   const handleLocatePlaying = useCallback(() => {
     handleExitSearch()
     global.app_event.jumpListPosition()
@@ -159,12 +170,14 @@ export default () => {
           onShowMenu={showMenu}
           onMuiltSelectMode={hancelMultiSelect}
           onSelectAll={syncSelectBar}
+          onScroll={handleScroll}
         />
         <ListMusicSearch
           ref={listMusicSearchRef}
           onScrollToInfo={handleScrollToInfo}
         />
         <View style={styles.fabWrap} pointerEvents="box-none">
+          <ScrollTopBtn visible={showScrollTop} onPress={handleScrollTop} />
           <LocatePlayingBtn onPress={handleLocatePlaying} />
         </View>
       </View>
@@ -216,8 +229,10 @@ const styles = createStyle({
   },
   fabWrap: {
     position: 'absolute',
-    right: 14,
-    bottom: scaleSizeH(168),
+    right: 16,
+    bottom: 16,
     zIndex: 8,
+    alignItems: 'center',
+    gap: 10,
   },
 })

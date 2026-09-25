@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { TouchableOpacity, View } from 'react-native'
 import OnlineList, { type OnlineListType, type OnlineListProps } from '@/components/OnlineList'
 import Text from '@/components/common/Text'
@@ -11,6 +11,8 @@ import { useBgPic, useStatusbarHeight } from '@/store/common/hook'
 import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
 import { createStyle } from '@/utils/tools'
+
+import ScrollTopBtn from '@/components/common/ScrollTopBtn'
 import { handlePlay } from './listAction'
 import Header, { type HeaderType } from './Header'
 import { useListInfo } from './state'
@@ -34,6 +36,17 @@ export default forwardRef<MusicListType, MusicListProps>(({ componentId }, ref) 
   const hasDynamicBg = useBgPic() != null
   // 头部内部的操作栏会读取列表上下文，不能提前 memo，否则首次渲染会拿到未定义的 info
   const header = <Header ref={headerRef} componentId={componentId} />
+  const [showScrollTop, setShowScrollTop] = useState(false)
+  const showScrollTopRef = useRef(false)
+  const handleScroll = useCallback((offset: number) => {
+    const visible = offset > 640
+    if (visible == showScrollTopRef.current) return
+    showScrollTopRef.current = visible
+    setShowScrollTop(visible)
+  }, [])
+  const handleScrollTop = useCallback(() => {
+    listRef.current?.scrollToTop()
+  }, [])
 
   const back = () => {
     void pop(commonState.componentIds.songlistDetail!)
@@ -159,13 +172,19 @@ export default forwardRef<MusicListType, MusicListProps>(({ componentId }, ref) 
           <Text size={11} color={theme['c-primary-font']}>{info?.source?.toUpperCase() ?? ''}</Text>
         </View>
       </View>
-      <OnlineList
-        ref={listRef}
-        onPlayList={handlePlayList}
-        onRefresh={handleRefresh}
-        onLoadMore={handleLoadMore}
-        ListHeaderComponent={header}
-      />
+      <View style={styles.listArea}>
+        <OnlineList
+          ref={listRef}
+          onPlayList={handlePlayList}
+          onRefresh={handleRefresh}
+          onLoadMore={handleLoadMore}
+          onScroll={handleScroll}
+          ListHeaderComponent={header}
+        />
+        <View style={styles.fabWrap} pointerEvents="box-none">
+          <ScrollTopBtn visible={showScrollTop} onPress={handleScrollTop} />
+        </View>
+      </View>
     </View>
   )
 })
@@ -173,6 +192,16 @@ export default forwardRef<MusicListType, MusicListProps>(({ componentId }, ref) 
 const styles = createStyle({
   container: {
     flex: 1,
+  },
+  listArea: {
+    flex: 1,
+    position: 'relative',
+  },
+  fabWrap: {
+    position: 'absolute',
+    right: 16,
+    bottom: 16,
+    zIndex: 8,
   },
   nav: {
     zIndex: 2,
