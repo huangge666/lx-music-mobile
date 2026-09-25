@@ -291,9 +291,8 @@ const withTimeout = async<T>(promise: Promise<T>, ms: number, label: string): Pr
 }
 
 /**
- * 多选源回退：当主源的 handler 不支持某平台或请求失败时，
- * 遍历其他已初始化的用户 API 源，尝试用它们的 handler 获取 URL。
- * 这解决了多源模式下主源不支持原始平台导致搜索结果被跳过的问题。
+ * 多选源回退：主源失败时同时向其它已就绪的用户源取链。
+ * 谁先返回可用地址就用谁，不再按顺序把每个源的超时叠在一起。
  * @returns URL 和实际音质，或 null 表示所有备用用户源均失败
  */
 const tryOtherUserApiForMusicUrl = async(musicInfo: LX.Music.MusicInfoOnline, targetQuality: LX.Quality): Promise<{ url: string, type: LX.Quality } | null> => {
@@ -303,27 +302,31 @@ const tryOtherUserApiForMusicUrl = async(musicInfo: LX.Music.MusicInfoOnline, ta
   if (userApiIds.length < 1) return null
 
   const oldMusicInfo = toOldMusicInfo(musicInfo) as LX.Music.MusicInfo
-
-  for (const apiId of userApiIds) {
-    if (!isUserApiReady(apiId)) continue
+  const requests = userApiIds.flatMap(apiId => {
+    if (!isUserApiReady(apiId)) return []
     const handlers = getUserApiHandlers(apiId, musicInfo.source)
-    if (!handlers?.getMusicUrl) continue
+    if (!handlers?.getMusicUrl) return []
     const getMusicUrlHandler = handlers.getMusicUrl
-    try {
-      const result = await withTimeout<{ url: string, type: LX.Quality }>(
-        getMusicUrlHandler(oldMusicInfo, targetQuality).promise,
-        SOURCE_REQUEST_TIMEOUT,
-        `user api ${apiId} for ${musicInfo.source}`,
-      )
-      if (result.url) {
-        console.log('tryOtherUserApiForMusicUrl: success with', apiId, 'for source', musicInfo.source)
-        return result
-      }
-    } catch (e) {
-      console.log('tryOtherUserApiForMusicUrl: failed with', apiId, e)
-    }
+    return [withTimeout<{ url: string, type: LX.Quality }>(
+      getMusicUrlHandler(oldMusicInfo, targetQuality).promise,
+      SOURCE_REQUEST_TIMEOUT,
+      `user api ${apiId} for ${musicInfo.source}`,
+    ).then(result => {
+      if (!result.url) throw new Error('empty url')
+      console.log('tryOtherUserApiForMusicUrl: success with', apiId, 'for source', musicInfo.source)
+      return result
+    }).catch(err => {
+      console.log('tryOtherUserApiForMusicUrl: failed with', apiId, err)
+      throw err
+    })]
+  })
+  if (!requests.length) return null
+
+  try {
+    return await Promise.any(requests)
+  } catch {
+    return null
   }
-  return null
 }
 
 export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggleSource, isRefresh, retryedSource = [], currentMusicInfo, qualityFallbacks, attemptCount = 0, isAborted, excludeMusicIds = [] }: {

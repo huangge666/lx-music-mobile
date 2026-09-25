@@ -158,52 +158,54 @@ const delayRetry = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListItem, i
   })
 }
 /**
- * 多选源支持：在主流程失败时按顺序尝试其它已成功初始化的用户源。
- * 仅对在线（非 local、非下载）歌曲生效，遍历 `common.apiSourceList` 中
- * 所有已 settle 的 userApi，对每个 apiId 取其对应当前 musicInfo.source 的
- * handler 直接拉取 URL。
+ * 多选源支持：主流程失败时同时向已就绪的用户源取链。
+ * 仅对在线歌曲生效，谁先返回可用地址就用谁。
  * 返回值：
  * - string：找到可用的 URL
- * - null：所有其它用户源均失败或不存在可用的源
+ * - null：所有用户源均失败或不存在可用的源
  */
 /** 单个用户源请求的超时时间（毫秒） */
-const USER_API_REQUEST_TIMEOUT = 15_000
+const USER_API_REQUEST_TIMEOUT = 8_000
 
 const tryOtherUserApiHandlers = async(musicInfo: LX.Music.MusicInfoOnline, quality?: LX.Quality): Promise<string | null> => {
   const activeList = getActiveApiSources()
   const userApiIds = activeList.filter(id => /^user_api/.test(id))
   if (userApiIds.length < 1) return null
 
-  for (const apiId of userApiIds) {
-    if (!isUserApiReady(apiId)) continue
+  const targetQuality = getPlayQuality(quality ?? settingState.setting['player.playQuality'], musicInfo)
+  const sourceMusicInfo = toOldMusicInfo(musicInfo) as LX.Music.MusicInfo
+  const requests = userApiIds.flatMap(apiId => {
+    if (!isUserApiReady(apiId)) return []
     const handlers = getUserApiHandlers(apiId, musicInfo.source)
-    if (!handlers?.getMusicUrl) continue
+    if (!handlers?.getMusicUrl) return []
     const getMusicUrlHandler = handlers.getMusicUrl
-    try {
-      const targetQuality = getPlayQuality(quality ?? settingState.setting['player.playQuality'], musicInfo)
-      const sourceMusicInfo = toOldMusicInfo(musicInfo) as LX.Music.MusicInfo
-      // 为每个用户源请求添加超时保护，防止某个源挂起阻塞后续尝试
-      const result = await new Promise<{ url: string }>((resolve, reject) => {
-        const timer = BackgroundTimer.setTimeout(() => {
-          reject(new Error(`user api ${apiId} timeout`))
-        }, USER_API_REQUEST_TIMEOUT)
-        getMusicUrlHandler(sourceMusicInfo, targetQuality).promise.then((res: { url: string }) => {
-          BackgroundTimer.clearTimeout(timer)
-          resolve(res)
-        }).catch((err: any) => {
-          BackgroundTimer.clearTimeout(timer)
-          reject(err)
-        })
+    return [new Promise<string>((resolve, reject) => {
+      const timer = BackgroundTimer.setTimeout(() => {
+        reject(new Error(`user api ${apiId} timeout`))
+      }, USER_API_REQUEST_TIMEOUT)
+      getMusicUrlHandler(sourceMusicInfo, targetQuality).promise.then((res: { url: string }) => {
+        BackgroundTimer.clearTimeout(timer)
+        if (!res.url) reject(new Error('empty url'))
+        else resolve(res.url)
+      }).catch((err: any) => {
+        BackgroundTimer.clearTimeout(timer)
+        reject(err)
       })
-      if (result.url) {
-        console.log('tryOtherUserApiHandlers: success with', apiId)
-        return result.url
-      }
-    } catch (e) {
-      console.log('tryOtherUserApiHandlers: failed with', apiId, e)
-    }
+    }).then(url => {
+      console.log('tryOtherUserApiHandlers: success with', apiId)
+      return url
+    }).catch(err => {
+      console.log('tryOtherUserApiHandlers: failed with', apiId, err)
+      throw err
+    })]
+  })
+  if (!requests.length) return null
+
+  try {
+    return await Promise.any(requests)
+  } catch {
+    return null
   }
-  return null
 }
 
 const getMusicPlayUrl = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListItem, isRefresh = false, isRetryed = false, quality?: LX.Quality): Promise<string | null> => {
