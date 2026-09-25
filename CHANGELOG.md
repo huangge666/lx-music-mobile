@@ -6,6 +6,17 @@ Project versioning adheres to [Semantic Versioning](http://semver.org/).
 Commit convention is based on [Conventional Commits](http://conventionalcommits.org).
 Change log format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [2.1.3](https://github.com/huangge666/lx-music-mobile/compare/v2.1.2...v2.1.3) - 2026-09-25
+
+### 优化
+
+- 设置页按用途拆成分组卡片，目录增加说明，横屏同样使用分组
+- 音源管理新增内置音源，点击后可选择洛雪、幻音、长青并手动导入
+
+### 修复
+
+- 搜索页空白状态不再显示「搜我所想」上方的大图标
+
 ## [2.1.2](https://github.com/huangge666/lx-music-mobile/compare/v2.1.1...v2.1.2) - 2026-09-24
 
 ### 优化
