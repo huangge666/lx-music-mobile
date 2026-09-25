@@ -724,6 +724,8 @@ const PREWARM_RETRY_INTERVAL = 10_000
 // 触发层节流间隔：同一首当前曲短时间内最多触发一次完整预取流程，
 // 避免进度事件反复执行 getNextPlayMusicInfo（大列表过滤有开销）
 const PREWARM_TRIGGER_INTERVAL = 2_000
+// 没有本地缓存时，HEAD 只等这么久；超时按不可用处理，后面走正常重取
+const PREWARM_URL_CHECK_TIMEOUT = 3_000
 interface PrewarmMusicUrlCache {
   url: string
   expireAt: number
@@ -739,14 +741,31 @@ let prewarmLastTriggerAt = 0
 let prewarmSeq = 0
 
 /**
- * 校验已缓存的 URL 是否仍可用：已被播放器本地缓存，或 HEAD 请求通过
+ * 校验已缓存的 URL 是否仍可用。
+ * 本地缓存确认和 HEAD 同时进行；缓存命中立刻返回，不必等 HEAD。
+ * 没有缓存时 HEAD 使用短超时，失败则交给后面的正常重取。
  */
 const isPrewarmUrlUsable = async(url: string): Promise<boolean> => {
-  const [cached, available] = await Promise.all([
-    isCached(url).catch(() => false),
-    checkUrl(url).then(() => true).catch(() => false),
-  ])
-  return cached || available
+  let settled = false
+  let cached = false
+  return new Promise(resolve => {
+    const finish = (usable: boolean) => {
+      if (settled) return
+      settled = true
+      resolve(usable)
+    }
+    void isCached(url).then(hit => {
+      if (!hit) return
+      cached = true
+      finish(true)
+    }).catch(() => {})
+    void checkUrl(url, { timeout: PREWARM_URL_CHECK_TIMEOUT }).then(() => {
+      finish(true)
+    }).catch(() => {
+      // 本地缓存已确认时，慢 HEAD 的失败不能把可用地址判掉
+      if (!cached) finish(false)
+    })
+  })
 }
 
 /**

@@ -9,6 +9,7 @@ import { getListPosition, getListPrevSelectId, saveListPosition } from '@/utils/
 import { getListMusics, setActiveList } from '@/core/list'
 import ListItem, { ITEM_HEIGHT } from './ListItem'
 import { createStyle, getRowInfo } from '@/utils/tools'
+import { windowSizeTools } from '@/utils/windowSizeTools'
 import { scaleSizeW } from '@/utils/pixelRatio'
 import { usePlayInfo, usePlayMusicInfo } from '@/store/player/hook'
 import type { Position } from './ListMenu'
@@ -266,6 +267,13 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
   }
 
 
+  // 首屏按屏幕高度计算，至少保留原来的 12 行，避免短列表或窗口高度未就绪时少渲染
+  const initialNumToRender = useMemo(() => {
+    const height = windowSizeTools.getSize().height
+    if (height <= 0) return 12
+    return Math.max(12, Math.ceil(height / ITEM_HEIGHT) + 2)
+  }, [])
+
   const renderItem: FlatListType['renderItem'] = ({ item, index }) => (
     <ListItem
       item={item}
@@ -298,7 +306,7 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
       // updateCellsBatchingPeriod={80}
       windowSize={8}
       removeClippedSubviews={true}
-      initialNumToRender={12}
+      initialNumToRender={initialNumToRender}
       renderItem={renderItem}
       keyExtractor={getkey}
       extraData={activeIndex}

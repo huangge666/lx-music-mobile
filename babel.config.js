@@ -2,6 +2,8 @@ module.exports = {
   presets: ['module:@react-native/babel-preset'],
   plugins: [
     '@babel/plugin-proposal-export-namespace-from',
+    // 生产包去掉 console，包含 node_modules 里的日志；开发环境保留
+    process.env.NODE_ENV == 'production' && ['transform-remove-console', { exclude: ['error'] }],
     [
       'module-resolver',
       {
@@ -32,5 +34,5 @@ module.exports = {
         },
       },
     ],
-  ],
+  ].filter(Boolean),
 }
