@@ -1,8 +1,8 @@
-import { updateListMusics } from '@/core/list'
+import { updateListMusicsDeferred } from '@/core/list'
 import { setMaxplayTime, setNowPlayTime } from '@/core/player/progress'
 import { setCurrentTime, getDuration, getPosition } from '@/plugins/player'
 import { formatPlayTime2 } from '@/utils/common'
-import { savePlayInfo } from '@/utils/data'
+import { saveListMusics, savePlayInfo } from '@/utils/data'
 import { throttleBackgroundTimer } from '@/utils/tools'
 import BackgroundTimer from 'react-native-background-timer'
 import playerState from '@/store/player/state'
@@ -10,6 +10,7 @@ import settingState from '@/store/setting/state'
 import { onScreenStateChange } from '@/utils/nativeModules/utils'
 import { AppState } from 'react-native'
 import { prewarmNextMusicUrl } from '@/core/player/player'
+import { allMusicList } from '@/utils/listManage'
 
 const delaySavePlayInfo = throttleBackgroundTimer(() => {
   void savePlayInfo({
@@ -19,6 +20,47 @@ const delaySavePlayInfo = throttleBackgroundTimer(() => {
     index: playerState.playInfo.playIndex,
   })
 }, 2000)
+
+// 缺时长的补齐只改内存。同一首歌只补一次，整表写入延到空闲、切歌或退出。
+const pendingIntervalListIds = new Set<string>()
+let flushIntervalTimer: number | null = null
+
+let flushingInterval: Promise<void> | null = null
+
+const flushPendingInterval = async() => {
+  if (flushingInterval) return flushingInterval
+  flushingInterval = (async() => {
+    const ids = [...pendingIntervalListIds]
+    pendingIntervalListIds.clear()
+    const listData = ids.flatMap(id => {
+      const musics = allMusicList.get(id)
+      return musics ? [{ id, musics }] : []
+    })
+    if (!listData.length) return
+    await saveListMusics(listData)
+  })().finally(() => {
+    flushingInterval = null
+  })
+  return flushingInterval
+}
+
+const scheduleFlushPendingInterval = () => {
+  if (flushIntervalTimer != null) return
+  // 合并同一空闲窗口内的多次补齐，避免每首歌都立刻重写整张歌单
+  flushIntervalTimer = BackgroundTimer.setTimeout(() => {
+    flushIntervalTimer = null
+    void flushPendingInterval()
+  }, 30000)
+}
+
+export const flushPendingListInterval = async() => {
+  if (flushIntervalTimer != null) {
+    BackgroundTimer.clearTimeout(flushIntervalTimer)
+    flushIntervalTimer = null
+  }
+  if (!pendingIntervalListIds.size) return flushingInterval ?? Promise.resolve()
+  return flushPendingInterval()
+}
 
 export default () => {
   // const updateMusicInfo = useCommit('list', 'updateMusicInfo')
@@ -51,13 +93,19 @@ export default () => {
       // console.log(formatPlayTime2(playProgress.maxPlayTime))
 
       if (playerState.playMusicInfo.listId) {
-        void updateListMusics([{
-          id: playerState.playMusicInfo.listId,
+        const listId = playerState.playMusicInfo.listId
+        const interval = formatPlayTime2(playerState.progress.maxPlayTime)
+        void updateListMusicsDeferred([{
+          id: listId,
           musicInfo: {
             ...playerState.playMusicInfo.musicInfo,
-            interval: formatPlayTime2(playerState.progress.maxPlayTime),
+            interval,
           },
-        }])
+        }]).then(() => {
+          // 内存改完才登记，避免切歌时把还没补上时长的旧列表提前写回去
+          pendingIntervalListIds.add(listId)
+          scheduleFlushPendingInterval()
+        })
       }
     }
   }
@@ -126,6 +174,7 @@ export default () => {
     // void setCurrentTime(playerState.progress.nowPlayTime)
     // setMaxplayTime(playProgress.maxPlayTime)
     handlePause()
+    void flushPendingListInterval()
     if (!playerState.playMusicInfo.isTempPlay) {
       void savePlayInfo({
         time: playerState.progress.nowPlayTime,

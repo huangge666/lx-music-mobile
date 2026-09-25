@@ -9,6 +9,7 @@ import { langS2T, toNewMusicInfo, toOldMusicInfo } from '@/utils'
 import { assertApiSupport } from '@/utils/tools'
 import settingState from '@/store/setting/state'
 import { requestMsg } from '@/utils/message'
+import { checkUrl } from '@/utils/request'
 import BackgroundTimer from 'react-native-background-timer'
 import { apis } from '@/utils/musicSdk/api-source'
 import { getActiveApiSources, isUserApiReady, getUserApiHandlers, hasPlayableApiSource } from '@/core/apiSource'
@@ -291,18 +292,14 @@ const withTimeout = async<T>(promise: Promise<T>, ms: number, label: string): Pr
 }
 
 /**
- * 多选源回退：主源失败时同时向其它已就绪的用户源取链。
- * 谁先返回可用地址就用谁，不再按顺序把每个源的超时叠在一起。
- * @returns URL 和实际音质，或 null 表示所有备用用户源均失败
+ * 同时向所有已就绪的用户源取链。
+ * 主源也包含在内：它不支持当前平台时，不必等它失败才让备用源开始。
+ * 返回地址必须能访问，域名失败或 404 会继续等其它源。
  */
-const tryOtherUserApiForMusicUrl = async(musicInfo: LX.Music.MusicInfoOnline, targetQuality: LX.Quality): Promise<{ url: string, type: LX.Quality } | null> => {
-  const activeList = getActiveApiSources()
-  const primaryApiId = settingState.setting['common.apiSource']
-  const userApiIds = activeList.filter(id => /^user_api/.test(id) && id != primaryApiId)
-  if (userApiIds.length < 1) return null
-
+const requestUserApiMusicUrls = (musicInfo: LX.Music.MusicInfoOnline, targetQuality: LX.Quality) => {
+  const userApiIds = getActiveApiSources().filter(id => /^user_api/.test(id))
   const oldMusicInfo = toOldMusicInfo(musicInfo) as LX.Music.MusicInfo
-  const requests = userApiIds.flatMap(apiId => {
+  return userApiIds.flatMap(apiId => {
     if (!isUserApiReady(apiId)) return []
     const handlers = getUserApiHandlers(apiId, musicInfo.source)
     if (!handlers?.getMusicUrl) return []
@@ -311,22 +308,16 @@ const tryOtherUserApiForMusicUrl = async(musicInfo: LX.Music.MusicInfoOnline, ta
       getMusicUrlHandler(oldMusicInfo, targetQuality).promise,
       SOURCE_REQUEST_TIMEOUT,
       `user api ${apiId} for ${musicInfo.source}`,
-    ).then(result => {
+    ).then(async result => {
       if (!result.url) throw new Error('empty url')
-      console.log('tryOtherUserApiForMusicUrl: success with', apiId, 'for source', musicInfo.source)
+      await checkUrl(result.url, { timeout: 5_000 })
+      console.log('requestUserApiMusicUrls: success with', apiId, 'for source', musicInfo.source)
       return result
     }).catch(err => {
-      console.log('tryOtherUserApiForMusicUrl: failed with', apiId, err)
+      console.log('requestUserApiMusicUrls: failed with', apiId, err)
       throw err
     })]
   })
-  if (!requests.length) return null
-
-  try {
-    return await Promise.any(requests)
-  } catch {
-    return null
-  }
 }
 
 export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggleSource, isRefresh, retryedSource = [], currentMusicInfo, qualityFallbacks, attemptCount = 0, isAborted, excludeMusicIds = [] }: {
@@ -395,27 +386,24 @@ export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggl
   const cachedUrl = await getStoreMusicUrl(musicInfo, itemQuality)
   if (cachedUrl && !isRefresh) return { url: cachedUrl, musicInfo, quality: itemQuality, isFromCache: true }
 
+  // 主源和备用源同时取链。主源不支持当前平台时，备用源不用再等它超时。
+  const userApiRequests = requestUserApiMusicUrls(musicInfo, itemQuality)
   let reqPromise: Promise<{ url: string, type: LX.Quality }>
   try {
     reqPromise = musicSdk[musicInfo.source].getMusicUrl(toOldMusicInfo(musicInfo), itemQuality).promise
   } catch (err: any) {
     reqPromise = Promise.reject(err)
   }
-  // 为每个源的请求添加超时保护，防止某个源无响应阻塞整条换源链
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
-  return withTimeout<{ url: string, type: LX.Quality }>(reqPromise, SOURCE_REQUEST_TIMEOUT, `source ${musicInfo.source}`).then(({ url, type }) => {
+  const requests = [
+    withTimeout<{ url: string, type: LX.Quality }>(reqPromise, SOURCE_REQUEST_TIMEOUT, `source ${musicInfo.source}`),
+    ...userApiRequests,
+  ]
+  try {
+    const { url, type } = await Promise.any(requests)
     return { musicInfo, url, quality: type, isFromCache: false }
-    // eslint-disable-next-line @typescript-eslint/promise-function-async
-  }).catch(async(err: any) => {
-    if (err.message == requestMsg.tooManyRequests) throw err
+  } catch (err: any) {
+    if (err?.errors?.some((item: any) => item?.message == requestMsg.tooManyRequests)) throw new Error(requestMsg.tooManyRequests)
     console.log(err)
-
-    // 多源模式下主源可能不支持当前平台，先尝试其他已初始化用户源的同平台 handler。
-    // 备用源返回成功后直接结束当前条目，避免误跳到其他平台。
-    const otherApiResult = await tryOtherUserApiForMusicUrl(musicInfo, itemQuality)
-    if (otherApiResult) {
-      return { musicInfo, url: otherApiResult.url, quality: otherApiResult.type, isFromCache: false }
-    }
 
     // 如果当前源还有剩余音质可尝试，先降级音质再试
     if (remainingFallbacks.length) {
@@ -424,7 +412,7 @@ export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggl
     }
     // 当前源所有音质都失败了，切换到下一个源
     return getOnlineOtherSourceMusicUrl({ musicInfos, quality, onToggleSource, isRefresh, retryedSource, attemptCount: attemptCount + 1, isAborted, excludeMusicIds })
-  })
+  }
 }
 
 /**

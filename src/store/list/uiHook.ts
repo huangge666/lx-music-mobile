@@ -3,7 +3,7 @@ import state, { type InitState } from './state'
 import { LIST_IDS } from '@/config/constant'
 import { useSettingValue } from '@/store/setting/hook'
 import { allMusicList } from '@/utils/listManage'
-import { getListMusics as getListMusicsFromStore } from '@/utils/data'
+import { getListMusicCount, getListMusics as getListMusicsFromStore } from '@/utils/data'
 
 export const useActiveListId = () => {
   const [id, setId] = useState(state.activeListId)
@@ -64,6 +64,12 @@ export const useListMusicCount = (listId: string) => {
         applyCount(cached)
         return
       }
+      // 优先读写入时维护的数量索引，避免歌单页每个歌单都解析整表只为取 length
+      const indexed = await getListMusicCount(listId)
+      if (indexed != null) {
+        applyCount(indexed)
+        return
+      }
       const list = await getListMusicsFromStore(listId)
       applyCount(list.length)
     }
@@ -76,7 +82,13 @@ export const useListMusicCount = (listId: string) => {
         applyCount(musics.length)
         return
       }
-      void getListMusicsFromStore(listId).then(list => { applyCount(list.length) })
+      void getListMusicCount(listId).then(indexed => {
+        if (indexed != null) {
+          applyCount(indexed)
+          return
+        }
+        void getListMusicsFromStore(listId).then(list => { applyCount(list.length) })
+      })
     }
     global.app_event.on('myListMusicUpdate', handleUpdate)
     return () => {

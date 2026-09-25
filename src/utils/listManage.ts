@@ -277,6 +277,15 @@ export const listMusicUpdateInfo = async(musicInfos: LX.List.ListActionMusicUpda
       interval: musicInfo.interval,
       meta: musicInfo.meta,
     })
+    // 字段和原对象一致时不算变更，避免重复触发整表保存
+    const prev = targetList[index]
+    if (
+      prev.name == info.name &&
+      prev.singer == info.singer &&
+      prev.source == info.source &&
+      prev.interval == info.interval &&
+      prev.meta == info.meta
+    ) continue
     targetList.splice(index, 1, info)
     updateListIds.add(id)
   }

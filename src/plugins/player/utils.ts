@@ -154,12 +154,20 @@ export const setResource = (musicInfo: LX.Player.PlayMusic, url: string, duratio
   playMusic(musicInfo, url, duration ?? 0)
 }
 
-export const setPlay = async() => TrackPlayer.play()
+export const setPlay = async() => {
+  try {
+    await TrackPlayer.play()
+  } catch {}
+}
 export const getPosition = async() => TrackPlayer.getPosition()
 export const getDuration = async() => TrackPlayer.getDuration()
 export const setStop = async() => {
   await TrackPlayer.stop()
-  if (!isEmpty()) await TrackPlayer.skipToNext()
+  // 队列只剩当前轨或已经为空时，skipToNext 会抛出没有可播放曲目
+  if (isEmpty()) return
+  try {
+    await TrackPlayer.skipToNext()
+  } catch {}
 }
 export const setLoop = async(loop: boolean) => TrackPlayer.setRepeatMode(loop ? RepeatMode.Off : RepeatMode.Track)
 

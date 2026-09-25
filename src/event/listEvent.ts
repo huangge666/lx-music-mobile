@@ -38,6 +38,12 @@ export const checkUpdateList = async(changedIds: string[]) => {
   global.app_event.myListMusicUpdate(changedIds)
 }
 
+// 只补了内存里的单字段时，先通知界面，整表写入延后；进程被杀最多丢掉这次补齐
+export const notifyListMusicUpdated = (changedIds: string[]) => {
+  if (!changedIds.length) return
+  global.app_event.myListMusicUpdate(changedIds)
+}
+
 
 // {
 //   // sync: {
@@ -209,6 +215,15 @@ export class ListEvent extends Event {
     const changedIds = await listMusicUpdateInfo(musicInfos)
     await checkUpdateList(changedIds)
     this.emit('list_music_update', musicInfos, isRemote)
+  }
+
+  /**
+   * 批量更新歌曲信息，但只改内存。用于播放中补时长这类可丢失的单字段，
+   * 不触发同步、也不立刻重写整表。
+   */
+  async list_music_update_deferred(musicInfos: LX.List.ListActionMusicUpdate) {
+    const changedIds = await listMusicUpdateInfo(musicInfos)
+    notifyListMusicUpdated(changedIds)
   }
 
   /**

@@ -159,7 +159,7 @@ const delayRetry = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListItem, i
 }
 /**
  * 多选源支持：主流程失败时同时向已就绪的用户源取链。
- * 仅对在线歌曲生效，谁先返回可用地址就用谁。
+ * 仅对在线歌曲生效。返回地址必须能访问，域名失败或 404 会继续等其它源。
  * 返回值：
  * - string：找到可用的 URL
  * - null：所有用户源均失败或不存在可用的源
@@ -183,10 +183,18 @@ const tryOtherUserApiHandlers = async(musicInfo: LX.Music.MusicInfoOnline, quali
       const timer = BackgroundTimer.setTimeout(() => {
         reject(new Error(`user api ${apiId} timeout`))
       }, USER_API_REQUEST_TIMEOUT)
-      getMusicUrlHandler(sourceMusicInfo, targetQuality).promise.then((res: { url: string }) => {
+      getMusicUrlHandler(sourceMusicInfo, targetQuality).promise.then(async(res: { url: string }) => {
         BackgroundTimer.clearTimeout(timer)
-        if (!res.url) reject(new Error('empty url'))
-        else resolve(res.url)
+        if (!res.url) {
+          reject(new Error('empty url'))
+          return
+        }
+        try {
+          await checkUrl(res.url, { timeout: 5_000 })
+          resolve(res.url)
+        } catch (err) {
+          reject(err)
+        }
       }).catch((err: any) => {
         BackgroundTimer.clearTimeout(timer)
         reject(err)

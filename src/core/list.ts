@@ -72,6 +72,14 @@ export const updateListMusics = async(infos: Array<{ id: string, musicInfo: LX.M
 }
 
 /**
+ * 只改内存中的歌曲字段并通知界面，不立即重写整张歌单。
+ * 调用方负责在切歌、退出或真正编辑时把内存列表落盘。
+ */
+export const updateListMusicsDeferred = async(infos: Array<{ id: string, musicInfo: LX.Music.MusicInfo }>) => {
+  await global.list_event.list_music_update_deferred(infos)
+}
+
+/**
  * 批量移动列表内歌曲的位置
  */
 export const updateListMusicPosition = async(listId: string, position: number, ids: string[]) => {

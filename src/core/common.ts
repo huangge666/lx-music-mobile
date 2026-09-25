@@ -14,6 +14,7 @@ import { saveData } from '@/plugins/storage'
 import { throttle } from '@/utils/common'
 import { getSelectedManagedFolder, saveFontSize, saveViewPrevState, setSelectedManagedFolder } from '@/utils/data'
 import { hideDesktopLyricView } from '@/utils/nativeModules/lyricDesktop'
+import { flushPendingListInterval } from '@/core/init/player/playProgress'
 import { getPersistedUriList, selectManagedFolder } from '@/utils/fs'
 
 
@@ -53,6 +54,9 @@ export const exitApp = (reason: string) => {
   console.log('Handle Exit App, Reason: ' + reason)
   if (isDestroying) return
   isDestroying = true
+
+  // 退出前把内存里补齐的时长写回歌单；进程随后会被立刻结束，写不完只丢这次补齐
+  void flushPendingListInterval().catch(() => {})
 
   // 先发暂停和隐藏歌词，但不等待 JS 侧 destroy（缓存释放会卡住数秒）
   void pausePlayer().catch(() => {})

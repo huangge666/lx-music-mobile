@@ -8,6 +8,10 @@ const partKeyArrPrefixRxp = /^@___PART_A___/
 const keySplit = ','
 const limit = 500000
 
+const isPartMarker = (value: string | null): value is string => {
+  return !!value && (partKeyPrefixRxp.test(value) || partKeyArrPrefixRxp.test(value))
+}
+
 const buildData = (key: string, value: any, datas: Array<[string, string]>) => {
   let valueStr = JSON.stringify(value)
   if (valueStr.length <= limit) {
@@ -22,6 +26,20 @@ const buildData = (key: string, value: any, datas: Array<[string, string]>) => {
     datas.push([partKey, valueStr.substring(i * limit, (i + 1) * limit)])
   }
   datas.push([key, partKeyArrPrefix + JSON.stringify(partKeys)])
+}
+
+// 小对象直接覆盖主键。只有新值超阈值，或旧值仍是分片标记时，才读旧值并清掉旧分片，
+// 避免播放进度这类高频小写入每次都先 getItem 再 removeItem。
+const cleanupBeforeSave = async(entries: Array<[string, string]>) => {
+  const keys = [...new Set(entries.map(([key]) => key))]
+  const mustCleanup = entries.some(([, value]) => value.length > limit || isPartMarker(value))
+  if (!mustCleanup) return
+
+  const stored = await AsyncStorage.multiGet(keys)
+  const chunkedKeys = stored
+    .filter(([, value]) => isPartMarker(value))
+    .map(([key]) => key)
+  if (chunkedKeys.length) await removeDataMultiple(chunkedKeys)
 }
 
 // 1.4.0 之前的数据分片存储方式，存在key的内容与分隔符冲突的问题
@@ -48,7 +66,7 @@ export const saveData = async(key: string, value: any) => {
   buildData(key, value, datas)
 
   try {
-    await removeData(key)
+    await cleanupBeforeSave(datas)
     await AsyncStorage.multiSet(datas)
   } catch (e: any) {
     // saving error
@@ -66,7 +84,7 @@ export const getData = async<T = unknown>(key: string): Promise<T | null> => {
     log.error('storage error[getData]:', key, e.message)
     throw e
   }
-  if (value && (partKeyPrefixRxp.test(value) || partKeyArrPrefixRxp.test(value))) {
+  if (isPartMarker(value)) {
     return handleGetData<T>(value)
   } else if (value == null) return value
   return JSON.parse(value)
@@ -81,7 +99,7 @@ export const removeData = async(key: string) => {
     log.error('storage error[removeData]:', key, e.message)
     throw e
   }
-  if (value) {
+  if (isPartMarker(value)) {
     if (partKeyPrefixRxp.test(value)) {
       let partKeys = value.replace(partKeyPrefixRxp, '').split(keySplit)
       partKeys.push(key)
@@ -142,7 +160,7 @@ export const getDataMultiple = async<T extends readonly string[]>(keys: T) => {
   }
   const promises: Array<Promise<ReadonlyArray<[unknown | null]>>> = []
   for (const [, value] of datas) {
-    if (value && (partKeyPrefixRxp.test(value) || partKeyArrPrefixRxp.test(value))) {
+    if (isPartMarker(value)) {
       promises.push(handleGetData(value))
     } else {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
@@ -160,7 +178,7 @@ export const saveDataMultiple = async(datas: Array<[string, any]>) => {
     buildData(key, value, allData)
   }
   try {
-    await removeDataMultiple(datas.map(k => k[0]))
+    await cleanupBeforeSave(allData)
     await AsyncStorage.multiSet(allData)
   } catch (e: any) {
     // save error
@@ -176,7 +194,7 @@ export const removeDataMultiple = async(keys: string[]) => {
   let allKeys = []
   for (const [key, value] of datas) {
     allKeys.push(key)
-    if (value) {
+    if (isPartMarker(value)) {
       if (partKeyPrefixRxp.test(value)) {
         allKeys.push(...value.replace(partKeyPrefixRxp, '').split(keySplit))
       } else if (partKeyArrPrefixRxp.test(value)) {

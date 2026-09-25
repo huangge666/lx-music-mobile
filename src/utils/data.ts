@@ -25,6 +25,7 @@ const syncAuthKeyPrefix = storageDataPrefix.syncAuthKey
 const syncHostPrefix = storageDataPrefix.syncHost
 const syncHostHistoryPrefix = storageDataPrefix.syncHostHistory
 const listPrefix = storageDataPrefix.list
+const listMusicCountKey = storageDataPrefix.listMusicCount
 const dislikeListPrefix = storageDataPrefix.dislikeList
 const userApiPrefix = storageDataPrefix.userApi
 const openStoragePathPrefix = storageDataPrefix.openStoragePath
@@ -319,6 +320,46 @@ export const saveListMusics = async(listData: Array<{ id: string, musics: LX.Mus
     const list = listData[0]
     await saveData(listPrefix + list.id, list.musics)
   }
+  // 数量和歌曲写在同一条路径，歌单页可以直接读数量，不必为了 length 解析整表
+  await saveListMusicCounts(listData.map(list => [list.id, list.musics.length]))
+}
+
+let listMusicCounts: Record<string, number> | null = null
+
+const loadListMusicCounts = async() => {
+  if (listMusicCounts) return listMusicCounts
+  const stored = await getData<Record<string, number>>(listMusicCountKey) ?? {}
+  // eslint-disable-next-line require-atomic-updates
+  listMusicCounts ??= stored
+  return listMusicCounts
+}
+
+const saveListMusicCounts = async(counts: Array<[string, number]>) => {
+  if (!counts.length) return
+  const stored = await loadListMusicCounts()
+  for (const [id, count] of counts) stored[id] = count
+  await saveData(listMusicCountKey, stored)
+}
+
+/**
+ * 读取已持久化的歌单数量。没有索引时返回 null，调用方再决定是否回退整表。
+ */
+export const getListMusicCount = async(listId: string): Promise<number | null> => {
+  const stored = await loadListMusicCounts()
+  const count = stored[listId]
+  return typeof count == 'number' ? count : null
+}
+
+export const removeListMusicCounts = async(ids: string[]) => {
+  if (!ids.length) return
+  const stored = await loadListMusicCounts()
+  let changed = false
+  for (const id of ids) {
+    if (!(id in stored)) continue
+    delete stored[id]
+    changed = true
+  }
+  if (changed) await saveData(listMusicCountKey, stored)
 }
 
 /**
@@ -335,6 +376,7 @@ export const removeListMusics = async(ids: string[]): Promise<void> => {
   } else {
     await removeData(listPrefix + ids[0])
   }
+  await removeListMusicCounts(ids)
   // await saveData(listSortPrefix, global.lx.listSort)
   // delaySaveListScrollPosition(global.lx.listScrollPosition)
 }

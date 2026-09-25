@@ -254,28 +254,39 @@ const fetchData = (url, { timeout = 15000, ...options }) => {
       return global.fetch(url, {
         ...options,
         signal: controller.signal,
-      }).then(resp => (options.binary ? resp.blob() : resp.text()).then(text => {
-        // console.log(options, headers, text)
-        return {
-          headers: resp.headers.map,
-          body: text,
-          statusCode: resp.status,
-          statusMessage: resp.statusText,
-          url: resp.url,
-          ok: resp.ok,
+      }).then(resp => {
+        if (options.method?.toLowerCase() === 'head') {
+          return {
+            headers: resp.headers.map,
+            body: null,
+            statusCode: resp.status,
+            statusMessage: resp.statusText,
+            url: resp.url,
+            ok: resp.ok,
+          }
         }
-      })).then(resp => {
+        return (options.binary ? resp.blob() : resp.text()).then(text => {
+          return {
+            headers: resp.headers.map,
+            body: text,
+            statusCode: resp.status,
+            statusMessage: resp.statusText,
+            url: resp.url,
+            ok: resp.ok,
+          }
+        })
+      }).then(resp => {
         if (options.binary) {
           return blobToBuffer(resp.body).then(buffer => {
             resp.body = buffer
             return resp
           })
-        } else {
-          try {
-            resp.body = JSON.parse(resp.body)
-          } catch {}
-          return resp
         }
+        if (options.method?.toLowerCase() === 'head') return resp
+        try {
+          resp.body = JSON.parse(resp.body)
+        } catch {}
+        return resp
       }).catch(err => {
         // console.log(err, err.code, err.message)
         return Promise.reject(err)

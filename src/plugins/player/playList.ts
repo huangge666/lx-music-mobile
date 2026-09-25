@@ -243,7 +243,11 @@ const handlePlayMusic = async(musicInfo: LX.Player.PlayMusic, url: string, time:
   }))
   const queue = ((await withNativeTimeout(TrackPlayer.getQueue())) ?? []) as LX.Player.Track[]
   const skipIndex = queue.findIndex(t => t.id == track.id)
-  if (skipIndex >= 0) await withNativeTimeout(TrackPlayer.skip(skipIndex))
+  if (skipIndex >= 0) {
+    try {
+      await withNativeTimeout(TrackPlayer.skip(skipIndex))
+    } catch {}
+  }
   void TrackPlayer.setRepeatMode(RepeatMode.Off)
 
   if (!isTempTrack(track.id as string)) {
@@ -253,7 +257,7 @@ const handlePlayMusic = async(musicInfo: LX.Player.PlayMusic, url: string, time:
       global.lx.restorePlayInfo = null
     } else {
       // waitForBuffer 时 play() 可能一直不 resolve，不能 await 堵住后续切歌
-      void TrackPlayer.play()
+      void TrackPlayer.play().catch(() => {})
     }
     global.app_event.playerLoadstart()
   }

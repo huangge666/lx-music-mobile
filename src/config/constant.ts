@@ -46,6 +46,7 @@ export const storageDataPrefix = {
   viewPrevState: '@view_prev_state',
 
   list: '@list__',
+  listMusicCount: '@list_music_count',
   listScrollPosition: '@list_scroll_position',
   listPrevSelectId: '@list_prev_select_id',
 
