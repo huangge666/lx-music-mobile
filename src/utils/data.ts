@@ -382,9 +382,33 @@ export const removeListMusics = async(ids: string[]): Promise<void> => {
 }
 
 
-export const getMusicUrl = async(musicInfo: LX.Music.MusicInfo, type: LX.Quality) => getData<string>(`${storageDataPrefix.musicUrl}${musicInfo.id}_${type}`).then((url) => url ?? '')
-export const saveMusicUrl = async(musicInfo: LX.Music.MusicInfo, type: LX.Quality, url: string) => saveData(`${storageDataPrefix.musicUrl}${musicInfo.id}_${type}`, url)
+/** 同会话再次播放不必再走 AsyncStorage；超过容量淘汰最早写入的条目 */
+const MUSIC_URL_MEM_CACHE_MAX = 50
+const musicUrlMemCache = new Map<string, string>()
+const musicUrlMemKey = (musicInfo: LX.Music.MusicInfo, type: LX.Quality) => `${musicInfo.id}_${type}`
+const rememberMusicUrl = (key: string, url: string) => {
+  if (musicUrlMemCache.has(key)) musicUrlMemCache.delete(key)
+  musicUrlMemCache.set(key, url)
+  if (musicUrlMemCache.size > MUSIC_URL_MEM_CACHE_MAX) {
+    const firstKey = musicUrlMemCache.keys().next().value
+    if (firstKey != null) musicUrlMemCache.delete(firstKey)
+  }
+}
+
+export const getMusicUrl = async(musicInfo: LX.Music.MusicInfo, type: LX.Quality) => {
+  const memKey = musicUrlMemKey(musicInfo, type)
+  const cached = musicUrlMemCache.get(memKey)
+  if (cached) return cached
+  const url = await getData<string>(`${storageDataPrefix.musicUrl}${memKey}`).then((stored) => stored ?? '')
+  if (url) rememberMusicUrl(memKey, url)
+  return url
+}
+export const saveMusicUrl = async(musicInfo: LX.Music.MusicInfo, type: LX.Quality, url: string) => {
+  rememberMusicUrl(musicUrlMemKey(musicInfo, type), url)
+  return saveData(`${storageDataPrefix.musicUrl}${musicInfo.id}_${type}`, url)
+}
 export const clearMusicUrl = async(keys?: string[]) => {
+  musicUrlMemCache.clear()
   if (!keys) keys = (await getAllKeys()).filter(key => key.startsWith(storageDataPrefix.musicUrl))
   await removeDataMultiple(keys)
 }

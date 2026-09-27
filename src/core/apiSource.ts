@@ -51,6 +51,17 @@ export const hasPlayableApiSource = () => {
 }
 
 /**
+ * 等到至少有一个可取链的音源就绪。
+ * 初始化时写入的 userApiApis 一旦可用就放行，不再死等主源 apiInitPromise；
+ * 主源失败但备用源已就绪时，首次播放也能继续取链。
+ */
+export const waitForPlayableApiSource = async() => {
+  if (hasPlayableApiSource()) return true
+  await global.lx.apiInitPromise[0]
+  return hasPlayableApiSource()
+}
+
+/**
  * Native 层一次只能装载一个脚本，故所有用户源必须串行初始化。
  * 每个源都拥有独立 Promise，初始化回调据此准确归属到对应的源。
  */
