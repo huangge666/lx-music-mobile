@@ -12,7 +12,7 @@ import { requestMsg } from '@/utils/message'
 import { checkUrl } from '@/utils/request'
 import BackgroundTimer from 'react-native-background-timer'
 import { apis } from '@/utils/musicSdk/api-source'
-import { getActiveApiSources, isUserApiReady, getUserApiHandlers, waitForPlayableApiSource } from '@/core/apiSource'
+import { getActiveApiSources, isUserApiReady, getUserApiHandlers, hasPlayableApiSource } from '@/core/apiSource'
 
 
 const getOtherSourcePromises = new Map()
@@ -181,7 +181,7 @@ export const getOnlineOtherSourceMusicUrlByLocal = async(musicInfo: LX.Music.Mus
   quality: LX.Quality
   isFromCache: boolean
 }> => {
-  if (!await waitForPlayableApiSource()) throw new Error('no api source')
+  if (!await global.lx.apiInitPromise[0]) throw new Error('source init failed')
 
   const quality = '128k'
 
@@ -204,7 +204,7 @@ export const getOnlineOtherSourceLyricByLocal = async(musicInfo: LX.Music.MusicI
   lyricInfo: LX.Music.LyricInfo
   isFromCache: boolean
 }> => {
-  if (!await waitForPlayableApiSource()) throw new Error('no api source')
+  if (!await global.lx.apiInitPromise[0]) throw new Error('source init failed')
 
   const lyricInfo = await getCachedLyricInfo(musicInfo)
   if (lyricInfo && !isRefresh) return { lyricInfo, isFromCache: true }
@@ -224,7 +224,7 @@ export const getOnlineOtherSourceLyricByLocal = async(musicInfo: LX.Music.MusicI
 export const getOnlineOtherSourcePicByLocal = async(musicInfo: LX.Music.MusicInfoLocal): Promise<{
   url: string
 }> => {
-  if (!await waitForPlayableApiSource()) throw new Error('no api source')
+  if (!await global.lx.apiInitPromise[0]) throw new Error('source init failed')
 
   let reqPromise: Promise<string>
   try {
@@ -293,10 +293,10 @@ const withTimeout = async<T>(promise: Promise<T>, ms: number, label: string): Pr
 
 /**
  * 同时向所有已就绪的用户源取链。
- * handlers 在初始化时已写入 global.lx.userApiApis，这里只做查找，不再等主源失败。
- * validateUrl：换源路径校验链接可访问；首次取链跳过 HEAD，避免多一轮 RTT。
+ * 主源也包含在内：它不支持当前平台时，不必等它失败才让备用源开始。
+ * 返回地址必须能访问，域名失败或 404 会继续等其它源。
  */
-const requestUserApiMusicUrls = (musicInfo: LX.Music.MusicInfoOnline, targetQuality: LX.Quality, validateUrl = true) => {
+const requestUserApiMusicUrls = (musicInfo: LX.Music.MusicInfoOnline, targetQuality: LX.Quality) => {
   const userApiIds = getActiveApiSources().filter(id => /^user_api/.test(id))
   const oldMusicInfo = toOldMusicInfo(musicInfo) as LX.Music.MusicInfo
   return userApiIds.flatMap(apiId => {
@@ -310,7 +310,7 @@ const requestUserApiMusicUrls = (musicInfo: LX.Music.MusicInfoOnline, targetQual
       `user api ${apiId} for ${musicInfo.source}`,
     ).then(async result => {
       if (!result.url) throw new Error('empty url')
-      if (validateUrl) await checkUrl(result.url, { timeout: 5_000 })
+      await checkUrl(result.url, { timeout: 5_000 })
       console.log('requestUserApiMusicUrls: success with', apiId, 'for source', musicInfo.source)
       return result
     }).catch(err => {
@@ -318,23 +318,6 @@ const requestUserApiMusicUrls = (musicInfo: LX.Music.MusicInfoOnline, targetQual
       throw err
     })]
   })
-}
-
-/**
- * 优先并发已缓存的用户源 handlers；没有就绪用户源时才回退到内置 SDK。
- * 避免 musicSdk.getMusicUrl → apis() 再打一遍主源。
- */
-const collectMusicUrlRequests = (musicInfo: LX.Music.MusicInfoOnline, targetQuality: LX.Quality, validateUrl: boolean) => {
-  const userApiRequests = requestUserApiMusicUrls(musicInfo, targetQuality, validateUrl)
-  if (userApiRequests.length) return userApiRequests
-
-  let reqPromise: Promise<{ url: string, type: LX.Quality }>
-  try {
-    reqPromise = musicSdk[musicInfo.source].getMusicUrl(toOldMusicInfo(musicInfo), targetQuality).promise
-  } catch (err: any) {
-    reqPromise = Promise.reject(err)
-  }
-  return [withTimeout<{ url: string, type: LX.Quality }>(reqPromise, SOURCE_REQUEST_TIMEOUT, `source ${musicInfo.source}`)]
 }
 
 export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggleSource, isRefresh, retryedSource = [], currentMusicInfo, qualityFallbacks, attemptCount = 0, isAborted, excludeMusicIds = [] }: {
@@ -359,7 +342,8 @@ export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggl
   quality: LX.Quality
   isFromCache: boolean
 }> => {
-  if (!await waitForPlayableApiSource()) throw new Error('no api source')
+  if (!await global.lx.apiInitPromise[0]) throw new Error('source init failed')
+  if (!hasPlayableApiSource()) throw new Error('no api source')
 
   // 检查是否已中止（用户切歌、停止播放等场景）
   if (isAborted?.()) throw new Error('toggle source aborted')
@@ -402,8 +386,18 @@ export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggl
   const cachedUrl = await getStoreMusicUrl(musicInfo, itemQuality)
   if (cachedUrl && !isRefresh) return { url: cachedUrl, musicInfo, quality: itemQuality, isFromCache: true }
 
-  // 换源路径校验 URL，避免把 404/失效域名交给播放器后再失败
-  const requests = collectMusicUrlRequests(musicInfo, itemQuality, true)
+  // 主源和备用源同时取链。主源不支持当前平台时，备用源不用再等它超时。
+  const userApiRequests = requestUserApiMusicUrls(musicInfo, itemQuality)
+  let reqPromise: Promise<{ url: string, type: LX.Quality }>
+  try {
+    reqPromise = musicSdk[musicInfo.source].getMusicUrl(toOldMusicInfo(musicInfo), itemQuality).promise
+  } catch (err: any) {
+    reqPromise = Promise.reject(err)
+  }
+  const requests = [
+    withTimeout<{ url: string, type: LX.Quality }>(reqPromise, SOURCE_REQUEST_TIMEOUT, `source ${musicInfo.source}`),
+    ...userApiRequests,
+  ]
   try {
     const { url, type } = await Promise.any(requests)
     return { musicInfo, url, quality: type, isFromCache: false }
@@ -438,18 +432,21 @@ export const handleGetOnlineMusicUrl = async({ musicInfo, quality, onToggleSourc
   quality: LX.Quality
   isFromCache: boolean
 }> => {
-  if (!await waitForPlayableApiSource()) throw new Error('no api source')
+  if (!await global.lx.apiInitPromise[0]) throw new Error('source init failed')
+  if (!hasPlayableApiSource()) throw new Error('no api source')
   // console.log(musicInfo.source)
   const targetQuality = quality ?? getPlayQuality(settingState.setting['player.playQuality'], musicInfo)
 
-  // 首次取链：所有已就绪用户源并发，跳过 HEAD，谁先返回谁用
-  const requests = collectMusicUrlRequests(musicInfo, targetQuality, false)
+  let reqPromise: Promise<{ url: string, type: LX.Quality }>
   try {
-    const { url, type } = await Promise.any(requests)
-    return { musicInfo, url, quality: type, isFromCache: false }
+    reqPromise = musicSdk[musicInfo.source].getMusicUrl(toOldMusicInfo(musicInfo), targetQuality).promise
   } catch (err: any) {
+    reqPromise = Promise.reject(err)
+  }
+  return reqPromise.then(({ url, type }: { url: string, type: LX.Quality }) => {
+    return { musicInfo, url, quality: type, isFromCache: false }
+  }).catch(async(err: any) => {
     console.log(err)
-    if (err?.errors?.some((item: any) => item?.message == requestMsg.tooManyRequests)) throw new Error(requestMsg.tooManyRequests)
     if (!allowToggleSource || err.message == requestMsg.tooManyRequests) throw err
 
     // 第一步：在原始源上尝试音质降级
@@ -497,7 +494,7 @@ export const handleGetOnlineMusicUrl = async({ musicInfo, quality, onToggleSourc
       }
       throw err
     })
-  }
+  })
 }
 
 
