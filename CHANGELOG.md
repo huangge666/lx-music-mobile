@@ -6,6 +6,12 @@ Project versioning adheres to [Semantic Versioning](http://semver.org/).
 Commit convention is based on [Conventional Commits](http://conventionalcommits.org).
 Change log format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [2.1.6-pre](https://github.com/huangge666/lx-music-mobile/compare/v2.1.4...v2.1.6-pre) - 2026-09-28
+
+### 变更
+
+- 回退上一版对播放地址取链的调整，恢复此前的取链流程：等待音源初始化完成后再取链、优先使用主音源、播放地址不再做内存缓存
+
 ## [2.1.4](https://github.com/huangge666/lx-music-mobile/compare/v2.1.3...v2.1.4) - 2026-09-25
 
 ### 优化
