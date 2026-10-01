@@ -300,11 +300,16 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
       onScroll={handleScroll}
       style={styles.list}
       data={currentList}
-      maxToRenderPerBatch={4}
+      // 进场后 FlatList 不是一次渲染完，而是按 maxToRenderPerBatch 逐批把渲染窗口填满，
+      // 每批之间固定等 50ms（RN 的 updateCellsBatchingPeriod 默认值）。
+      // 填充批数 ≈ (windowSize × 一屏行数 − initialNumToRender) / maxToRenderPerBatch，
+      // 所以进场后"持续卡一阵"的时长由这两个参数共同决定。
+      // 这里把 windowSize 从 8 收到 5、每批从 4 提到 RN 默认的 10：
+      // 窗口越小，每次窗口移动要重建的元素越少；每批越大，填充所需的批数与总等待越少。
+      maxToRenderPerBatch={10}
       numColumns={rowInfo.current.rowNum}
       horizontal={false}
-      // updateCellsBatchingPeriod={80}
-      windowSize={8}
+      windowSize={5}
       removeClippedSubviews={true}
       initialNumToRender={initialNumToRender}
       renderItem={renderItem}

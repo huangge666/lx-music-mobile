@@ -243,9 +243,11 @@ const List = forwardRef<ListType, ListProps>(({
       data={currentList}
       numColumns={rowInfo.current.rowNum}
       horizontal={false}
-      maxToRenderPerBatch={4}
-      // updateCellsBatchingPeriod={80}
-      windowSize={8}
+      // 同 Mylist/MusicList：进场后 FlatList 按批填充渲染窗口，每批间隔 50ms（RN 默认），
+      // 填充批数 ≈ (windowSize × 一屏行数 − initialNumToRender) / maxToRenderPerBatch。
+      // 8 屏窗口配每批 4 行会让填充拖到一秒以上，收窄窗口并按 RN 默认每批 10 行。
+      maxToRenderPerBatch={10}
+      windowSize={5}
       removeClippedSubviews={true}
       initialNumToRender={12}
       renderItem={renderItem}
