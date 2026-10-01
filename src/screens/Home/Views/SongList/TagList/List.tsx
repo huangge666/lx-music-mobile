@@ -84,6 +84,7 @@ const styles = createStyle({
   tagContainer: {
     paddingTop: 15,
     paddingLeft: 15,
+    paddingRight: 15,
     paddingBottom: 15,
   },
   blankView: {

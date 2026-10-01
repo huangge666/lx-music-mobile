@@ -1,7 +1,7 @@
 import { memo } from 'react'
 import { ScrollView, TouchableOpacity, View } from 'react-native'
 import { useI18n } from '@/lang'
-import { useNavActiveId, useStatusbarHeight } from '@/store/common/hook'
+import { useNavActiveId } from '@/store/common/hook'
 import { useTheme } from '@/store/theme/hook'
 import { Icon } from '@/components/common/Icon'
 import { confirmDialog, createStyle, exitApp as backHome } from '@/utils/tools'
@@ -11,7 +11,6 @@ import { exitApp, setNavActiveId } from '@/core/common'
 import Text from '@/components/common/Text'
 import { useSettingValue } from '@/store/setting/hook'
 import { BorderRadius, BorderWidths } from '@/theme'
-import GlassSurface from '@/components/common/GlassSurface'
 import versionState from '@/store/version/state'
 
 const styles = createStyle({
@@ -100,9 +99,8 @@ const styles = createStyle({
  */
 const Header = () => {
   const theme = useTheme()
-  const statusBarHeight = useStatusbarHeight()
   return (
-    <View style={{ paddingTop: statusBarHeight }}>
+    <>
       <View style={styles.header}>
         <View style={{ ...styles.logoTile, backgroundColor: theme['c-primary'] }}>
           <Icon name="logo" color="rgb(255, 255, 255)" size={22} />
@@ -115,7 +113,7 @@ const Header = () => {
         </View>
       </View>
       <View style={{ ...styles.divider, backgroundColor: theme['c-border-background'] }} />
-    </View>
+    </>
   )
 }
 
@@ -206,7 +204,7 @@ export default memo(() => {
 
 
   return (
-    <GlassSurface highlight="none" style={styles.container}>
+    <View style={styles.container}>
       <Header />
       <ScrollView style={styles.menus}>
         <View style={styles.list}>
@@ -218,6 +216,6 @@ export default memo(() => {
         {showBackBtn ? <MenuItem id="back_home" icon="home" onPress={handlePress} /> : null}
         {showExitBtn ? <MenuItem id="nav_exit" icon="exit2" onPress={handlePress} /> : null}
       </View>
-    </GlassSurface>
+    </View>
   )
 })

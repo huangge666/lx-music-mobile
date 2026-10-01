@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { View } from 'react-native'
 
 import Button from '@/components/common/Button'
@@ -13,7 +14,12 @@ export interface TagGroupProps {
   activeId: string
 }
 
-export default ({ name, list, onTagChange, activeId }: TagGroupProps) => {
+/**
+ * 标签分组 — 侧栏面板本身是液态玻璃，胶囊改用面板上的中性填充色，
+ * 否则浅色下白色胶囊会与白色面板糊在一起。
+ * memo 保证切换标签时只重渲染新旧两个分组，不用整面板重排。
+ */
+export default memo(({ name, list, onTagChange, activeId }: TagGroupProps) => {
   const theme = useTheme()
   return (
     <View>
@@ -27,12 +33,12 @@ export default ({ name, list, onTagChange, activeId }: TagGroupProps) => {
           activeId == item.id
             ? (
                 <View style={{ ...styles.tagButton, backgroundColor: theme['c-accent-soft'], borderColor: theme['c-glass-border'] }} key={item.id}>
-                  <Text style={styles.tagButtonText} color={theme['c-font']}>{item.name}</Text>
+                  <Text style={styles.tagButtonText} color={theme['c-accent']}>{item.name}</Text>
                 </View>
               )
             : (
                 <Button
-                  style={{ ...styles.tagButton, backgroundColor: theme['c-glass-surface'], borderColor: theme['c-glass-border'] }}
+                  style={{ ...styles.tagButton, backgroundColor: theme['c-primary-input-background'], borderColor: theme['c-glass-border'] }}
                   key={item.id}
                   onPress={() => { onTagChange(item.name, item.id) }}
                 >
@@ -44,7 +50,7 @@ export default ({ name, list, onTagChange, activeId }: TagGroupProps) => {
       </View>
     </View>
   )
-}
+})
 
 const styles = createStyle({
   tagTypeTitle: {

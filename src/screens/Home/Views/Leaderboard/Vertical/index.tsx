@@ -6,8 +6,6 @@ import MusicList, { type MusicListType } from '../MusicList'
 import { getLeaderboardSetting, saveLeaderboardSetting } from '@/utils/data'
 import DrawerLayoutFixed, { type DrawerLayoutFixedType } from '@/components/common/DrawerLayoutFixed'
 import HeaderBar, { type HeaderBarType, type HeaderBarProps } from './HeaderBar'
-import { scaleSizeW } from '@/utils/pixelRatio'
-import { useTheme } from '@/store/theme/hook'
 import BoardsList, { type BoardsListType, type BoardsListProps } from '../BoardsList'
 import type { InitState as CommonState } from '@/store/common/state'
 import settingState from '@/store/setting/state'
@@ -17,11 +15,8 @@ import { handleCollect, handlePlay } from '../listAction'
 import boardState from '@/store/leaderboard/state'
 
 
-const MAX_WIDTH = scaleSizeW(200)
-
 export default () => {
   const drawer = useRef<DrawerLayoutFixedType>(null)
-  const theme = useTheme()
   const musicListRef = useRef<MusicListType>(null)
   const isUnmountedRef = useRef(false)
   const boardsListRef = useRef<BoardsListType>(null)
@@ -117,12 +112,8 @@ export default () => {
     <DrawerLayoutFixed
       ref={drawer}
       visibleNavNames={[COMPONENT_IDS.home]}
-      widthPercentage={0.82}
-      widthPercentageMax={MAX_WIDTH}
       drawerPosition={settingState.setting['common.drawerLayoutPosition']}
       renderNavigationView={navigationView}
-      drawerBackgroundColor={theme['c-content-background']}
-      style={{ elevation: 1 }}
     >
       <View style={styles.container}>
         <HeaderBar ref={headerBarRef} onShowBound={onShowBound} onSourceChange={onSourceChange} />

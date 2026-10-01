@@ -7,10 +7,7 @@ import BottomBar from '../components/BottomBar'
 import DrawerLayoutFixed, { type DrawerLayoutFixedType } from '@/components/common/DrawerLayoutFixed'
 import { COMPONENT_IDS } from '@/config/constant'
 import { useSettingValue } from '@/store/setting/hook'
-import { scaleSizeW } from '@/utils/pixelRatio'
 import { useNavActiveId } from '@/store/common/hook'
-
-const MAX_DRAWER_WIDTH = scaleSizeW(300)
 
 export default () => {
   const drawer = useRef<DrawerLayoutFixedType>(null)
@@ -39,8 +36,6 @@ export default () => {
   return (
     <DrawerLayoutFixed
       ref={drawer}
-      widthPercentage={0.7}
-      widthPercentageMax={MAX_DRAWER_WIDTH}
       visibleNavNames={[COMPONENT_IDS.home]}
       drawerPosition={drawerLayoutPosition}
       renderNavigationView={() => <DrawerNav />}
