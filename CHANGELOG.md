@@ -6,6 +6,14 @@ Project versioning adheres to [Semantic Versioning](http://semver.org/).
 Commit convention is based on [Conventional Commits](http://conventionalcommits.org).
 Change log format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [2.1.6](https://github.com/huangge666/lx-music-mobile/compare/v2.1.4...v2.1.6) - 2026-10-01
+
+### 优化
+
+- 侧栏抽屉统一外观：统一面板尺寸、玻璃质感与状态栏留白，各页面侧栏不再各写一套样式
+- 歌单标签面板改为首屏空闲时提前挂载，切换标签不再整块重排，标签选中态配色更清晰
+- 我的歌单与在线列表进场改为分批渲染：每批渲染行数提高、渲染窗口收窄，长列表进场更快、滚动更少卡顿
+
 ## [2.1.6-pre](https://github.com/huangge666/lx-music-mobile/compare/v2.1.4...v2.1.6-pre) - 2026-09-28
 
 ### 变更
