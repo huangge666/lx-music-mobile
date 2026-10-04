@@ -17,6 +17,7 @@ import { scaleSizeH, scaleSizeW } from '@/utils/pixelRatio'
 import Loading from '@/components/common/Loading'
 import { BorderRadius, BorderWidths } from '@/theme'
 import { useI18n } from '@/lang'
+import { useBottomInset } from '@/components/common/BottomInset'
 
 type FlatListType = FlatListProps<LX.List.MyListInfo>
 
@@ -101,6 +102,7 @@ export default ({ onShowMenu }: {
 }) => {
   const flatListRef = useRef<FlatList>(null)
   const allList = useMyList()
+  const bottomInset = useBottomInset()
 
   const handleToggleList = (item: LX.List.MyListInfo) => {
     setActiveList(item.id)
@@ -142,7 +144,7 @@ export default ({ onShowMenu }: {
       ref={flatListRef}
       onScroll={handleScroll}
       style={styles.container}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingBottom: bottomInset + 16 }]}
       data={allList}
       maxToRenderPerBatch={9}
       windowSize={9}

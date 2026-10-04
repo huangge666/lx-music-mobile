@@ -18,6 +18,7 @@ export interface OnlineListProps {
   checkHomePagerIdle?: boolean
   rowType?: RowInfoType
   onScroll?: ListProps['onScroll']
+  search?: boolean
 }
 export interface OnlineListType {
   setList: (list: LX.Music.MusicInfoOnline[], isAppend?: boolean, showSource?: boolean) => void
@@ -34,6 +35,7 @@ export default forwardRef<OnlineListType, OnlineListProps>(({
   checkHomePagerIdle = false,
   rowType,
   onScroll,
+  search,
 }, ref) => {
   const listRef = useRef<ListType>(null)
   const multipleModeBarRef = useRef<MultipleModeBarType>(null)
@@ -115,6 +117,7 @@ export default forwardRef<OnlineListType, OnlineListProps>(({
           checkHomePagerIdle={checkHomePagerIdle}
           rowType={rowType}
           onScroll={onScroll}
+          search={search}
         />
         <MultipleModeBar
           ref={multipleModeBarRef}

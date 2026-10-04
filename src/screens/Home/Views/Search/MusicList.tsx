@@ -1,13 +1,8 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
-import OnlineList, { type OnlineListType, type OnlineListProps } from '@/components/OnlineList'
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import OnlineList, { type OnlineListType } from '@/components/OnlineList'
 import { search } from '@/core/search/music'
 import searchMusicState, { type Source } from '@/store/search/music/state'
-
-// export type MusicListProps = Pick<OnlineListProps,
-// 'onLoadMore'
-// | 'onPlayList'
-// | 'onRefresh'
-// >
+import PartialSearchNotice from './PartialSearchNotice'
 
 export interface MusicListType {
   loadList: (text: string, source: Source) => void
@@ -17,90 +12,71 @@ export default forwardRef<MusicListType, {}>((props, ref) => {
   const listRef = useRef<OnlineListType>(null)
   const searchInfoRef = useRef<{ text: string, source: Source }>({ text: '', source: 'kw' })
   const isUnmountedRef = useRef(false)
+  const requestRef = useRef(0)
+  const loadingRef = useRef(false)
+  const nextPageRef = useRef(1)
+  const failedPageRef = useRef<number | null>(null)
+  const [partialFailed, setPartialFailed] = useState(false)
+
+  const loadPage = useCallback(async(page: number, refresh = false, force = false) => {
+    const { text, source } = searchInfoRef.current
+    const request = ++requestRef.current
+    const isCurrent = () => !isUnmountedRef.current && request == requestRef.current
+    loadingRef.current = true
+    failedPageRef.current = null
+    setPartialFailed(false)
+    listRef.current?.setStatus(refresh ? 'refreshing' : 'loading')
+    try {
+      const list = await search(text, page, source, (partial) => {
+        if (isCurrent()) listRef.current?.setList(partial, page > 1, source == 'all')
+      }, (count) => {
+        if (isCurrent()) setPartialFailed(count > 0)
+      }, force)
+      if (!isCurrent()) return
+      const info = searchMusicState.listInfos[source]!
+      nextPageRef.current = page + 1
+      listRef.current?.setList(list, page > 1, source == 'all')
+      listRef.current?.setStatus(info.maxPage <= page ? 'end' : 'idle')
+    } catch {
+      if (!isCurrent()) return
+      // 增量回包可能已经写入本页数据；失败重试仍应请求本页，而不是跳到下一页。
+      failedPageRef.current = page
+      listRef.current?.setStatus('error')
+    } finally {
+      if (isCurrent()) loadingRef.current = false
+    }
+  }, [])
+
   useImperativeHandle(ref, () => ({
-    async loadList(text, source) {
-      // const listDetailInfo = searchMusicState.listDetailInfo
+    loadList(text, source) {
+      searchInfoRef.current = { text, source }
+      nextPageRef.current = 1
       listRef.current?.setList([], false, source == 'all')
-      if (searchMusicState.searchText == text && searchMusicState.source == source && searchMusicState.listInfos[searchMusicState.source]!.list.length) {
-        requestAnimationFrame(() => {
-          listRef.current?.setList(searchMusicState.listInfos[searchMusicState.source]!.list, false, source == 'all')
-        })
-      } else {
-        listRef.current?.setStatus('loading')
-        const page = 1
-        searchInfoRef.current.text = text
-        searchInfoRef.current.source = source
-        return search(text, page, source, (list) => {
-          // 「全部音源」先到先展示：每个源返回即增量渲染，不被最慢源拖住
-          if (isUnmountedRef.current) return
-          requestAnimationFrame(() => {
-            listRef.current?.setList(list, false, source == 'all')
-          })
-        }).then((list) => {
-          // const result = setListInfo(listDetail, id, page)
-          if (isUnmountedRef.current) return
-          requestAnimationFrame(() => {
-            listRef.current?.setList(list, false, source == 'all')
-            listRef.current?.setStatus(searchMusicState.listInfos[searchMusicState.source]!.maxPage <= page ? 'end' : 'idle')
-          })
-        }).catch(() => {
-          listRef.current?.setStatus('error')
-        })
-      }
+      void loadPage(1)
     },
-  }), [])
+  }), [loadPage])
 
   useEffect(() => {
     isUnmountedRef.current = false
     return () => {
       isUnmountedRef.current = true
+      // 这是请求序号而不是节点引用，卸载必须使当时最新的请求失效。
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      requestRef.current++
     }
   }, [])
 
+  const handleRefresh = useCallback(() => {
+    if (loadingRef.current) return
+    void loadPage(1, true, true)
+  }, [loadPage])
+  const handleLoadMore = useCallback(() => {
+    if (loadingRef.current) return
+    void loadPage(failedPageRef.current ?? nextPageRef.current, false, failedPageRef.current != null)
+  }, [loadPage])
 
-  const handleRefresh: OnlineListProps['onRefresh'] = () => {
-    const page = 1
-    listRef.current?.setStatus('refreshing')
-    search(searchInfoRef.current.text, page, searchInfoRef.current.source, (list) => {
-      // 「全部音源」先到先展示
-      if (isUnmountedRef.current) return
-      requestAnimationFrame(() => {
-        listRef.current?.setList(list, false, searchInfoRef.current.source == 'all')
-      })
-    }).then((list) => {
-      // const result = setListInfo(listDetail, searchMusicState.listDetailInfo.id, page)
-      if (isUnmountedRef.current) return
-      listRef.current?.setList(list, false, searchInfoRef.current.source == 'all')
-      listRef.current?.setStatus(searchMusicState.listInfos[searchInfoRef.current.source]!.maxPage <= page ? 'end' : 'idle')
-    }).catch(() => {
-      listRef.current?.setStatus('error')
-    })
-  }
-  const handleLoadMore: OnlineListProps['onLoadMore'] = () => {
-    listRef.current?.setStatus('loading')
-    const info = searchMusicState.listInfos[searchInfoRef.current.source]!
-    const page = info?.list.length ? info.page + 1 : 1
-    search(searchInfoRef.current.text, page, searchInfoRef.current.source, (list) => {
-      // 「全部音源」翻页也先到先展示；isAppend=true 保持多选状态
-      if (isUnmountedRef.current) return
-      requestAnimationFrame(() => {
-        listRef.current?.setList(list, true, searchInfoRef.current.source == 'all')
-      })
-    }).then((list) => {
-      // const result = setListInfo(listDetail, searchMusicState.listDetailInfo.id, page)
-      if (isUnmountedRef.current) return
-      listRef.current?.setList(list, true, searchInfoRef.current.source == 'all')
-      listRef.current?.setStatus(info.maxPage <= page ? 'end' : 'idle')
-    }).catch(() => {
-      listRef.current?.setStatus('error')
-    })
-  }
-
-  return <OnlineList
-    ref={listRef}
-    onRefresh={handleRefresh}
-    onLoadMore={handleLoadMore}
-    checkHomePagerIdle
-  />
+  return <>
+    {partialFailed && <PartialSearchNotice onRetry={handleRefresh} />}
+    <OnlineList ref={listRef} onRefresh={handleRefresh} onLoadMore={handleLoadMore} checkHomePagerIdle search />
+  </>
 })
-

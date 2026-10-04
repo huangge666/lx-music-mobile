@@ -11,58 +11,63 @@ export const setSearchText: typeof searchMusicActions['setSearchText'] = (text) 
 export const setListInfo: typeof searchMusicActions.setListInfo = (result, id, page) => {
   return searchMusicActions.setListInfo(result, id, page)
 }
-
 export const clearListInfo: typeof searchMusicActions.clearListInfo = (source) => {
   searchMusicActions.clearListInfo(source)
 }
 
+let requestId = 0
 
-export const search = async(text: string, page: number, sourceId: Source, onPartial?: (list: LX.Music.MusicInfoOnline[]) => void): Promise<LX.Music.MusicInfoOnline[]> => {
+export const search = async(text: string, page: number, sourceId: Source, onPartial?: (list: LX.Music.MusicInfoOnline[]) => void, onSourceErrors?: (count: number) => void, force = false): Promise<LX.Music.MusicInfoOnline[]> => {
+  const currentRequest = ++requestId
   const listInfo = searchMusicState.listInfos[sourceId]!
   if (!text) return []
   const key = `${page}__${text}`
-  if (sourceId == 'all') {
-    listInfo.key = key
+  // 同关键词重试、切换音源也会产生新请求，不能只靠关键词过滤过期回包。
+  const isCurrent = () => currentRequest == requestId
+  if (!force && sourceId != 'all' && listInfo.key == key && listInfo.list.length) {
     setSearchText(text)
     setSource(sourceId)
-    // 先到先展示：每个源的结果一返回就合并渲染，不再被最慢的源拖住整页空白。
-    // 到达的结果按到达顺序累积；store 的 setLists 每次都会从原始（旧格式）数据
-    // 重新转换并全量合并，重复调用是幂等的（toNewMusicInfo 非幂等，不能对已转换条目二次转换）。
+    return listInfo.list
+  }
+  setSearchText(text)
+  setSource(sourceId)
+  if (sourceId == 'all') {
+    // 每个源先到先展示；setListInfo 每次从原始数据重算，避免重复转换歌曲。
     const results: SearchResult[] = []
-    let task = []
-    for (const source of searchMusicState.sources) {
-      if (source == 'all') continue
-      task.push(((musicSdk[source]?.musicSearch.search(text, page, searchMusicState.listInfos.all.limit) as Promise<SearchResult>) ?? Promise.reject(new Error('source not found: ' + source))).catch((error: any) => {
+    let failedSources = 0
+    const sources = searchMusicState.sources.filter(source => source != 'all')
+    const task = sources.map(async(source) => {
+      const result = await Promise.resolve().then(async() => {
+        const api = musicSdk[source]?.musicSearch
+        if (!api) throw new Error('source not found: ' + source)
+        return await api.search(text, page, listInfo.limit) as SearchResult
+      }).catch((error: unknown): SearchResult => {
         console.log(error)
-        return {
-          allPage: 1,
-          limit: 30,
-          list: [],
-          source,
-          total: 0,
-        }
-      }).then((result: SearchResult) => {
-        // 搜索条件已变化时丢弃过期结果
-        if (key != listInfo.key) return
-        results.push(result)
-        // 失败的源返回空列表，跳过无效的重复渲染
-        if (onPartial && result.list.length) onPartial(setListInfo([...results], page, text))
-      }))
-    }
-    return Promise.all(task).then(() => {
-      if (key != listInfo.key) return []
-      return setListInfo(results, page, text)
+        failedSources++
+        return { allPage: 1, limit: 30, list: [], source, total: 0 }
+      })
+      if (!isCurrent()) return
+      results.push(result)
+      if (onPartial && result.list.length) onPartial(setListInfo([...results], page, text))
     })
-  } else {
-    if (listInfo?.key == key && listInfo?.list.length) return listInfo?.list
+    await Promise.all(task)
+    if (!isCurrent()) return []
+    // 失败不等于零结果；至少一个音源成功，才能进入正常的结束状态。
+    if (!task.length || failedSources == task.length) throw new Error('All search sources failed')
+    onSourceErrors?.(failedSources)
+    return setListInfo(results, page, text)
+  }
+  try {
+    const api = musicSdk[sourceId]?.musicSearch
+    if (!api) throw new Error('source not found: ' + sourceId)
+    const data = await api.search(text, page, listInfo.limit) as SearchResult
+    if (!isCurrent()) return []
+    // 缓存键只对应成功数据，不能让正在请求的新关键词命中上一轮旧列表。
     listInfo.key = key
-    return (musicSdk[sourceId]?.musicSearch.search(text, page, listInfo.limit).then((data: SearchResult) => {
-      if (key != listInfo.key) return []
-      return setListInfo(data, page, text)
-    }) ?? Promise.reject(new Error('source not found: ' + sourceId))).catch((err: any) => {
-      if (listInfo.list.length && page == 1) clearListInfo(sourceId)
-      throw err
-    })
+    return setListInfo(data, page, text)
+  } catch (err) {
+    if (!isCurrent()) return []
+    if (listInfo.list.length && page == 1) clearListInfo(sourceId)
+    throw err
   }
 }
-

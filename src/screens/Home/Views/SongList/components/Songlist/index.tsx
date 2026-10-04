@@ -8,6 +8,7 @@ import commonState from '@/store/common/state'
 export interface SonglistProps {
   onRefresh: ListProps['onRefresh']
   onLoadMore: ListProps['onLoadMore']
+  search?: boolean
 }
 export interface SonglistType {
   setList: (list: ListInfoItem[], showSource?: boolean) => void
@@ -17,6 +18,7 @@ export interface SonglistType {
 export default forwardRef<SonglistType, SonglistProps>(({
   onRefresh,
   onLoadMore,
+  search,
 }, ref) => {
   const listRef = useRef<ListType>(null)
   // const loadingMaskRef = useRef<LoadingMaskType>(null)
@@ -40,6 +42,7 @@ export default forwardRef<SonglistType, SonglistProps>(({
       onRefresh={onRefresh}
       onLoadMore={onLoadMore}
       onOpenDetail={handleOpenDetail}
+      search={search}
     />
   )
 })

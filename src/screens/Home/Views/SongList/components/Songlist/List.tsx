@@ -10,6 +10,8 @@ import { useI18n } from '@/lang'
 import { scaleSizeW } from '@/utils/pixelRatio'
 import { createStyle } from '@/utils/tools'
 import Text from '@/components/common/Text'
+import ListState from '@/components/common/ListState'
+import { useBottomInset } from '@/components/common/BottomInset'
 
 type FlatListType = FlatListProps<ListInfoItem>
 
@@ -21,6 +23,7 @@ export interface ListProps {
   onRefresh: () => void
   onLoadMore: () => void
   onOpenDetail: (item: ListInfoItem, index: number) => void
+  search?: boolean
 }
 export type Status = 'loading' | 'refreshing' | 'end' | 'error' | 'idle'
 
@@ -29,13 +32,14 @@ export interface ListType {
   setStatus: (val: Status) => void
 }
 
-export default forwardRef<ListType, ListProps>(({ onRefresh, onLoadMore, onOpenDetail }, ref) => {
+export default forwardRef<ListType, ListProps>(({ onRefresh, onLoadMore, onOpenDetail, search = false }, ref) => {
   const flatListRef = useRef<FlatList>(null)
   const [currentList, setList] = useState<ListInfoItem[]>([])
   const [showSource, setShowSource] = useState(false)
   const [status, setStatus] = useState<Status>('idle')
   const { onLayout, width } = useLayout()
   const theme = useTheme()
+  const bottomInset = useBottomInset()
   // console.log('render songlist')
 
   useImperativeHandle(ref, () => ({
@@ -93,10 +97,10 @@ export default forwardRef<ListType, ListProps>(({ onRefresh, onLoadMore, onOpenD
     }
     return (
       <View style={{ width: '100%' }}>
-        <Footer label={label} onLoadMore={onLoadMore} />
+        <Footer label={currentList.length ? label : null} onLoadMore={onLoadMore} />
       </View>
     )
-  }, [onLoadMore, status])
+  }, [onLoadMore, status, currentList.length])
 
 
   // const itemWidth = useMemo(() => {
@@ -153,7 +157,7 @@ export default forwardRef<ListType, ListProps>(({ onRefresh, onLoadMore, onOpenD
                 key={String(rowInfo.num)}
                 ref={flatListRef}
                 style={styles.list}
-                contentContainerStyle={styles.listContent}
+                contentContainerStyle={[styles.listContent, { paddingBottom: bottomInset + 16 }]}
                 columnWrapperStyle={styles.row}
                 numColumns={rowInfo.num}
                 data={list}
@@ -171,6 +175,7 @@ export default forwardRef<ListType, ListProps>(({ onRefresh, onLoadMore, onOpenD
                 onEndReached={handleLoadMore}
                 refreshControl={refreshControl}
                 ListFooterComponent={footerComponent}
+                ListEmptyComponent={<ListState status={status} search={search} onRetry={onRefresh} />}
               />
             )
       }

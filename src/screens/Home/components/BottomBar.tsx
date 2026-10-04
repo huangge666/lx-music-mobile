@@ -48,6 +48,9 @@ const BarItem = ({ id, icon, floating }: BarItemProps) => {
           : null,
       ]}
       onPress={handlePress}
+      accessibilityRole="tab"
+      accessibilityLabel={t(id)}
+      accessibilityState={{ selected: isActive }}
       activeOpacity={0.6}
     >
       <Icon

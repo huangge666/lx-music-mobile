@@ -8,11 +8,13 @@ import type { Position } from './ListMenu'
 import type { SelectMode } from './MultipleModeBar'
 import { useTheme } from '@/store/theme/hook'
 import settingState from '@/store/setting/state'
-import { MULTI_SELECT_BAR_HEIGHT } from './MultipleModeBar'
+import { useBottomInset } from '@/components/common/BottomInset'
 import { useI18n } from '@/lang'
 import Text from '@/components/common/Text'
 import { handlePlay } from './listAction'
 import { useSettingValue } from '@/store/setting/hook'
+import ListState from '@/components/common/ListState'
+import { usePlayMusicInfo } from '@/store/player/hook'
 
 type FlatListType = FlatListProps<LX.Music.MusicInfoOnline>
 
@@ -32,6 +34,7 @@ export interface ListProps {
   checkHomePagerIdle: boolean
   rowType?: RowInfoType
   onScroll?: (offset: number) => void
+  search?: boolean
 }
 export interface ListType {
   setList: (list: LX.Music.MusicInfoOnline[], isAppend: boolean, showSource: boolean) => void
@@ -58,9 +61,12 @@ const List = forwardRef<ListType, ListProps>(({
   checkHomePagerIdle,
   rowType,
   onScroll,
+  search = false,
 }, ref) => {
   // const t = useI18n()
   const theme = useTheme()
+  // 在列表层订阅一次播放歌曲；逐行只接收布尔值，避免给每行增加全局监听。
+  const { musicInfo: playingMusic } = usePlayMusicInfo()
   const flatListRef = useRef<FlatList>(null)
   const scrollOffsetRef = useRef(0)
   const [currentList, setList] = useState<LX.Music.MusicInfoOnline[]>([])
@@ -70,7 +76,7 @@ const List = forwardRef<ListType, ListProps>(({
   const prevSelectIndexRef = useRef(-1)
   const [selectedList, setSelectedList] = useState<LX.Music.MusicInfoOnline[]>([])
   const selectedListRef = useRef<LX.Music.MusicInfoOnline[]>([])
-  const [visibleMultiSelect, setVisibleMultiSelect] = useState(false)
+  const bottomInset = useBottomInset()
   const [status, setStatus] = useState<Status>('idle')
   const rowInfo = useRef(getRowInfo(rowType))
   const isShowAlbumName = useSettingValue('list.isShowAlbumName')
@@ -90,7 +96,6 @@ const List = forwardRef<ListType, ListProps>(({
         prevSelectIndexRef.current = -1
         handleUpdateSelectedList([])
       }
-      setVisibleMultiSelect(isMultiSelectMode)
     },
     setSelectMode(mode) {
       selectModeRef.current = mode
@@ -191,6 +196,7 @@ const List = forwardRef<ListType, ListProps>(({
     <ListItem
       item={item}
       index={index}
+      active={playingMusic?.id == item.id}
       showSource={showSource}
       onPress={handlePress}
       onLongPress={handleLongPress}
@@ -230,11 +236,11 @@ const List = forwardRef<ListType, ListProps>(({
         break
     }
     return (
-      <View style={{ width: '100%', paddingBottom: visibleMultiSelect ? 168 + MULTI_SELECT_BAR_HEIGHT : 168 }} >
-        <Footer label={label} onLoadMore={onLoadMore} />
+      <View style={{ width: '100%', paddingBottom: bottomInset + 16 }} >
+        <Footer label={currentList.length ? label : null} onLoadMore={onLoadMore} />
       </View>
     )
-  }, [onLoadMore, status, visibleMultiSelect])
+  }, [onLoadMore, status, bottomInset, currentList.length])
 
   return (
     <FlatList
@@ -259,6 +265,7 @@ const List = forwardRef<ListType, ListProps>(({
       onEndReached={handleLoadMore}
       progressViewOffset={progressViewOffset}
       ListHeaderComponent={ListHeaderComponent}
+      ListEmptyComponent={<ListState status={status} search={search} onRetry={onRefresh} />}
       refreshControl={refreshControl}
       ListFooterComponent={footerComponent}
       onScroll={handleScroll}

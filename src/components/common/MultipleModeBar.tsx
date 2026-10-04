@@ -8,6 +8,7 @@ import { createStyle } from '@/utils/tools'
 import { BorderRadius } from '@/theme'
 import GlassSurface from '@/components/common/GlassSurface'
 import { scaleSizeH } from '@/utils/pixelRatio'
+import { OverlayInsetContext } from './BottomInset'
 
 export type SelectMode = 'single' | 'range'
 
@@ -46,6 +47,7 @@ const OverlayContext = createContext<OverlayContextValue | null>(null)
  */
 export const MultipleModeBarHost = ({ children }: { children: ReactNode }) => {
   const [node, setNodeState] = useState<ReactNode>(null)
+  const [overlayHeight, setOverlayHeight] = useState(0)
   const ownerRef = useRef<symbol | null>(null)
 
   const value = useMemo<OverlayContextValue>(() => ({
@@ -63,9 +65,13 @@ export const MultipleModeBarHost = ({ children }: { children: ReactNode }) => {
   return (
     <OverlayContext.Provider value={value}>
       <View style={styles.hostRoot}>
-        {children}
+        <OverlayInsetContext.Provider value={node ? overlayHeight : 0}>
+          {children}
+        </OverlayInsetContext.Provider>
         <View pointerEvents="box-none" style={styles.hostOverlay}>
-          {node}
+          <View pointerEvents="box-none" onLayout={({ nativeEvent }) => { setOverlayHeight(nativeEvent.layout.height) }}>
+            {node}
+          </View>
         </View>
       </View>
     </OverlayContext.Provider>

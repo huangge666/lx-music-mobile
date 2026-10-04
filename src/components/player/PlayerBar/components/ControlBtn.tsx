@@ -5,12 +5,10 @@ import { useTheme } from '@/store/theme/hook'
 import { playNext, playPrev, togglePlay } from '@/core/player/player'
 import { createStyle } from '@/utils/tools'
 import { useHorizontalMode } from '@/utils/hooks'
+import { useI18n } from '@/lang'
 
-// 下一首图标 — 次要色
 const NEXT_ICON_SIZE = 16
-// 上一首图标 — 次要色
 const PREV_ICON_SIZE = 16
-// 播放按钮内次要色图标
 const PLAY_ICON_SIZE = 18
 
 const handlePlayPrev = () => {
@@ -22,19 +20,20 @@ const handlePlayNext = () => {
 
 const PlayPrevBtn = () => {
   const theme = useTheme()
+  const t = useI18n()
   return (
-    <TouchableOpacity style={styles.sideBtn} activeOpacity={0.5} onPress={handlePlayPrev}>
-      <Icon name='prevMusic' color={theme['c-font-label']} size={PREV_ICON_SIZE} />
+    <TouchableOpacity style={styles.sideBtn} activeOpacity={0.5} onPress={handlePlayPrev} accessibilityRole="button" accessibilityLabel={t('play_prev')}>
+      <Icon name="prevMusic" color={theme['c-font-label']} size={PREV_ICON_SIZE} />
     </TouchableOpacity>
   )
 }
 
 const PlayNextBtn = () => {
   const theme = useTheme()
+  const t = useI18n()
   return (
-    <TouchableOpacity style={styles.sideBtn} activeOpacity={0.5} onPress={handlePlayNext}>
-      {/* 下一首 — 次要色，层级低于播放按钮 */}
-      <Icon name='nextMusic' color={theme['c-font-label']} size={NEXT_ICON_SIZE} />
+    <TouchableOpacity style={styles.sideBtn} activeOpacity={0.5} onPress={handlePlayNext} accessibilityRole="button" accessibilityLabel={t('play_next')}>
+      <Icon name="nextMusic" color={theme['c-font-label']} size={NEXT_ICON_SIZE} />
     </TouchableOpacity>
   )
 }
@@ -42,13 +41,16 @@ const PlayNextBtn = () => {
 const TogglePlayBtn = () => {
   const isPlay = useIsPlay()
   const theme = useTheme()
+  const t = useI18n()
   return (
     <TouchableOpacity
-      style={[styles.playBtn, { backgroundColor: theme['c-accent'] }]}
+      style={styles.playBtn}
       activeOpacity={0.6}
       onPress={togglePlay}
+      accessibilityRole="button"
+      accessibilityLabel={t(isPlay ? 'pause' : 'play')}
     >
-      <View style={styles.playInner}>
+      <View style={[styles.playInner, { backgroundColor: theme['c-accent'] }]}>
         <Icon name={isPlay ? 'pause' : 'play'} color={theme.isDark ? 'rgb(18, 16, 14)' : 'rgb(255, 255, 255)'} size={PLAY_ICON_SIZE} />
       </View>
     </TouchableOpacity>
@@ -66,27 +68,24 @@ export default () => {
   )
 }
 
-
 const styles = createStyle({
-  // 上下首热区 — 28×36，轻量，跟手
+  // 热区实际参与布局，避免相邻按钮的 hitSlop 重叠；可视图标仍保持轻量。
   sideBtn: {
-    width: 28,
-    height: 36,
+    width: 48,
+    height: 48,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  // 播放/暂停 — 透明背景 + 次要色图标，线性、克制
   playBtn: {
+    width: 48,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  playInner: {
     width: 38,
     height: 38,
     borderRadius: 19,
-    justifyContent: 'center',
-    alignItems: 'center',
-    // 与两侧按钮拉开少量间距，制造呼吸感
-    marginHorizontal: 3,
-  },
-  playInner: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },

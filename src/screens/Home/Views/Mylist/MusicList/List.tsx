@@ -13,7 +13,8 @@ import { windowSizeTools } from '@/utils/windowSizeTools'
 import { scaleSizeW } from '@/utils/pixelRatio'
 import { usePlayInfo, usePlayMusicInfo } from '@/store/player/hook'
 import type { Position } from './ListMenu'
-import { MULTI_SELECT_BAR_HEIGHT, type SelectMode } from './MultipleModeBar'
+import { type SelectMode } from './MultipleModeBar'
+import { useBottomInset } from '@/components/common/BottomInset'
 import { useActiveListId } from '@/store/list/hook'
 import { useSettingValue } from '@/store/setting/hook'
 
@@ -67,7 +68,7 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
   const selectedListRef = useRef<LX.List.ListMusics>([])
   // 渲染和 memo 比较按 ID 判断，避免每个可见项都扫描选中数组
   const selectedIdSet = useMemo(() => new Set(selectedList.map(item => item.id)), [selectedList])
-  const [visibleMultiSelect, setVisibleMultiSelect] = useState(false)
+  const bottomInset = useBottomInset()
   const currentListIdRef = useRef('')
   const waitJumpListPositionRef = useRef(false)
   const rowInfo = useRef(getRowInfo())
@@ -82,7 +83,6 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
         prevSelectIndexRef.current = -1
         handleUpdateSelectedList([])
       }
-      setVisibleMultiSelect(isMultiSelectMode)
     },
     setSelectMode(mode) {
       selectModeRef.current = mode
@@ -316,7 +316,7 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
       keyExtractor={getkey}
       extraData={activeIndex}
       getItemLayout={getItemLayout}
-      contentContainerStyle={{ paddingBottom: visibleMultiSelect ? 168 + MULTI_SELECT_BAR_HEIGHT : 168 }}
+      contentContainerStyle={{ paddingBottom: bottomInset + 16 }}
     />
   )
 })

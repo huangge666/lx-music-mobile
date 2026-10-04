@@ -6,6 +6,7 @@ import { usePlayerMusicInfo, useProgress, useStatusText } from '@/store/player/h
 import { createStyle } from '@/utils/tools'
 import { formatPlayTime2 } from '@/utils'
 import Text from '@/components/common/Text'
+import { Icon } from '@/components/common/Icon'
 import { useBufferProgress } from '@/plugins/player'
 import { useI18n } from '@/lang'
 import QualitySwitchPopup, { type QualitySwitchPopupType } from '../../../components/QualitySwitchPopup'
@@ -84,7 +85,7 @@ export default () => {
       case 'flac':
       case 'ape':
       case 'wav':
-        return '无损'
+        return t('quality_lossless')
       case '320k':
         return t('quality_high_quality')
       case '192k':
@@ -129,10 +130,13 @@ export default () => {
                   style={styles.qualityBtn}
                   onPress={() => { qualityPopupRef.current?.show() }}
                   activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('player_change_quality', { quality: qLabel })}
                 >
                   <Text color={Immersive.textSecondary} size={MacFontSize.caption} style={styles.quality}>
                     {qLabel}
                   </Text>
+                  <Icon name="chevron-down" size={12} color={Immersive.textSecondary} style={{ marginLeft: 4 }} />
                 </TouchableOpacity>
               )
             : null}
@@ -173,7 +177,8 @@ const styles = createStyle({
   // 音质点击区域，扩大热区便于触控
   qualityBtn: {
     minWidth: 44,
-    minHeight: 28,
+    minHeight: 44,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: MacSpacing.xs,

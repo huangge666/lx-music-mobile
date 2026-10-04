@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { View } from 'react-native'
 import Content from './Content'
 import DrawerNav from './DrawerNav'
@@ -8,9 +8,11 @@ import DrawerLayoutFixed, { type DrawerLayoutFixedType } from '@/components/comm
 import { COMPONENT_IDS } from '@/config/constant'
 import { useSettingValue } from '@/store/setting/hook'
 import { useNavActiveId } from '@/store/common/hook'
+import { BottomInsetContext } from '@/components/common/BottomInset'
 
 export default () => {
   const drawer = useRef<DrawerLayoutFixedType>(null)
+  const [dockHeight, setDockHeight] = useState(0)
   const drawerLayoutPosition = useSettingValue('common.drawerLayoutPosition')
   const navActiveId = useNavActiveId()
   const isDownloadPage = navActiveId == 'nav_download'
@@ -40,10 +42,12 @@ export default () => {
       drawerPosition={drawerLayoutPosition}
       renderNavigationView={() => <DrawerNav />}
     >
-      <Content />
+      <BottomInsetContext.Provider value={isDownloadPage || isSettingPage ? 0 : dockHeight}>
+        <Content />
+      </BottomInsetContext.Provider>
       {!isDownloadPage && !isSettingPage
         ? (
-            <View style={styles.dock} pointerEvents="box-none">
+            <View style={styles.dock} pointerEvents="box-none" onLayout={({ nativeEvent }) => { setDockHeight(nativeEvent.layout.height) }}>
               {!isSettingPage ? <PlayerBar isHome floating /> : null}
               <BottomBar floating />
             </View>

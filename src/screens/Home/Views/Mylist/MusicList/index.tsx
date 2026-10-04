@@ -16,6 +16,7 @@ import MetadataEditModal, { type MetadataEditType, type MetadataEditProps } from
 import MusicToggleModal, { type MusicToggleModalType } from './MusicToggleModal'
 import LocatePlayingBtn from './LocatePlayingBtn'
 import ScrollTopBtn from '@/components/common/ScrollTopBtn'
+import RemoveUndo, { type RemoveUndoType } from './RemoveUndo'
 
 
 export default () => {
@@ -29,6 +30,7 @@ export default () => {
   const musicPositionModalRef = useRef<MusicPositionModalType>(null)
   const metadataEditTypeRef = useRef<MetadataEditType>(null)
   const listMenuRef = useRef<ListMenuType>(null)
+  const removeUndoRef = useRef<RemoveUndoType>(null)
   const musicToggleModalRef = useRef<MusicToggleModalType>(null)
   const layoutHeightRef = useRef<number>(0)
   const selectedInfoRef = useRef<SelectInfo>()
@@ -190,7 +192,11 @@ export default () => {
         onPlay={info => { handlePlay(info.listId, info.index) }}
         onPlayLater={info => { hancelExitSelect(); handlePlayLater(info.listId, info.musicInfo, info.selectedList, hancelExitSelect) }}
         onDownload={info => { void handleDownload(info.musicInfo) }}
-        onRemove={info => { hancelExitSelect(); handleRemove(info.listId, info.musicInfo, info.selectedList, hancelExitSelect) }}
+        onRemove={info => {
+          hancelExitSelect()
+          if (info.selectedList.length) handleRemove(info.listId, info.musicInfo, info.selectedList, hancelExitSelect)
+          else removeUndoRef.current?.remove(info.listId, info.musicInfo)
+        }}
         onDislikeMusic={info => { void handleDislikeMusic(info.musicInfo) }}
         onCopyName={info => { handleShare(info.musicInfo) }}
         onMusicSourceDetail={info => { void handleShowMusicSourceDetail(info.musicInfo) }}
@@ -205,6 +211,7 @@ export default () => {
         onUpdate={handleUpdateMetadata}
       />
       <MusicToggleModal ref={musicToggleModalRef} />
+      <RemoveUndo ref={removeUndoRef} />
     </View>
   )
 }

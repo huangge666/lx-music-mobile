@@ -33,9 +33,10 @@ const useQualityTag = (musicInfo: LX.Music.MusicInfoOnline) => {
  * 通栏歌曲行：小封面、歌名、歌手、时长和更多操作。
  * 不给每一行单独套卡片，避免列表被切成一块一块。
  */
-export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu, selectedList, rowInfo, isShowAlbumName, isShowInterval }: {
+export default memo(({ item, index, active, showSource, onPress, onLongPress, onShowMenu, selectedList, rowInfo, isShowAlbumName, isShowInterval }: {
   item: LX.Music.MusicInfoOnline
   index: number
+  active: boolean
   showSource?: boolean
   onPress: (item: LX.Music.MusicInfoOnline, index: number) => void
   onLongPress: (item: LX.Music.MusicInfoOnline, index: number) => void
@@ -46,6 +47,7 @@ export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu
   isShowInterval: boolean
 }) => {
   const theme = useTheme()
+  const t = useI18n()
 
   const isSelected = selectedList.includes(item)
 
@@ -69,17 +71,21 @@ export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu
       height: ITEM_HEIGHT,
       backgroundColor: isSelected ? theme['c-accent-soft'] : 'transparent',
     }}>
-      <TouchableOpacity style={styles.listItemLeft} onPress={() => { onPress(item, index) }} onLongPress={() => { onLongPress(item, index) }} activeOpacity={0.6}>
-        {coverUrl
-          ? (
-              <View style={styles.coverWrap}>
-                <Image url={coverUrl} style={styles.cover} />
-              </View>
-            )
-          : null}
+      <TouchableOpacity style={styles.listItemLeft} onPress={() => { onPress(item, index) }} onLongPress={() => { onLongPress(item, index) }} activeOpacity={0.6}
+        accessibilityRole="button"
+        accessibilityLabel={`${item.name} · ${item.singer}${active ? ` · ${t('play_detail_queue')}` : ''}`}
+        accessibilityState={{ selected: isSelected }}
+      >
+        <View style={[styles.coverWrap, { backgroundColor: active ? theme['c-accent-soft'] : theme['c-primary-input-background'] }]}>
+          {active
+            ? <Icon name="play-outline" size={22} color={theme['c-accent']} />
+            : coverUrl
+              ? <Image url={coverUrl} style={styles.cover} />
+              : <Icon name="music" size={20} color={theme['c-font-label']} />}
+        </View>
         <View style={styles.itemInfo}>
           {/* 歌名 — 主文字色 */}
-          <Text numberOfLines={1} color={theme['c-font']}>{item.name}</Text>
+          <Text numberOfLines={1} color={active ? theme['c-accent'] : theme['c-font']}>{item.name}</Text>
           <View style={styles.listItemSingle}>
             { tagInfo.type ? <Badge type={tagInfo.type}>{tagInfo.text}</Badge> : null }
             { showSource ? <Badge type="tertiary">{item.source}</Badge> : null }
@@ -93,7 +99,7 @@ export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu
           ) : null
         }
       </TouchableOpacity>
-     <TouchableOpacity onPress={handleShowMenu} ref={moreButtonRef} style={styles.moreButton} activeOpacity={0.6}>
+     <TouchableOpacity onPress={handleShowMenu} ref={moreButtonRef} style={styles.moreButton} activeOpacity={0.6} accessibilityRole="button" accessibilityLabel={t('list_music_actions', { name: item.name })}>
         <Icon name="dots-vertical" style={{ color: theme['c-font-label'] }} size={14} />
       </TouchableOpacity>
     </View>
@@ -101,6 +107,9 @@ export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu
 }, (prevProps, nextProps) => {
   return !!(prevProps.item === nextProps.item &&
     prevProps.index === nextProps.index &&
+    prevProps.active === nextProps.active &&
+    prevProps.showSource === nextProps.showSource &&
+    prevProps.rowInfo === nextProps.rowInfo &&
     prevProps.isShowAlbumName === nextProps.isShowAlbumName &&
     prevProps.isShowInterval === nextProps.isShowInterval &&
     nextProps.selectedList.includes(nextProps.item) == prevProps.selectedList.includes(nextProps.item)
@@ -119,6 +128,9 @@ const styles = createStyle({
     width: 40,
     height: 40,
     marginRight: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
     flexGrow: 0,
     flexShrink: 0,
   },

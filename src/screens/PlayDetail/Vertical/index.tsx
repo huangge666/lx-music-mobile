@@ -1,5 +1,5 @@
-import { memo, useEffect, useState, useCallback } from 'react'
-import { View, AppState } from 'react-native'
+import { memo, useEffect, useState, useCallback, useRef } from 'react'
+import { View, AppState, Animated } from 'react-native'
 
 import Header from './components/Header'
 import AlbumBackground from './components/AlbumBackground'
@@ -10,6 +10,7 @@ import Lyric from './Lyric'
 import { screenkeepAwake, screenUnkeepAwake } from '@/utils/nativeModules/utils'
 import commonState, { type InitState as CommonState } from '@/store/common/state'
 import { createStyle } from '@/utils/tools'
+import { useReduceMotion } from '@/utils/hooks/useReduceMotion'
 
 
 /**
@@ -25,6 +26,20 @@ import { createStyle } from '@/utils/tools'
 export default memo(({ componentId }: { componentId: string }) => {
   // false=封面，true=歌词；点击封面进入歌词，顶栏封面缩略图 / 歌词顶栏点回封面
   const [showLyric, setShowLyric] = useState(false)
+  const reduceMotion = useReduceMotion()
+  const opacity = useRef(new Animated.Value(1)).current
+  const firstView = useRef(true)
+  useEffect(() => {
+    if (firstView.current || reduceMotion) {
+      firstView.current = false
+      opacity.setValue(1)
+      return
+    }
+    opacity.setValue(0)
+    const animation = Animated.timing(opacity, { toValue: 1, duration: 160, useNativeDriver: true })
+    animation.start()
+    return () => { animation.stop() }
+  }, [showLyric, reduceMotion, opacity])
 
   const openLyric = useCallback(() => {
     setShowLyric(true)
@@ -66,10 +81,10 @@ export default memo(({ componentId }: { componentId: string }) => {
   return (
     <View style={styles.root}>
       <AlbumBackground />
-      <Header showLyric={showLyric} onBackToCover={closeLyric} />
+      <Header showLyric={showLyric} onBackToCover={closeLyric} onShowLyric={openLyric} />
       <View style={styles.container}>
         {/* 上半：封面 或 歌词（点击封面进入歌词） */}
-        <View style={styles.topSection}>
+        <Animated.View style={[styles.topSection, { opacity }]}>
           {showLyric
             ? (
                 <View style={styles.lyricWrapper}>
@@ -77,7 +92,7 @@ export default memo(({ componentId }: { componentId: string }) => {
                 </View>
               )
             : <Pic componentId={componentId} onPress={openLyric} />}
-        </View>
+        </Animated.View>
 
         {/* 下半：标题 + 控制（始终可见） */}
         <View style={styles.bottomSection}>

@@ -7,6 +7,7 @@ import { useStatusbarHeight } from '@/store/common/hook'
 import { usePlayerMusicInfo } from '@/store/player/hook'
 import { Icon } from '@/components/common/Icon'
 import Image from '@/components/common/Image'
+import Text from '@/components/common/Text'
 import { useI18n } from '@/lang'
 import { scaleSizeH, scaleSizeW } from '@/utils/pixelRatio'
 import { HEADER_HEIGHT as _HEADER_HEIGHT, NAV_SHEAR_NATIVE_IDS } from '@/config/constant'
@@ -21,9 +22,10 @@ const CIRCLE = scaleSizeW(38)
  * — 左侧圆形下拉关闭（关闭播放详情）
  * — 歌词态右侧显示封面缩略图，点击回到封面
  */
-export default memo(({ showLyric, onBackToCover }: {
+export default memo(({ showLyric, onBackToCover, onShowLyric }: {
   showLyric?: boolean
   onBackToCover?: () => void
+  onShowLyric?: () => void
 }) => {
   const t = useI18n()
   const statusBarHeight = useStatusbarHeight()
@@ -58,19 +60,18 @@ export default memo(({ showLyric, onBackToCover }: {
           />
         </TouchableOpacity>
         <View style={styles.spacer} />
-        {showLyric
-          ? (
-              <TouchableOpacity
-                style={[styles.circleBtn, styles.coverBtn]}
-                onPress={onBackToCover}
-                activeOpacity={0.7}
-                accessibilityRole="button"
-                accessibilityLabel="返回封面"
-              >
-                <Image url={musicInfo.pic} style={styles.coverThumb} />
-              </TouchableOpacity>
-            )
-          : null}
+        <TouchableOpacity
+          style={styles.modeBtn}
+          onPress={showLyric ? onBackToCover : onShowLyric}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={t(showLyric ? 'player_show_cover' : 'player_show_lyrics')}
+        >
+          {showLyric
+            ? <Image url={musicInfo.pic} style={styles.coverThumb} />
+            : <Icon name="lyric-on" color={Immersive.text} size={19} />}
+          <Text color={Immersive.text} size={13} style={styles.modeLabel}>{t(showLyric ? 'player_cover' : 'player_lyrics')}</Text>
+        </TouchableOpacity>
       </View>
     </View>
   )
@@ -97,13 +98,20 @@ const styles = StyleSheet.create({
   spacer: {
     flex: 1,
   },
-  coverBtn: {
-    overflow: 'hidden',
-    padding: 0,
+  modeBtn: {
+    minHeight: 44,
+    paddingHorizontal: 14,
+    borderRadius: 22,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Immersive.glass,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: Immersive.glassBorder,
   },
+  modeLabel: { marginLeft: 8, fontWeight: '600' },
   coverThumb: {
-    width: CIRCLE,
-    height: CIRCLE,
-    borderRadius: CIRCLE / 2,
+    width: 24,
+    height: 24,
+    borderRadius: 6,
   },
 })

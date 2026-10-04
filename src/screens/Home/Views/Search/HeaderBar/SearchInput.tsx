@@ -57,6 +57,7 @@ export default forwardRef<SearchInputType, SearchInputProps>(({ onChangeText, on
     <Input
       ref={inputRef}
       placeholder={t('search_input_placeholder')}
+      returnKeyType="search"
       value={text}
       onChangeText={handleChangeText}
       style={styles.input}
