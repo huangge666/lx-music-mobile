@@ -6,6 +6,26 @@ Project versioning adheres to [Semantic Versioning](http://semver.org/).
 Commit convention is based on [Conventional Commits](http://conventionalcommits.org).
 Change log format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [2.1.8](https://github.com/huangge666/lx-music-mobile/compare/v2.1.7...v2.1.8) - 2026-10-05
+
+### 优化
+
+- 优化下一首播放衔接：已准备的相同歌曲与播放地址不再重复入队，保留原生播放器已有的缓冲
+- 手动切换下一首时复用已准备好的匹配轨道，减少重复添加和资源重建
+- 播放队列操作统一串行执行，减少预取、切歌与旧轨清理之间的竞态
+- 未播放时保留音质选择入口，暂停时切换音质将在恢复播放时应用，避免意外开播
+
+### 修复
+
+- 修复慢速预取请求被进度轮询反复判为失效，导致下一首准备不及时的问题
+- 修复预取缓存命中会延长旧播放地址有效期的问题，并增加音质匹配与异步结果失效校验
+- 修复切歌失败时仍可能清理当前轨道的问题
+- 修复音质弹出抽屉底部透明空隙，并调整圆角及键盘留白布局
+
+### 其他
+
+- 新增 11 项播放队列模拟测试，覆盖重复入队、轨道复用、异步失效、并发切歌与缓存过期
+
 ## [2.1.7](https://github.com/huangge666/lx-music-mobile/compare/v2.1.6...v2.1.7) - 2026-10-04
 
 ### 新增
