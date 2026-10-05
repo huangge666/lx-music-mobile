@@ -191,63 +191,87 @@ const syncListFromQueue = async() => {
  * 当前曲结束时 ExoPlayer 自己切到下一首，不再依赖 JS 在切歌瞬间醒着取链。
  * 必须等当前曲的 handlePlayMusic 完成，否则会被它的 remove 把刚入队的下一首清掉。
  */
-const doEnqueueNext = async(currentMusicId: string, tracks: LX.Player.Track[], gen: number) => {
-  if (gen !== queueGen) return undefined
+const doEnqueueNext = async(currentMusicId: string, tracks: LX.Player.Track[], isValid: () => boolean) => {
+  if (!isValid()) return undefined
   const currentIndex = await withNativeTimeout(TrackPlayer.getCurrentTrack())
   if (currentIndex == null) return undefined
   const queue = ((await withNativeTimeout(TrackPlayer.getQueue())) ?? []) as LX.Player.Track[]
+  if (!isValid()) return undefined
   const current = queue[currentIndex]
   // 调用方已等过上一轮 playPromise。这里再 await playPromise 会等自己，死锁。
   if (!current || current.musicId !== currentMusicId) return undefined
   // 已经停在占位轨上就来不及做原生无缝切歌，交给 JS 取链路径
   if (isTempTrack(current.id as string)) return undefined
 
+  // URL 与歌曲都相同就保留原轨；重新 add 会丢掉原生已准备的缓冲。
+  const queuedNext = queue[currentIndex + 1]
+  if (queuedNext?.musicId === tracks[0].musicId && queuedNext.url === tracks[0].url) {
+    await syncListFromQueue()
+    return isValid() ? queuedNext.id as string : undefined
+  }
+  // 查询期间歌曲可能自然结束；不能继续按旧下标删除正在播放的新轨。
+  if (await withNativeTimeout(TrackPlayer.getCurrentTrack()) !== currentIndex || !isValid()) return undefined
   const removeIdx: number[] = []
   for (let i = currentIndex + 1; i < queue.length; i++) removeIdx.push(i)
   if (removeIdx.length) await withNativeTimeout(TrackPlayer.remove(removeIdx))
+  if (!isValid()) {
+    await syncListFromQueue()
+    return undefined
+  }
   await withNativeTimeout(TrackPlayer.add(tracks))
   void TrackPlayer.setRepeatMode(RepeatMode.Off)
-  await syncListFromQueue()
-  return tracks[0]?.id as string | undefined
+  const updatedQueue = await syncListFromQueue()
+  // 超时不是写入成功，只有原生队列实际包含新轨时才能报告已准备。
+  return isValid() && updatedQueue.some(track => track.id === tracks[0].id)
+    ? tracks[0].id as string
+    : undefined
 }
 
-export const enqueueNextMusic = async(currentMusicId: string, musicInfo: LX.Player.PlayMusic, url: string): Promise<string | undefined> => {
+export const enqueueNextMusic = async(
+  currentMusicId: string,
+  musicInfo: LX.Player.PlayMusic,
+  url: string,
+  isRequestValid: () => boolean = () => true,
+): Promise<string | undefined> => {
   const tracks = buildTracks(musicInfo, url)
-  const gen = ++enqueueSeq
-  return new Promise((resolve) => {
-    void playPromise.finally(() => {
-      if (gen !== enqueueSeq) {
-        resolve(undefined)
-        return
-      }
-      playPromise = doEnqueueNext(currentMusicId, tracks, queueGen).then((id) => {
-        resolve(id)
-      }).catch(() => {
-        resolve(undefined)
-      })
-    })
-  })
+  const seq = ++enqueueSeq
+  const requestedAction = actionId
+  // 立即接到串行链尾，不能等 finally 回调才赋值，否则并发调用会共用旧链尾。
+  const task = playPromise.then(async() => {
+    const gen = queueGen
+    return doEnqueueNext(currentMusicId, tracks, () =>
+      seq === enqueueSeq && requestedAction === actionId && gen === queueGen && isRequestValid())
+  }).catch(() => undefined)
+  playPromise = task.then(() => {})
+  return task
 }
 
 
 const handlePlayMusic = async(musicInfo: LX.Player.PlayMusic, url: string, time: number) => {
 // console.log(tracks, time)
   queueGen++
-  const tracks = buildTracks(musicInfo, url)
+  const currentTrackIndex = await withNativeTimeout(TrackPlayer.getCurrentTrack())
+  let queue = ((await withNativeTimeout(TrackPlayer.getQueue())) ?? []) as LX.Player.Track[]
+  const queuedNext = currentTrackIndex == null ? undefined : queue[currentTrackIndex + 1]
+  // 手动下一首仍经过上层的选曲/取链校验，但不重建已预入队的相同资源。
+  const canReuse = time === 0 && queuedNext?.musicId === musicInfo.id && queuedNext.url === url
+  const tracks = canReuse ? [queuedNext] : buildTracks(musicInfo, url)
   const track = tracks[0]
   // 先改 trackId，避免 skip 过程中 PlaybackState 仍按占位轨把 Connecting/Playing 丢掉
   global.lx.playerTrackId = track.id
-  const currentTrackIndex = await withNativeTimeout(TrackPlayer.getCurrentTrack())
-  await withNativeTimeout(TrackPlayer.add(tracks).then(() => {
-    list.push(...tracks)
-  }))
-  const queue = ((await withNativeTimeout(TrackPlayer.getQueue())) ?? []) as LX.Player.Track[]
-  const skipIndex = queue.findIndex(t => t.id == track.id)
-  if (skipIndex >= 0) {
-    try {
-      await withNativeTimeout(TrackPlayer.skip(skipIndex))
-    } catch {}
+  if (!canReuse) {
+    await withNativeTimeout(TrackPlayer.add(tracks))
+    queue = await syncListFromQueue()
+  } else {
+    list.length = 0
+    list.push(...queue)
   }
+  const skipIndex = queue.findIndex(t => t.id == track.id)
+  if (skipIndex < 0) return
+  try {
+    const skipped = await withNativeTimeout(TrackPlayer.skip(skipIndex).then(() => true))
+    if (!skipped) return
+  } catch { return }
   void TrackPlayer.setRepeatMode(RepeatMode.Off)
 
   if (!isTempTrack(track.id as string)) {
@@ -262,18 +286,18 @@ const handlePlayMusic = async(musicInfo: LX.Player.PlayMusic, url: string, time:
     global.app_event.playerLoadstart()
   }
 
-  if (queue.length > 2) {
-    // 必须等 remove 完成后再让 playPromise resolve，否则预入队下一首会和这次清理抢队列下标
-    await withNativeTimeout(TrackPlayer.remove(Array(queue.length - 2).fill(null).map((_, i) => i)))
-    list.splice(0, list.length - 2)
+  if (skipIndex > 0) {
+    // 只清理目标之前的旧轨，保留后续缓冲与兜底轨；完成后再开放下一次队列操作。
+    await withNativeTimeout(TrackPlayer.remove(Array.from({ length: skipIndex }, (_, i) => i)))
+    await syncListFromQueue()
   }
 }
 export const playMusic = (musicInfo: LX.Player.PlayMusic, url: string, time: number) => {
   const id = actionId = Math.random()
-  void playPromise.finally(() => {
+  playPromise = playPromise.then(async() => {
     if (id != actionId) return
-    playPromise = handlePlayMusic(musicInfo, url, time)
-  })
+    await handlePlayMusic(musicInfo, url, time)
+  }).catch((err: unknown) => { console.log('play queue failed', err) })
 }
 
 // let musicId = null

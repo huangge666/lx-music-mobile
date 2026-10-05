@@ -101,6 +101,10 @@ const MAX_FETCH_RETRY = 3
 let preparedNext: { playMusicInfo: LX.Player.PlayMusicInfo, trackId: string } | null = null
 const clearPreparedNext = () => {
   preparedNext = null
+  // 同一首重新取链也可能重建队列，旧预取不能在重建后写回。
+  prewarmSeq++
+  prewarmInFlight = null
+  prewarmLastTriggerForId = null
 }
 
 const createGettingUrlId = (musicInfo: LX.Music.MusicInfo | LX.Download.ListItem) => {
@@ -302,6 +306,7 @@ export const setMusicUrl = (
     callbacks.onSuccess?.()
     return
   }
+  if (isRefresh) clearPreparedNext()
   // addLoadTimeout()
   // 刷新当前歌曲时允许覆盖进行中的取链（音质切换），避免被 isPlay / 同曲取链去重直接丢掉
   if (!isRefresh && !diffCurrentMusicInfo(musicInfo)) return
@@ -742,11 +747,20 @@ interface PrewarmMusicUrlCache {
 const prewarmMusicUrlMap = new Map<string, PrewarmMusicUrlCache>()
 /** 每个预取 key 的最近一次尝试时间，用于失败后的退避重试 */
 const prewarmAttemptAtMap = new Map<string, number>()
-/** 触发层节流状态：上次触发时针对的当前曲 id 与时间 */
+/** 触发层节流状态：上次触发的播放上下文快照与时间 */
 let prewarmLastTriggerForId: string | null = null
 let prewarmLastTriggerAt = 0
 
 let prewarmSeq = 0
+let prewarmInFlight: { context: string, seq: number } | null = null
+// 将影响下一首选择/资源的设置纳入快照；异步结果只能提交给原来的播放上下文。
+const getPrewarmContext = () => JSON.stringify([
+  playerState.playMusicInfo.musicInfo?.id,
+  playerState.playMusicInfo.listId,
+  playerState.tempPlayList[0]?.musicInfo.id,
+  settingState.setting['player.togglePlayMethod'],
+  settingState.setting['player.playQuality'],
+])
 
 /**
  * 校验已缓存的 URL 是否仍可用。
@@ -791,12 +805,17 @@ export const prewarmNextMusicUrl = () => {
   if (!playMusicInfo.musicInfo) return
   // 切歌后允许立刻预取新的下一首；同一首歌在节流间隔内不重复触发
   const startedForId = playMusicInfo.musicInfo.id
+  const context = getPrewarmContext()
+  // 同一个请求尚未结束时不另起一轮，避免每 2 秒使慢请求的结果失效。
+  if (prewarmInFlight?.context === context) return
   const triggerNow = Date.now()
-  if (startedForId === prewarmLastTriggerForId && triggerNow - prewarmLastTriggerAt < PREWARM_TRIGGER_INTERVAL) return
-  prewarmLastTriggerForId = startedForId
+  if (context === prewarmLastTriggerForId && triggerNow - prewarmLastTriggerAt < PREWARM_TRIGGER_INTERVAL) return
+  prewarmLastTriggerForId = context
   prewarmLastTriggerAt = triggerNow
   // 过期序号的结果直接丢弃
   const seq = ++prewarmSeq
+  prewarmInFlight = { context, seq }
+  const isValid = () => seq === prewarmSeq && context === getPrewarmContext() && !pausedByUser && !global.lx.isPlayedStop
   // 预取前顺手清理过期条目，避免用户频繁切歌后缓存表持续增长。
   for (const [key, caching] of prewarmMusicUrlMap) {
     if (triggerNow >= caching.expireAt) prewarmMusicUrlMap.delete(key)
@@ -805,20 +824,20 @@ export const prewarmNextMusicUrl = () => {
     if (triggerNow - at >= PREWARM_MUSIC_URL_TTL) prewarmAttemptAtMap.delete(key)
   }
   void getNextPlayMusicInfo().then(async(next) => {
-    if (seq !== prewarmSeq || playerState.playMusicInfo.musicInfo?.id !== startedForId) return
+    if (!isValid()) return
     if (!next?.musicInfo || next.musicInfo.id === startedForId) return
     const nextMusicInfo = next.musicInfo
-    const apply = async(url: string, quality: LX.Quality | null) => {
-      if (seq !== prewarmSeq || playerState.playMusicInfo.musicInfo?.id !== startedForId) return
+    const apply = async(url: string, quality: LX.Quality | null, expireAt = Date.now() + PREWARM_MUSIC_URL_TTL) => {
+      if (!isValid()) return
       const key = createGettingUrlId(nextMusicInfo)
       prewarmMusicUrlMap.set(key, {
         url,
-        expireAt: Date.now() + PREWARM_MUSIC_URL_TTL,
+        expireAt,
         quality,
       })
       // 预取成功后立刻写入原生队列：当前曲结束时由 ExoPlayer 自己切，不依赖 JS 取链
-      const trackId = await enqueueNextMusic(startedForId, nextMusicInfo, url)
-      if (!trackId || seq !== prewarmSeq || playerState.playMusicInfo.musicInfo?.id !== startedForId) return
+      const trackId = await enqueueNextMusic(startedForId, nextMusicInfo, url, isValid)
+      if (!trackId || !isValid()) return
       preparedNext = { playMusicInfo: next, trackId }
       console.log('enqueue next track', nextMusicInfo.id)
     }
@@ -832,17 +851,19 @@ export const prewarmNextMusicUrl = () => {
     const key = createGettingUrlId(nextMusicInfo)
     // 已存在且未过期则复用，但仍要入队（上次可能只写了内存、没写进原生队列）
     const caching = prewarmMusicUrlMap.get(key)
-    if (caching && Date.now() < caching.expireAt) {
-      await apply(caching.url, caching.quality)
+    const targetQuality = getPlayQuality(settingState.setting['player.playQuality'], nextMusicInfo)
+    if (caching && Date.now() < caching.expireAt && caching.quality === targetQuality) {
+      // 命中缓存不能续期；否则临播轮询会让旧 URL 永远不过期。
+      await apply(caching.url, caching.quality, caching.expireAt)
       return
     }
     // 失败退避：临播触发器会反复调用，同一 key 的重试间隔至少 PREWARM_RETRY_INTERVAL
-    const lastAttemptAt = prewarmAttemptAtMap.get(key)
+    const attemptKey = `${key}_${targetQuality}`
+    const lastAttemptAt = prewarmAttemptAtMap.get(attemptKey)
     if (lastAttemptAt != null && Date.now() - lastAttemptAt < PREWARM_RETRY_INTERVAL) return
-    prewarmAttemptAtMap.set(key, Date.now())
+    prewarmAttemptAtMap.set(attemptKey, Date.now())
     try {
       // 1) 优先复用持久缓存：正常取链会写盘，这里校验仍可用就直接进内存预热表，省一次网络请求
-      const targetQuality = getPlayQuality(settingState.setting['player.playQuality'], nextMusicInfo)
       const cachedUrl = await getStoreMusicUrl(nextMusicInfo, targetQuality).catch(() => '')
       if (cachedUrl && await isPrewarmUrlUsable(cachedUrl)) {
         await apply(cachedUrl, targetQuality)
@@ -851,6 +872,8 @@ export const prewarmNextMusicUrl = () => {
       // 2) 持久缓存缺失/失效 → 强制刷新取新链（绕过持久缓存，避免把旧 URL 当成新预取结果）
       const request = handleGetOnlineMusicUrl({
         musicInfo: nextMusicInfo,
+        quality: targetQuality,
+        isAborted: () => !isValid(),
         onToggleSource: () => {},
         isRefresh: true,
         allowToggleSource: true,
@@ -873,7 +896,9 @@ export const prewarmNextMusicUrl = () => {
       // 预取失败不打扰当前播放，静默忽略（临播触发器会按退避间隔重试）
       console.log('prewarm next music url fail', e)
     }
-  }).catch(() => {})
+  }).catch(() => {}).finally(() => {
+    if (prewarmInFlight?.seq === seq) prewarmInFlight = null
+  })
 }
 
 const handlePlayNext = async(playMusicInfo: LX.Player.PlayMusicInfo) => {
