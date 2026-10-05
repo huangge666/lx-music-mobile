@@ -236,11 +236,10 @@ export default forwardRef<PopupType, PopupProps>(({
             maxHeight: '82%' as const,
             borderTopLeftRadius: BorderRadius.xlarge,
             borderTopRightRadius: BorderRadius.xlarge,
-            paddingBottom: 28 + (keyboardShown ? keyboardHeight : 0),
           },
         ]
     }
-  }, [keyboardHeight, keyboardShown, position, statusBarHeight])
+  }, [position, statusBarHeight])
 
   if (!visible) return null
 
@@ -274,7 +273,12 @@ export default forwardRef<PopupType, PopupProps>(({
             { transform },
           ]}
         >
-          <GlassSurface highlight="none" style={styles.sheetFill}>
+          {/* 底部留白必须位于玻璃背景内，避免面板下方出现透明断层。 */}
+          <GlassSurface highlight="none" style={[styles.sheetFill, isBottom && {
+            borderTopLeftRadius: BorderRadius.xlarge,
+            borderTopRightRadius: BorderRadius.xlarge,
+            paddingBottom: 28 + (keyboardShown ? keyboardHeight : 0),
+          }]}>
           <View {...(isBottom ? panResponder.panHandlers : {})}>
             {
               isBottom

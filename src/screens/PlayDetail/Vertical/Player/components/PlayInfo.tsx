@@ -9,7 +9,7 @@ import Text from '@/components/common/Text'
 import { Icon } from '@/components/common/Icon'
 import { useBufferProgress } from '@/plugins/player'
 import { useI18n } from '@/lang'
-import QualitySwitchPopup, { type QualitySwitchPopupType } from '../../../components/QualitySwitchPopup'
+import QualitySwitchPopup, { useCurrentQuality, type QualitySwitchPopupType } from '../../../components/QualitySwitchPopup'
 import {
   Immersive,
   MacSpacing,
@@ -76,8 +76,8 @@ export default () => {
     return `-${formatPlayTime2(remain)}`
   }, [maxPlayTime, nowPlayTime])
 
+  const quality = useCurrentQuality()
   const qLabel = useMemo(() => {
-    const quality = playerMusicInfo.quality
     if (!quality) return ''
     switch (quality) {
       case 'flac24bit':
@@ -94,30 +94,26 @@ export default () => {
       default:
         return String(quality)
     }
-  }, [playerMusicInfo.quality, t])
-
-  // 未加载成功时显示加载状态
-  if (!isLoaded && playerMusicInfo.id) {
-    return (
-      <View style={styles.container}>
-        <LoadingStatus statusText={statusText} />
-      </View>
-    )
-  }
+  }, [quality, t])
 
   return (
     <View style={styles.container}>
-      <View style={styles.progressRow}>
-        <Progress
-          progress={progress}
-          duration={maxPlayTime}
-          buffered={buffered}
-          playedColor={Immersive.fill}
-          bufferedColor="rgba(255,255,255,0.16)"
-          dotColor={Immersive.fill}
-          trackColor={Immersive.track}
-        />
-      </View>
+      {/* 加载状态只替换进度条，音质入口和弹窗始终保留。 */}
+      {!isLoaded && playerMusicInfo.id
+        ? <LoadingStatus statusText={statusText} />
+        : (
+            <View style={styles.progressRow}>
+              <Progress
+                progress={progress}
+                duration={maxPlayTime}
+                buffered={buffered}
+                playedColor={Immersive.fill}
+                bufferedColor="rgba(255,255,255,0.16)"
+                dotColor={Immersive.fill}
+                trackColor={Immersive.track}
+              />
+            </View>
+          )}
 
       <View style={styles.info}>
         <PlayTimeCurrent timeStr={nowPlayTimeStr} />

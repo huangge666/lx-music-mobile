@@ -3,14 +3,14 @@ import { TouchableOpacity, View } from 'react-native'
 
 import Progress from '@/components/player/Progress'
 import Status from './Status'
-import { usePlayerMusicInfo, useProgress } from '@/store/player/hook'
+import { useProgress } from '@/store/player/hook'
 import { useTheme } from '@/store/theme/hook'
 import { createStyle } from '@/utils/tools'
 import Text from '@/components/common/Text'
 import { useBufferProgress } from '@/plugins/player'
 import Badge from '@/components/common/Badge'
 import { MacSpacing, MacFontSize } from '../../macOS'
-import QualitySwitchPopup, { type QualitySwitchPopupType } from '../../components/QualitySwitchPopup'
+import QualitySwitchPopup, { useCurrentQuality, type QualitySwitchPopupType } from '../../components/QualitySwitchPopup'
 
 
 /**
@@ -41,7 +41,7 @@ const PlayTimeMax = memo(({ timeStr }: { timeStr: string }) => {
 
 export default () => {
   const theme = useTheme()
-  const playerMusicInfo = usePlayerMusicInfo()
+  const quality = useCurrentQuality()
   const { maxPlayTimeStr, nowPlayTimeStr, progress, maxPlayTime } = useProgress()
   const buffered = useBufferProgress()
   // 音质切换弹窗引用
@@ -60,7 +60,7 @@ export default () => {
           <Status />
         </View>
         <View style={styles.timeRow}>
-          {playerMusicInfo.quality
+          {quality
             ? (
                 // 点击音质标签打开音质切换弹窗
                 <TouchableOpacity
@@ -68,7 +68,7 @@ export default () => {
                   onPress={() => { qualityPopupRef.current?.show() }}
                   activeOpacity={0.7}
                 >
-                  <Badge type="tertiary">{playerMusicInfo.quality}</Badge>
+                  <Badge type="tertiary">{quality}</Badge>
                 </TouchableOpacity>
               )
             : null}

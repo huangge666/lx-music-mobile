@@ -288,12 +288,20 @@ const getMusicPlayUrl = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListIt
   })
 }
 
+// 暂停时切音质只记录待刷新歌曲，恢复播放时再替换资源，避免 setResource 自动开播。
+let pendingQualityRefreshId: string | null = null
+
 export const setMusicUrl = (
   musicInfo: LX.Music.MusicInfo | LX.Download.ListItem,
   isRefresh?: boolean,
   // 可选的结果回调，供音质切换等场景向用户反馈成功/失败
   callbacks?: { quality?: LX.Quality, onSuccess?: () => void, onError?: (err: any) => void },
 ) => {
+  if (callbacks?.quality && !playbackRequested) {
+    pendingQualityRefreshId = musicInfo.id
+    callbacks.onSuccess?.()
+    return
+  }
   // addLoadTimeout()
   // 刷新当前歌曲时允许覆盖进行中的取链（音质切换），避免被 isPlay / 同曲取链去重直接丢掉
   if (!isRefresh && !diffCurrentMusicInfo(musicInfo)) return
@@ -1082,6 +1090,12 @@ export const play = () => {
   // 用户明确要求播放：之前连续失败的停播状态解除
   resetFetchFailCount()
   if (playerState.playMusicInfo.musicInfo == null) return
+  const refreshQuality = pendingQualityRefreshId === playerState.playMusicInfo.musicInfo.id
+  pendingQualityRefreshId = null
+  if (refreshQuality) {
+    setMusicUrl(playerState.playMusicInfo.musicInfo, true)
+    return
+  }
   if (isEmpty()) {
     if (createGettingUrlId(playerState.playMusicInfo.musicInfo) != global.lx.gettingUrlId) setMusicUrl(playerState.playMusicInfo.musicInfo)
     return

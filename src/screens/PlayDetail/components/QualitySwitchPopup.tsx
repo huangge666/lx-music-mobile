@@ -7,11 +7,11 @@ import { Icon } from '@/components/common/Icon'
 import Loading from '@/components/common/Loading'
 import { useTheme } from '@/store/theme/hook'
 import playerState from '@/store/player/state'
-import settingState from '@/store/setting/state'
+import { useSettingValue } from '@/store/setting/hook'
 import { updateSetting } from '@/core/common'
 import { setMusicUrl } from '@/core/player/player'
 import { getPlayQuality } from '@/core/music/utils'
-import { usePlayerMusicInfo } from '@/store/player/hook'
+import { useIsPlay, usePlayMusicInfo, usePlayerMusicInfo } from '@/store/player/hook'
 import { useI18n } from '@/lang'
 import { createStyle, toast } from '@/utils/tools'
 
@@ -27,12 +27,24 @@ const QUALITY_ORDER: LX.Quality[] = ['flac24bit', 'flac', 'ape', 'wav', '320k', 
  * 仅在线歌曲 / 下载歌曲支持，本地歌曲返回空列表
  */
 const getAvailableQualitys = (musicInfo: LX.Music.MusicInfo | LX.Download.ListItem | null): LX.Quality[] => {
-  if (!musicInfo) return []
+  if (!musicInfo) return QUALITY_ORDER
   // 下载列表项的原始歌曲信息存放在 metadata.musicInfo 中
   const onlineInfo = 'progress' in musicInfo ? musicInfo.metadata.musicInfo : musicInfo
   if (!onlineInfo || onlineInfo.source == 'local') return []
   const qualitys = onlineInfo.meta?._qualitys
   return QUALITY_ORDER.filter(q => qualitys?.[q])
+}
+
+/** 未播放时展示待生效音质；播放中优先展示实际取链音质。 */
+export const useCurrentQuality = () => {
+  const { musicInfo } = usePlayMusicInfo()
+  const playerMusicInfo = usePlayerMusicInfo()
+  const isPlay = useIsPlay()
+  const preferredQuality = useSettingValue('player.playQuality')
+  if (!musicInfo) return preferredQuality
+  if ('progress' in musicInfo) return musicInfo.metadata.quality
+  if (musicInfo.source == 'local') return null
+  return (isPlay ? playerMusicInfo.quality : null) ?? getPlayQuality(preferredQuality, musicInfo)
 }
 
 /**
@@ -82,7 +94,8 @@ const QualitySwitchPopup = forwardRef<QualitySwitchPopupType>((_, ref) => {
   // 切换超时定时器：超时未收到结果则按失败处理，避免一直转圈
   const switchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const popupRef = useRef<PopupType>(null)
-  const playerMusicInfo = usePlayerMusicInfo()
+  const { musicInfo } = usePlayMusicInfo()
+  const currentQuality = useCurrentQuality()
   const getLabel = useQualityLabel()
   const t = useI18n()
   const theme = useTheme()
@@ -104,28 +117,19 @@ const QualitySwitchPopup = forwardRef<QualitySwitchPopupType>((_, ref) => {
     if (switchTimerRef.current) clearTimeout(switchTimerRef.current)
   }, [])
 
-  // 当前实际生效的音质，用于标记选中项：
-  // 优先使用播放器取到链接后记录的真实音质（playerState.musicInfo.quality），
-  // 尚未取得时按 getPlayQuality 从当前默认音质逐级回落推算
-  const currentQuality = useMemo(() => {
-    const musicInfo = playerState.playMusicInfo.musicInfo
-    if (!musicInfo) return null
-    const onlineInfo = 'progress' in musicInfo ? musicInfo.metadata.musicInfo : musicInfo
-    if (!onlineInfo || onlineInfo.source == 'local') return null
-    return playerMusicInfo.quality ?? getPlayQuality(settingState.setting['player.playQuality'], onlineInfo)
-  }, [playerMusicInfo.quality])
-
   const qualitys = useMemo(() => {
-    return visible ? getAvailableQualitys(playerState.playMusicInfo.musicInfo) : []
-    // playerMusicInfo.id 是“歌曲已切换”的代理依赖（playerState 为可变单例，musicInfo 无法直接进依赖数组）
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible, playerMusicInfo.id])
+    return visible ? getAvailableQualitys(musicInfo) : []
+  }, [visible, musicInfo])
 
   const handleChange = (quality: LX.Quality) => {
     // 切换进行中忽略其它点击，避免并发取链接
     if (switchingQuality) return
     const musicInfo = playerState.playMusicInfo.musicInfo
-    if (!musicInfo) return
+    if (!musicInfo) {
+      updateSetting({ 'player.playQuality': quality })
+      popupRef.current?.setVisible(false)
+      return
+    }
     const onlineInfo = 'progress' in musicInfo ? musicInfo.metadata.musicInfo : musicInfo
     if (!onlineInfo || onlineInfo.source == 'local') return
     // 当前音源不支持所选音质时直接提示，不发起请求
