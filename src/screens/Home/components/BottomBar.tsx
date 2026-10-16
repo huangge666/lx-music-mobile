@@ -1,6 +1,6 @@
 import { memo } from 'react'
 import { TouchableOpacity, View } from 'react-native'
-import { NAV_MENUS } from '@/config/constant'
+import { MAIN_NAV_MENUS, type NAV_MENUS } from '@/config/constant'
 import { setNavActiveId } from '@/core/common'
 import { useI18n } from '@/lang'
 import { useNavActiveId } from '@/store/common/hook'
@@ -12,7 +12,8 @@ import GlassSurface from '@/components/common/GlassSurface'
 
 /** 底栏内容底边距。iOS 另有系统 Home Indicator；Android 需在栏内留出贴底安全距离。 */
 const TAB_BAR_PADDING_BOTTOM = isAndroid ? 12 : 6
-const TAB_BAR_MENUS = NAV_MENUS.filter(item => item.id != 'nav_download' && item.id != 'nav_setting')
+/** 底栏只呈现三个主标签，顺序与首页分页器、主标签判断共用同一份定义。 */
+const TAB_BAR_MENUS = MAIN_NAV_MENUS
 
 interface BarItemProps {
   id: typeof NAV_MENUS[number]['id']

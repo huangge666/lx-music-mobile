@@ -4,9 +4,9 @@ import { useNavActiveId, useStatusbarHeight } from '@/store/common/hook'
 import { useTheme } from '@/store/theme/hook'
 import { Icon } from '@/components/common/Icon'
 import { confirmDialog, createStyle, exitApp as backHome } from '@/utils/tools'
-import { NAV_MENUS } from '@/config/constant'
+import { isMainNavId, MAIN_NAV_MENUS, NAV_MENUS } from '@/config/constant'
 import type { InitState } from '@/store/common/state'
-import { exitApp, setNavActiveId } from '@/core/common'
+import { exitApp, openLeaderboard, setNavActiveId } from '@/core/common'
 import { BorderWidths } from '@/theme'
 import GlassSurface from '@/components/common/GlassSurface'
 import { useSettingValue } from '@/store/setting/hook'
@@ -15,6 +15,12 @@ import { useSettingValue } from '@/store/setting/hook'
  * 横屏液态玻璃侧栏：窄栏只放图标，选中态用辅色玻璃底。
  */
 const NAV_WIDTH = 68
+
+/** 主标签在前，覆盖页入口在后，避免侧栏和底栏给出两种主标签顺序 */
+const ASIDE_MENUS = [
+  ...MAIN_NAV_MENUS,
+  ...NAV_MENUS.filter(menu => !isMainNavId(menu.id)),
+]
 
 const styles = createStyle({
   container: {
@@ -116,7 +122,12 @@ export default memo(() => {
     }
 
     global.app_event.changeMenuVisible(false)
-    setNavActiveId(id)
+    // 排行榜是浏览的覆盖页，从侧栏进入同样先固定父级
+    if (id == 'nav_top') {
+      openLeaderboard()
+    } else {
+      setNavActiveId(id)
+    }
   }
 
   return (
@@ -124,7 +135,7 @@ export default memo(() => {
       <Header />
       <ScrollView style={styles.menus}>
         <View style={styles.list}>
-          {NAV_MENUS.map(menu => <MenuItem key={menu.id} id={menu.id} icon={menu.icon} onPress={handlePress} />)}
+          {ASIDE_MENUS.map(menu => <MenuItem key={menu.id} id={menu.id} icon={menu.icon} onPress={handlePress} />)}
         </View>
       </ScrollView>
       {

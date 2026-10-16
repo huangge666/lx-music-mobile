@@ -17,6 +17,9 @@ export default () => {
   const navActiveId = useNavActiveId()
   const isDownloadPage = navActiveId == 'nav_download'
   const isSettingPage = navActiveId == 'nav_setting'
+  // 排行榜是浏览的覆盖页：隐藏主标签栏，但保留迷你播放器，列表按实际 Dock 高度避让
+  const isLeaderboardPage = navActiveId == 'nav_top'
+  const showDock = !isDownloadPage && !isSettingPage
 
   useEffect(() => {
     const changeVisible = (visible: boolean) => {
@@ -42,14 +45,14 @@ export default () => {
       drawerPosition={drawerLayoutPosition}
       renderNavigationView={() => <DrawerNav />}
     >
-      <BottomInsetContext.Provider value={isDownloadPage || isSettingPage ? 0 : dockHeight}>
+      <BottomInsetContext.Provider value={showDock ? dockHeight : 0}>
         <Content />
       </BottomInsetContext.Provider>
-      {!isDownloadPage && !isSettingPage
+      {showDock
         ? (
             <View style={styles.dock} pointerEvents="box-none" onLayout={({ nativeEvent }) => { setDockHeight(nativeEvent.layout.height) }}>
-              {!isSettingPage ? <PlayerBar isHome floating /> : null}
-              <BottomBar floating />
+              <PlayerBar isHome floating />
+              {!isLeaderboardPage ? <BottomBar floating /> : null}
             </View>
           )
         : null}

@@ -5,7 +5,7 @@ import { useNavActiveId } from '@/store/common/hook'
 import { useTheme } from '@/store/theme/hook'
 import { Icon } from '@/components/common/Icon'
 import { confirmDialog, createStyle, exitApp as backHome } from '@/utils/tools'
-import { NAV_MENUS } from '@/config/constant'
+import { DRAWER_NAV_MENUS } from '@/config/constant'
 import type { InitState } from '@/store/common/state'
 import { exitApp, setNavActiveId } from '@/core/common'
 import Text from '@/components/common/Text'
@@ -208,7 +208,7 @@ export default memo(() => {
       <Header />
       <ScrollView style={styles.menus}>
         <View style={styles.list}>
-          {NAV_MENUS.map(menu => <MenuItem key={menu.id} id={menu.id} icon={menu.icon} onPress={handlePress} />)}
+          {DRAWER_NAV_MENUS.map(menu => <MenuItem key={menu.id} id={menu.id} icon={menu.icon} onPress={handlePress} />)}
         </View>
       </ScrollView>
 

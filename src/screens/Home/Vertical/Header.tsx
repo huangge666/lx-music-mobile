@@ -6,25 +6,28 @@ import { createStyle } from '@/utils/tools'
 import { Icon } from '@/components/common/Icon'
 import Text from '@/components/common/Text'
 import StatusBar from '@/components/common/StatusBar'
-import { useSettingActiveScreenId, useSettingValue } from '@/store/setting/hook'
+import { useSettingActiveScreenId } from '@/store/setting/hook'
 import { scaleSizeH } from '@/utils/pixelRatio'
 import { HEADER_HEIGHT } from '@/config/constant'
 import { type InitState as CommonState } from '@/store/common/state'
 import DetailNav from '@/screens/Home/Views/Mylist/DetailNav'
 import ImportSonglist from '@/screens/Home/Views/Mylist/MyList/ImportSonglist'
 import { useMylistPlaylistsVisible } from '@/store/list/uiHook'
-import { backToHomeTab } from '@/core/common'
+import { backToHomeTab, closeLeaderboard } from '@/core/common'
 import { type SettingScreenIds } from '@/screens/Home/Views/Setting'
+import { LeaderboardEntry, MoreButton } from '@/screens/Home/components/HeaderActions'
 
-// Apple Music 各页面对应的大标题文案
-const headerComponents: Partial<Record<CommonState['navActiveId'], React.ReactNode>> = {
-  // “我的”页头部提供导入歌单入口（歌单页“打开歌单”的同款交互，改为直接导入）
-  nav_love: <ImportSonglist />,
+// 各主标签页头右侧的操作入口；主标签切换由底部标签栏承担，这里不再放导航菜单
+const headerActions: Partial<Record<CommonState['navActiveId'], React.ReactNode>> = {
+  // 资料库：导入歌单 + 打开只承载下载/设置的辅助抽屉
+  nav_love: <><ImportSonglist /><MoreButton /></>,
+  // 浏览：排行榜覆盖页入口
+  nav_songlist: <LeaderboardEntry />,
 }
 
-type StandaloneNavId = Extract<CommonState['navActiveId'], 'nav_download' | 'nav_setting'>
+type StandaloneNavId = Extract<CommonState['navActiveId'], 'nav_download' | 'nav_setting' | 'nav_top'>
 
-/** 下载与设置脱离主页分页，头部返回进入前的普通 Tab。 */
+/** 下载、设置与排行榜脱离主页分页，头部返回各自的上级。 */
 const StandaloneHeader = ({
   id,
   settingScreenId,
@@ -37,9 +40,11 @@ const StandaloneHeader = ({
   const statusBarHeight = useStatusbarHeight()
   const isSettingScreen = id == 'nav_setting' && settingScreenId != null
   const title = isSettingScreen ? t(`setting_${settingScreenId}`) : t(id)
-  const handleBack = isSettingScreen
-    ? () => { global.app_event.closeSettingScreen() }
-    : backToHomeTab
+  const handleBack = id == 'nav_top'
+    ? closeLeaderboard
+    : isSettingScreen
+      ? () => { global.app_event.closeSettingScreen() }
+      : backToHomeTab
 
   return (
     <View style={{
@@ -63,20 +68,16 @@ const StandaloneHeader = ({
 }
 
 /**
- * 左侧式 Header — 不透明内容背景风格
- * 菜单按钮 + 大标题，与内容层背景统一
+ * 主标签页头 — 左侧大标题，右侧当前页面的操作入口，内容背景保持透明。
+ * 资料库进入歌单详情后由 DetailNav 接管这一行。
  */
-const LeftHeader = () => {
+const TabHeader = () => {
   const theme = useTheme()
   const id = useNavActiveId()
   const t = useI18n()
   const statusBarHeight = useStatusbarHeight()
   const playlistsVisible = useMylistPlaylistsVisible()
   const isMylistDetail = id == 'nav_love' && !playlistsVisible
-
-  const openMenu = () => {
-    global.app_event.changeMenuVisible(true)
-  }
 
   return (
     <View style={{
@@ -90,54 +91,9 @@ const LeftHeader = () => {
         : (
             <>
               <View style={styles.left}>
-                <TouchableOpacity style={[styles.menuBtn, styles.menuBubble, { backgroundColor: theme['c-glass-surface'], borderColor: theme['c-glass-border'] }]} onPress={openMenu} activeOpacity={0.6}>
-                  <Icon color={theme['c-accent']} name="menu" size={18} />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.titleBtn} onPress={openMenu} activeOpacity={0.6}>
-                  <Text style={styles.title} size={30} color={theme['c-font']}>{t(id)}</Text>
-                </TouchableOpacity>
+                <Text style={styles.title} size={30} color={theme['c-font']} numberOfLines={1}>{t(id)}</Text>
               </View>
-              {headerComponents[id] ?? null}
-            </>
-          )}
-    </View>
-  )
-}
-
-/**
- * 右侧式 Header — 抽屉在右边时的镜像布局
- */
-const RightHeader = () => {
-  const theme = useTheme()
-  const t = useI18n()
-  const id = useNavActiveId()
-  const statusBarHeight = useStatusbarHeight()
-  const playlistsVisible = useMylistPlaylistsVisible()
-  const isMylistDetail = id == 'nav_love' && !playlistsVisible
-
-  const openMenu = () => {
-    global.app_event.changeMenuVisible(true)
-  }
-  return (
-    <View style={{
-      ...styles.container,
-      height: scaleSizeH(HEADER_HEIGHT + 18) + statusBarHeight,
-      paddingTop: statusBarHeight,
-      backgroundColor: 'transparent',
-    }}>
-      {isMylistDetail
-        ? <DetailNav />
-        : (
-            <>
-              <View style={styles.rightLeft}>
-                <TouchableOpacity style={styles.titleBtn} onPress={openMenu} activeOpacity={0.6}>
-                  <Text style={styles.titleRight} size={30} color={theme['c-font']}>{t(id)}</Text>
-                </TouchableOpacity>
-              </View>
-              {headerComponents[id] ?? null}
-              <TouchableOpacity style={[styles.menuBtn, styles.menuBubble, { backgroundColor: theme['c-glass-surface'], borderColor: theme['c-glass-border'] }]} onPress={openMenu} activeOpacity={0.6}>
-                <Icon color={theme['c-accent']} name="menu" size={18} />
-              </TouchableOpacity>
+              {headerActions[id] ?? null}
             </>
           )}
     </View>
@@ -145,19 +101,16 @@ const RightHeader = () => {
 }
 
 const Header = () => {
-  const drawerLayoutPosition = useSettingValue('common.drawerLayoutPosition')
   const settingScreenId = useSettingActiveScreenId()
   const id = useNavActiveId()
-  const standaloneId = id == 'nav_download' || id == 'nav_setting' ? id : null
+  const standaloneId = id == 'nav_download' || id == 'nav_setting' || id == 'nav_top' ? id : null
 
   return (
     <>
       <StatusBar />
       {standaloneId
         ? <StandaloneHeader id={standaloneId} settingScreenId={settingScreenId} />
-        : drawerLayoutPosition == 'left'
-          ? <LeftHeader />
-          : <RightHeader />}
+        : <TabHeader />}
     </>
   )
 }
@@ -176,27 +129,9 @@ const styles = createStyle({
   left: {
     flex: 1,
     flexDirection: 'row',
-    paddingLeft: 4,
+    paddingLeft: 16,
     alignItems: 'center',
     height: '100%',
-  },
-  rightLeft: {
-    flex: 1,
-    flexDirection: 'row',
-    paddingRight: 8,
-    alignItems: 'center',
-    height: '100%',
-  },
-  menuBtn: {
-    width: 40,
-    height: 40,
-    marginLeft: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  menuBubble: {
-    borderRadius: 20,
-    borderWidth: 0.5,
   },
   backBtn: {
     width: 34,
@@ -212,19 +147,8 @@ const styles = createStyle({
     paddingRight: 16,
     fontWeight: '700',
   },
-  titleBtn: {
-    flex: 1,
-    height: '100%',
-    justifyContent: 'center',
-  },
   // Apple Music 风格标题 — 粗体、左对齐
   title: {
-    paddingLeft: 12,
-    paddingRight: 12,
-    fontWeight: '700',
-  },
-  titleRight: {
-    paddingLeft: 16,
     paddingRight: 8,
     fontWeight: '700',
   },

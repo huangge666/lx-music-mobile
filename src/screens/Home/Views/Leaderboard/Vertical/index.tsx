@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { View } from 'react-native'
 import { createStyle } from '@/utils/tools'
 
@@ -13,6 +13,7 @@ import { getBoardsList } from '@/core/leaderboard'
 import { COMPONENT_IDS } from '@/config/constant'
 import { handleCollect, handlePlay } from '../listAction'
 import boardState from '@/store/leaderboard/state'
+import { useBackHandler } from '@/utils/hooks/useBackHandler'
 
 
 export default () => {
@@ -21,6 +22,7 @@ export default () => {
   const isUnmountedRef = useRef(false)
   const boardsListRef = useRef<BoardsListType>(null)
   const headerBarRef = useRef<HeaderBarType>(null)
+  const isBoundDrawerOpenRef = useRef(false)
   const boundInfo = useRef<{ source: LX.OnlineSource, id: string | null }>({ source: 'kw', id: null })
 
   const handleBoundChange = (source: LX.OnlineSource, id: string) => {
@@ -82,6 +84,14 @@ export default () => {
     )
   }
 
+  // 榜单抽屉打开时，系统返回先收起抽屉，不直接退出排行榜。
+  // 该处理器比 Leaderboard/index 里的外层处理器注册更晚，会先被派发。
+  useBackHandler(useCallback(() => {
+    if (!isBoundDrawerOpenRef.current) return false
+    drawer.current?.closeDrawer()
+    return true
+  }, []))
+
   useEffect(() => {
     const handleFixDrawer = (id: CommonState['navActiveId']) => {
       if (id == 'nav_top') drawer.current?.fixWidth()
@@ -114,6 +124,8 @@ export default () => {
       visibleNavNames={[COMPONENT_IDS.home]}
       drawerPosition={settingState.setting['common.drawerLayoutPosition']}
       renderNavigationView={navigationView}
+      onDrawerOpen={() => { isBoundDrawerOpenRef.current = true }}
+      onDrawerClose={() => { isBoundDrawerOpenRef.current = false }}
     >
       <View style={styles.container}>
         <HeaderBar ref={headerBarRef} onShowBound={onShowBound} onSourceChange={onSourceChange} />

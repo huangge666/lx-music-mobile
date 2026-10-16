@@ -9,7 +9,7 @@ import settingState from '@/store/setting/state'
 import commonActions from '@/store/common/action'
 import commonState, { type InitState as CommonStateType } from '@/store/common/state'
 
-import { storageDataPrefix } from '@/config/constant'
+import { isMainNavId, normalizeNavId, storageDataPrefix } from '@/config/constant'
 import { saveData } from '@/plugins/storage'
 import { throttle } from '@/utils/common'
 import { getSelectedManagedFolder, saveFontSize, saveViewPrevState, setSelectedManagedFolder } from '@/utils/data'
@@ -83,25 +83,32 @@ export const removeComponentId = (name: string) => {
   commonActions.removeComponentId(name)
 }
 
-// 下载与设置是覆盖在主页分页上的独立页面，不能作为返回落点。
-const HOME_TAB_IDS = ['nav_search', 'nav_songlist', 'nav_top', 'nav_love'] as const
-const isHomeTabId = (id: CommonStateType['navActiveId']): id is typeof HOME_TAB_IDS[number] =>
-  HOME_TAB_IDS.includes(id as typeof HOME_TAB_IDS[number])
-
+// 下载、设置与排行榜都是覆盖在主页分页上的独立页面，不能作为返回落点。
 export const setNavActiveId = (id: Parameters<typeof commonActions.setNavActiveId>['0']) => {
   if (id == commonState.navActiveId) return
   commonActions.setNavActiveId(id)
-  if (isHomeTabId(id)) {
+  if (isMainNavId(id)) {
     commonActions.setLastNavActiveId(id)
     saveViewPrevState({ id })
   }
 }
 
 export const backToHomeTab = () => {
-  const fallbackId: CommonStateType['navActiveId'] = isHomeTabId(commonState.lastNavActiveId)
-    ? commonState.lastNavActiveId
-    : 'nav_search'
-  setNavActiveId(fallbackId)
+  setNavActiveId(normalizeNavId(commonState.lastNavActiveId))
+}
+
+/**
+ * 打开排行榜覆盖页。
+ * 排行榜从「浏览」进入，先把父级固定为浏览，保证返回与恢复都落在浏览而不是进入前的主标签。
+ */
+export const openLeaderboard = () => {
+  if (commonState.lastNavActiveId != 'nav_songlist') commonActions.setLastNavActiveId('nav_songlist')
+  setNavActiveId('nav_top')
+}
+
+/** 关闭排行榜覆盖页，回到它的父级「浏览」 */
+export const closeLeaderboard = () => {
+  setNavActiveId('nav_songlist')
 }
 
 export const checkStoragePermissions = async() => {

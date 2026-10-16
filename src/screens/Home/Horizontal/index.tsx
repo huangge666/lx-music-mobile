@@ -23,6 +23,8 @@ export default () => {
   const navActiveId = useNavActiveId()
   const isDownloadPage = navActiveId == 'nav_download'
   const isSettingPage = navActiveId == 'nav_setting'
+  // 排行榜是覆盖页，横屏同样隐藏主标签栏；辅助入口仍由常驻侧栏承担
+  const isLeaderboardPage = navActiveId == 'nav_top'
 
   return (
     <>
@@ -33,7 +35,7 @@ export default () => {
           <Header />
           <Main />
           {!isSettingPage ? <PlayerBar isHome /> : null}
-          {!isDownloadPage && !isSettingPage ? <BottomBar /> : null}
+          {!isDownloadPage && !isSettingPage && !isLeaderboardPage ? <BottomBar /> : null}
         </View>
       </View>
     </>

@@ -1,5 +1,5 @@
 import state, { type InitState } from './state'
-import { type COMPONENT_IDS } from '@/config/constant'
+import { isMainNavId, type COMPONENT_IDS } from '@/config/constant'
 
 
 export default {
@@ -24,7 +24,8 @@ export default {
   },
   setNavActiveId(id: InitState['navActiveId']) {
     state.navActiveId = id
-    if (id != 'nav_download' && id != 'nav_setting') state.lastNavActiveId = id
+    // 只有主标签才是返回落点，排行榜/下载/设置等覆盖页不能覆盖它
+    if (isMainNavId(id)) state.lastNavActiveId = id
     global.state_event.navActiveIdUpdated(id)
   },
   setLastNavActiveId(id: InitState['navActiveId']) {

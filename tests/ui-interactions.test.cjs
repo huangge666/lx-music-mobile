@@ -353,3 +353,138 @@ test('undo: a disappeared song is not offered as a removal', async() => {
   await assert.rejects(f.removeMusicWithUndo('playlist', { id: 'gone' }), /no longer/)
   assert.deepEqual(f.ids(), ['a', 'b', 'c'])
 })
+
+const constants = loadModule('src/config/constant.ts', {})
+
+test('navigation: the three main tabs come from one ordered definition', () => {
+  // 模块在独立 realm 里求值，比较前换成主 realm 的数组
+  assert.deepEqual(Array.from(constants.MAIN_NAV_MENUS, menu => menu.id), ['nav_love', 'nav_songlist', 'nav_search'])
+  for (const menu of constants.MAIN_NAV_MENUS) {
+    const defined = constants.NAV_MENUS.find(item => item.id == menu.id)
+    assert.ok(defined, `unknown main tab id: ${menu.id}`)
+    assert.equal(defined.icon, menu.icon, `icon drift for ${menu.id}`)
+    assert.equal(constants.getMainNavIndex(menu.id), constants.MAIN_NAV_MENUS.indexOf(menu))
+    assert.equal(constants.getMainNavIdAt(constants.getMainNavIndex(menu.id)), menu.id)
+  }
+  assert.equal(constants.getMainNavIdAt(constants.MAIN_NAV_MENUS.length), undefined)
+  assert.equal(constants.getMainNavIndex(constants.DEFAULT_MAIN_NAV_ID), 0)
+  assert.equal(constants.DEFAULT_SETTING.viewPrevState.id, constants.DEFAULT_MAIN_NAV_ID)
+})
+
+test('navigation: the auxiliary drawer never duplicates a main tab', () => {
+  assert.deepEqual(Array.from(constants.DRAWER_NAV_MENUS, menu => menu.id), ['nav_download', 'nav_setting'])
+  for (const menu of constants.DRAWER_NAV_MENUS) {
+    assert.equal(constants.isMainNavId(menu.id), false)
+    assert.ok(constants.NAV_MENUS.some(item => item.id == menu.id && item.icon == menu.icon))
+  }
+})
+
+test('navigation: restoring a legacy id never opens an overlay', () => {
+  for (const id of ['nav_love', 'nav_songlist', 'nav_search']) {
+    assert.equal(constants.normalizeNavId(id), id)
+    assert.equal(constants.isMainNavId(id), true)
+  }
+  assert.equal(constants.isMainNavId('nav_top'), false)
+  assert.equal(constants.normalizeNavId('nav_top'), 'nav_songlist')
+  for (const id of ['nav_download', 'nav_setting', '', 'nav_unknown', undefined, null]) {
+    assert.equal(constants.normalizeNavId(id), 'nav_love')
+  }
+})
+
+test('navigation: overlay pages never become the restore point', () => {
+  const state = { navActiveId: 'nav_love', lastNavActiveId: 'nav_love' }
+  const events = []
+  const actions = loadModule('src/store/common/action.ts', {
+    './state': state,
+    '@/config/constant': constants,
+  }, { global: { state_event: { navActiveIdUpdated: id => events.push(id) } } })
+
+  actions.default.setNavActiveId('nav_top')
+  assert.equal(state.navActiveId, 'nav_top')
+  assert.equal(state.lastNavActiveId, 'nav_love')
+  actions.default.setNavActiveId('nav_download')
+  assert.equal(state.lastNavActiveId, 'nav_love')
+  actions.default.setNavActiveId('nav_setting')
+  assert.equal(state.lastNavActiveId, 'nav_love')
+  actions.default.setNavActiveId('nav_songlist')
+  assert.equal(state.lastNavActiveId, 'nav_songlist')
+  assert.deepEqual(events, ['nav_top', 'nav_download', 'nav_setting', 'nav_songlist'])
+})
+
+function navigationFixture() {
+  const commonState = { navActiveId: 'nav_love', lastNavActiveId: 'nav_love' }
+  const saved = []
+  const actions = {
+    setNavActiveId(id) { commonState.navActiveId = id },
+    setLastNavActiveId(id) { commonState.lastNavActiveId = id },
+  }
+  const api = loadModule('src/core/common.ts', {
+    './desktopLyric': { hideDesktopLyric() {} },
+    '@/utils/nativeModules/utils': { exitApp() {} },
+    '@/plugins/player/utils': { setPause() {} },
+    '@/config/setting': { initSetting() {} },
+    '@/lang/i18n': { setLanguage() {} },
+    '@/store/setting/action': { updateSetting() {} },
+    '@/store/setting/state': { setting: {} },
+    '@/store/common/action': actions,
+    '@/store/common/state': commonState,
+    '@/config/constant': constants,
+    '@/plugins/storage': { saveData() {} },
+    '@/utils/common': { throttle: fn => fn },
+    '@/utils/data': {
+      getSelectedManagedFolder() {},
+      setSelectedManagedFolder() {},
+      saveFontSize() {},
+      saveViewPrevState(state) { saved.push(state) },
+    },
+    '@/utils/nativeModules/lyricDesktop': { hideDesktopLyricView() {} },
+    '@/core/init/player/playProgress': { flushPendingListInterval() {} },
+    '@/utils/fs': { getPersistedUriList() {}, selectManagedFolder() {} },
+  }, { global: { state_event: { languageChanged() {} } } })
+  return { ...api, commonState, saved }
+}
+
+test('navigation: the leaderboard entry pins its browse parent and returns to it', () => {
+  const f = navigationFixture()
+  // 持久化内容在独立 realm 里生成，这里只比较 id 序列
+  const savedIds = () => f.saved.map(state => state.id)
+
+  // 直接切到覆盖页也不能改写返回落点或写回持久化
+  f.setNavActiveId('nav_top')
+  assert.equal(f.commonState.lastNavActiveId, 'nav_love')
+  assert.deepEqual(savedIds(), [])
+
+  f.closeLeaderboard()
+  assert.equal(f.commonState.navActiveId, 'nav_songlist')
+
+  f.setNavActiveId('nav_love')
+  assert.deepEqual(savedIds(), ['nav_songlist', 'nav_love'])
+
+  f.openLeaderboard()
+  assert.equal(f.commonState.navActiveId, 'nav_top')
+  assert.equal(f.commonState.lastNavActiveId, 'nav_songlist')
+  // 打开排行榜覆盖页不写回持久化的主标签
+  assert.deepEqual(savedIds(), ['nav_songlist', 'nav_love'])
+
+  f.closeLeaderboard()
+  assert.equal(f.commonState.navActiveId, 'nav_songlist')
+  assert.deepEqual(savedIds(), ['nav_songlist', 'nav_love', 'nav_songlist'])
+
+  // 覆盖页在栈顶时同样回到有效主标签，脏值退回资料库
+  f.commonState.navActiveId = 'nav_download'
+  f.backToHomeTab()
+  assert.equal(f.commonState.navActiveId, 'nav_songlist')
+  f.commonState.lastNavActiveId = 'nav_setting'
+  f.commonState.navActiveId = 'nav_top'
+  f.backToHomeTab()
+  assert.equal(f.commonState.navActiveId, 'nav_love')
+})
+
+test('locale keys: navigation labels exist in all supported languages', () => {
+  const languages = ['zh-cn', 'zh-tw', 'en-us'].map(language => JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'src/lang', `${language}.json`), 'utf8')))
+  for (const language of languages) {
+    for (const key of ['nav_love', 'nav_songlist', 'nav_search', 'nav_top', 'nav_more']) {
+      assert.ok(typeof language[key] == 'string' && language[key].length, key)
+    }
+  }
+})
