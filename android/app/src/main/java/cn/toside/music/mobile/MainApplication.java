@@ -4,7 +4,6 @@ import android.content.Context;
 import androidx.multidex.MultiDex;
 
 import com.facebook.react.PackageList;
-import com.facebook.react.flipper.ReactNativeFlipper;
 import com.reactnativenavigation.NavigationApplication;
 import com.facebook.react.ReactNativeHost;
 import com.facebook.react.ReactPackage;
@@ -77,6 +76,5 @@ public class MainApplication extends NavigationApplication {
       // If you opted-in for the New Architecture, we load the native entry point for this app.
       DefaultNewArchitectureEntryPoint.load();
     }
-    ReactNativeFlipper.initializeFlipper(this, getReactNativeHost().getReactInstanceManager());
   }
 }
