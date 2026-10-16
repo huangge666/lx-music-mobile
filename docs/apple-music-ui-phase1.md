@@ -42,21 +42,39 @@
 - 覆盖页（排行榜、下载、设置）不写 `lastNavActiveId`、不写 `viewPrevState`；排行榜入口先把父级固定为浏览。
 - 覆盖页打开时底层分页手势关闭，原生页面事件与 `common.homePageScroll` 配置变化都不会顶掉当前覆盖页。
 
+## 启动闪退排查与修复（Android 构建产物问题，与 Phase 1 改动无关）
+
+- 现象：安装 debug 包后启动即闪退，`adb logcat -b crash` 报
+  `Unable to instantiate application cn.toside.music.mobile.MainApplication: java.lang.ClassNotFoundException`，
+  并附带 `NoClassDefFoundError: com.reactnativenavigation.NavigationApplication`。
+- 定位：`dex2oat` 给出 `Failure to verify dex file 'base.apk:classes10.dex': Bad checksum`；用 adler32 + SHA-1 校验 APK 内 10 个 dex，`classes2.dex` 与中间产物 `app/build/intermediates/dex/debug/mergeExtDexDebug/classes2.dex` 校验不一致（文件大小与 `file_size` 头字段一致，属于内容损坏而非截断）。坏文件时间是 2026-09-27，10-16 重新打包时被复用且任务被判为 up-to-date；Android 7.1.2 的 ART 不做校验跳过，因此整包类加载失败。
+- 修复：删除 `android/app/build/intermediates/dex/debug/mergeExtDexDebug`（仅 dex 合并产物，保留其余增量缓存）→ 重跑 `:app:assembleDebug`；确认新合并 dex 校验通过后，删除 `android/app/build/outputs/apk/debug` 强制重新打包（`packageDebug` 曾判为 up-to-date）。修复后 5 个 ABI 的 APK 全部 `ALL DEX OK`。
+- 同类问题自查：APK 启动即 `ClassNotFoundException` 时，先校验 dex 的 adler32/SHA-1 与中间产物是否一致，不要先怀疑 JS/业务代码。
+
 ## 已执行验证
 
-| 命令 | 结果 |
+| 检查 | 结果 |
 |---|---|
 | `node --test tests/ui-interactions.test.cjs` | 通过，38/38（含本轮新增 5 条导航与文案回归） |
 | `node --test tests/player-queue.test.cjs` | 通过，11/11（回归） |
-| `node_modules/.bin/eslint <本轮改动文件>` | 无错误 |
-| `node_modules/.bin/tsc --noEmit -p tsconfig.json` | 仅剩 2 条既有基线错误，均在未改动的 `src/core/player/player.ts`（651、660 行） |
-| `react-native bundle --platform android --dev true`（输出到系统临时目录） | 打包成功，改动模块均可解析 |
+| `eslint` 定向检查全部改动文件 | 无错误 |
+| `tsc --noEmit -p tsconfig.json` | 仅剩 2 条既有基线错误，均在未改动的 `src/core/player/player.ts`（651、660 行） |
+| `react-native bundle --platform android --dev true` | 打包成功 |
+| `:app:assembleDebug` + dex 校验 | 5 个 ABI 全部 `ALL DEX OK` |
+| 设备实测：安装 x86_64 debug 包（720×1280，Android 7.1.2，240dpi，`adb` 38947 端口设备） | 冷启动无崩溃（`FATAL EXCEPTION`/`ClassNotFoundException` 计数 0，新进程正常起） |
+| 设备实测：底栏三标签 | 资料库/浏览/搜索 可点击切换，`selected` 状态正确，页头与内容随标签切换 |
+| 设备实测：资料库页头 | 显示「导入歌单」与「更多」；点「更多」打开辅助抽屉，内容只有 下载 / 设置 / 退出应用（回桌面项受 `common.showBackBtn` 关闭，符合设置） |
+| 设备实测：浏览页头 | 显示「排行榜」入口 |
+| 设备实测：排行榜覆盖页 | 页头标题「排行榜」+ 返回按钮，底部主标签栏隐藏，浏览页内容仍在底层 |
+| 设备实测：系统返回 | 榜单抽屉打开时先收抽屉（排行榜保持打开），再次返回回到「浏览」且底栏恢复、浏览为选中态 |
 
 ## 未验证项与阻塞
 
-- 无设备/模拟器（`adb devices` 为空），未做真机或模拟器的点击、滑动、旋转、系统返回、大字号与三种导航栏实测；改前/改后截图与录屏均缺失。
-- 上述导航行为只在代码与单元层面验证，未完成 Phase 1 的界面验收（三页可点可滑、旋转后仍在同一内容、排行榜/设置/下载逐层返回）。
+- 未做旋转、最大应用字号/系统字体缩放、三键导航与手势导航的系统栏避让实测。
+- 未验证设置子页（下载/设置入口逐层返回）在真机上的完整路径，只在代码层核对。
+- 未做改前/改后截图对比；本轮只有零散截图（系统临时目录），未归档到仓库。
 - 动画与动效未涉及，本轮未新增动效。
+- 已知既有行为（本轮未改）：主标签页上打开辅助抽屉后按系统返回会直接退出应用到桌面，抽屉本身不消费返回键；下载/设置/排行榜页面才有返回处理。
 
 ## 已知基线问题（不在本轮范围）
 
