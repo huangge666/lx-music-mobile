@@ -92,10 +92,10 @@ const DrawerLayoutFixed = forwardRef<DrawerLayoutFixedType, Props>(({
    * 统一的面板外观，三个侧栏共用：
    * - 液态玻璃底 + 辅色柔光，与抽屉内部的玻璃控件同源
    * - 顶部留出状态栏高度，内容不会被状态栏压住
-   * - 内缘补一条高光发丝线，侧栏滑出后与页面内容有明确的分界
+   * - 内缘补一条中性发丝线，侧栏滑出后与页面内容有明确的分界
    * 依赖只取实际用到的值，避免主题对象换身份时把整块面板连带重建。
    */
-  const edgeColor = theme['c-glass-highlight']
+  const edgeColor = theme['c-border-background']
   const renderNavigation = useCallback(() => (
     <GlassSurface highlight="none" style={styles.panel}>
       <View style={{ flex: 1, paddingTop: statusBarHeight }}>

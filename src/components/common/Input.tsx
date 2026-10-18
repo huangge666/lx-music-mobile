@@ -10,8 +10,8 @@ import { BorderRadius } from '@/theme'
  * Apple Music 风格 Input 组件
  *
  * 特征：
- * — 浅灰填充背景 (c-primary-input-background)
- * — 圆角 10pt
+ * — 中性填充背景 (c-primary-input-background)，不再用玻璃底
+ * — 圆角 10pt + 一条中性发丝线
  * — 清除按钮带圆角背景
  * — 选中色为主色
  */
@@ -105,9 +105,7 @@ export default forwardRef<InputType, InputProps>(({ onChangeText, onClearText, c
           ...styles.input,
           color: theme['c-font'],
           fontSize: setSpText(size),
-          backgroundColor: theme['c-glass-surface'],
-          borderWidth: 0.5,
-          borderColor: theme['c-glass-border'],
+          backgroundColor: theme['c-primary-input-background'],
         }, style)}
         placeholderTextColor={theme['c-font-label']}
         selectionColor={theme['c-primary']}

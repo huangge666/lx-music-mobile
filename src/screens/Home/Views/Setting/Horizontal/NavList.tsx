@@ -37,7 +37,7 @@ const ListItem = memo(({ id, onPress }: {
           styles.iconWrapper,
           {
             backgroundColor: theme['c-accent-soft'],
-            borderColor: theme['c-glass-border'],
+            borderColor: theme['c-border-background'],
           },
         ]}
       >
@@ -79,8 +79,8 @@ export default ({ onChangeId }: {
             {t(group.titleKey)}
           </Text>
           <View style={[styles.card, {
-            backgroundColor: theme['c-glass-background'],
-            borderColor: theme['c-glass-border'],
+            backgroundColor: theme['c-card-background'],
+            borderColor: theme['c-border-background'],
           }]}>
             {group.items.map(id => (
               <ListItem key={id} id={id} onPress={onChangeId} />

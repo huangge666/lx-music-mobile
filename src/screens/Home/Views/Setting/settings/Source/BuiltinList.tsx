@@ -91,7 +91,7 @@ export default memo(() => {
     <>
       <TouchableOpacity
         style={[styles.entry, {
-          backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(118, 118, 128, 0.06)',
+          backgroundColor: theme['c-primary-input-background'],
           borderColor: theme['c-border-background'],
         }]}
         activeOpacity={0.82}
@@ -99,8 +99,8 @@ export default memo(() => {
         accessibilityLabel={t('setting_source_builtin')}
         onPress={openPicker}
       >
-        <View style={[styles.iconBubble, { backgroundColor: theme['c-primary-background'] }]}>
-          <Icon name="album" size={18} color={theme['c-primary']} />
+        <View style={[styles.iconBubble, { backgroundColor: theme['c-accent-soft'] }]}>
+          <Icon name="album" size={18} color={theme['c-accent']} />
         </View>
         <View style={styles.info}>
           <Text size={15} style={styles.name} numberOfLines={1}>{t('setting_source_builtin')}</Text>
@@ -135,8 +135,8 @@ export default memo(() => {
                     <View
                       key={source.id}
                       style={[styles.option, {
-                        backgroundColor: checked ? theme['c-primary-background'] : 'transparent',
-                        borderColor: checked ? theme['c-primary-alpha-600'] : theme['c-border-background'],
+                        backgroundColor: checked ? theme['c-accent-soft'] : 'transparent',
+                        borderColor: checked ? theme['c-accent'] : theme['c-border-background'],
                       }]}
                     >
                       <CheckBox
@@ -146,7 +146,7 @@ export default memo(() => {
                         onChange={() => { toggleSelected(source.id) }}
                       />
                       {imported
-                        ? <Text size={12} color={theme['c-primary']}>{t('setting_source_builtin_imported')}</Text>
+                        ? <Text size={12} color={theme['c-accent']}>{t('setting_source_builtin_imported')}</Text>
                         : null}
                     </View>
                   )

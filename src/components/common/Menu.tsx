@@ -9,6 +9,7 @@ import { useTheme } from '@/store/theme/hook'
 import Text from './Text'
 import { scaleSizeH, scaleSizeW } from '@/utils/pixelRatio'
 import { BorderRadius } from '@/theme'
+import { DISABLED_OPACITY } from '@/theme/themes/palette'
 
 const menuItemHeight = scaleSizeH(40)
 const menuItemWidth = scaleSizeW(100)
@@ -135,7 +136,7 @@ const Menu = ({
       style={{
         ...styles.menu,
         ...menuStyle,
-        backgroundColor: theme['c-content-background'],
+        backgroundColor: theme['c-card-background'],
         borderColor: theme['c-border-background'],
       }}
       onStartShouldSetResponder={() => true}
@@ -147,7 +148,7 @@ const Menu = ({
               ? (
                   <View
                     key={menu.action}
-                    style={{ ...styles.menuItem, width: menuItemStyle.width, height: menuItemStyle.height, opacity: 0.4 }}
+                    style={{ ...styles.menuItem, width: menuItemStyle.width, height: menuItemStyle.height, opacity: DISABLED_OPACITY }}
                   >
                     <Text style={{ textAlign: center ? 'center' : 'left' }} size={fontSize} numberOfLines={1}>{menu.label}</Text>
                   </View>

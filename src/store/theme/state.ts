@@ -1,4 +1,5 @@
 import { createContext } from 'react'
+import { createSemanticPalette } from '@/theme/themes/palette'
 // import type { RootState } from '@/store'
 
 
@@ -251,6 +252,8 @@ const state: InitState = {
   shouldUseDarkColors: false,
   theme: {
     ...theme,
+    // 首帧就使用与真实浅色主题同一套语义角色，避免启动闪一下旧色
+    ...createSemanticPalette(false),
     'c-app-background': theme['c-primary-light-600-alpha-600'],
     'c-main-background': 'rgba(255, 255, 255, 0.9)',
 
@@ -266,24 +269,12 @@ const state: InitState = {
     'c-primary-background': theme['c-primary-light-400-alpha-700'],
     'c-primary-background-hover': theme['c-primary-light-300-alpha-800'],
     'c-primary-background-active': theme['c-primary-light-100-alpha-800'],
-    'c-primary-input-background': theme['c-primary-light-400-alpha-700'],
     'c-button-font': theme['c-primary-alpha-100'],
     'c-button-font-selected': theme['c-primary-dark-100-alpha-100'],
     'c-button-background': theme['c-primary-light-400-alpha-700'],
     'c-button-background-selected': theme['c-primary-alpha-600'],
     'c-button-background-hover': theme['c-primary-light-300-alpha-600'],
     'c-button-background-active': theme['c-primary-light-100-alpha-600'],
-    'c-list-header-border-bottom': 'rgba(60, 60, 67, 0.10)',
-    'c-content-background': 'rgb(255, 255, 255)',
-    'c-border-background': 'rgba(60, 60, 67, 0.10)',
-    'c-card-background': 'rgb(242, 242, 247)',
-    'c-accent': 'rgb(92, 132, 146)',
-    'c-accent-soft': 'rgba(92, 132, 146, 0.16)',
-    'c-glass-background': 'rgba(255, 255, 255, 0.82)',
-    'c-glass-border': 'rgba(255, 255, 255, 0.70)',
-    'c-glass-highlight': theme['c-primary-alpha-900'],
-    'c-glass-fluid-glow': theme['c-primary-alpha-800'],
-    'c-glass-surface': 'rgba(255, 255, 255, 0.60)',
 
     'bg-image-position': 'center',
     'bg-image-size': 'cover',

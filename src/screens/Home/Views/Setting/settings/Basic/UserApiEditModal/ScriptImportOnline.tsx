@@ -37,8 +37,8 @@ const UrlInput = forwardRef<UrlInputType, { onSubmit: () => void }>((props, ref)
   return (
     <View style={{
       ...styles.inputWrap,
-      backgroundColor: theme['c-glass-surface'],
-      borderColor: theme['c-glass-border'],
+      backgroundColor: theme['c-primary-input-background'],
+      borderColor: theme['c-border-background'],
     }}>
       <Icon name="share" size={16} color={theme['c-accent']} />
       <Input

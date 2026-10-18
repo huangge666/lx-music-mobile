@@ -15,7 +15,7 @@ import ChoicePills from '../../components/ChoicePills'
 type Appearance = 'light' | 'dark' | 'system'
 
 /**
- * 外观只有三档：浅色白玻璃、深色黑玻璃、跟随系统。
+ * 外观只有三档：浅色、深色、跟随系统。
  * 先写入设置，再读取实际主题，保证跟随系统能拿到最新的深浅状态。
  */
 export default memo(() => {
@@ -40,7 +40,8 @@ export default memo(() => {
   return (
     <SubTitle title={t('setting_basic_theme')}>
       <View style={styles.preview}>
-        <View style={[styles.orb, { backgroundColor: theme['c-glass-highlight'] }]} />
+        {/* 外观预览条：实色强调 + 柔光强调，浅/深主题下都能看见 */}
+        <View style={[styles.orb, { backgroundColor: theme['c-accent'] }]} />
         <View style={[styles.orbSoft, { backgroundColor: theme['c-accent-soft'] }]} />
       </View>
       <ChoicePills

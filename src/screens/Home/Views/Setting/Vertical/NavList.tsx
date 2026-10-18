@@ -87,7 +87,7 @@ const NavRow = memo(({
         </View>
         <Animated.View
           style={[styles.chevron, {
-            backgroundColor: theme['c-primary-background'],
+            backgroundColor: theme['c-accent-soft'],
             transform: [{
               // chevron 顺势右移，暗示页面即将推入
               translateX: press.interpolate({
@@ -98,7 +98,7 @@ const NavRow = memo(({
             }],
           }]}
         >
-          <Icon name="chevron-right" size={16} color={theme['c-primary']} />
+          <Icon name="chevron-right" size={16} color={theme['c-accent']} />
         </Animated.View>
       </TouchableOpacity>
       {showDivider
@@ -192,7 +192,7 @@ export default ({ onChangeId }: {
       <Animated.View style={[styles.footer, { opacity: footerOpacity }]}>
         <View style={[styles.footerBadge, {
           backgroundColor: theme['c-accent-soft'],
-          borderColor: theme['c-glass-border'],
+          borderColor: theme['c-border-background'],
         }]}>
           <Icon name="logo" size={18} color={theme['c-accent']} />
         </View>

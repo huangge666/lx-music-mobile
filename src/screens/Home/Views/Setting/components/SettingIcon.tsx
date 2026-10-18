@@ -14,7 +14,7 @@ export default ({ name }: { name: string }) => {
       settingLayout.iconBubble,
       {
         backgroundColor: theme['c-accent-soft'],
-        borderColor: theme['c-glass-border'],
+        borderColor: theme['c-border-background'],
         marginRight: 14,
       },
     ]}>

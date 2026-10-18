@@ -6,17 +6,34 @@ import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
 import { createStyle } from '@/utils/tools'
 
-/** 首屏状态与分页页脚分离：空列表不再把“到底了”当作搜索结果。 */
-export default memo(({ status, search = false, onRetry }: {
+/**
+ * 首屏状态与分页页脚分离：空列表不再把“到底了”当作搜索结果。
+ *
+ * Phase 6A：加载/空/失败共用同一套排版与配色，下载等辅助页面通过
+ * `title` / `hint` 覆盖文案复用，不再各写一份纯文本提示。
+ */
+export default memo(({
+  status,
+  search = false,
+  onRetry,
+  title,
+  hint,
+}: {
   status: 'loading' | 'refreshing' | 'end' | 'error' | 'idle'
   search?: boolean
   onRetry: () => void
+  /** 覆盖标题文案；不传时按 status/search 取默认的多语言文案 */
+  title?: string
+  /** 覆盖说明文案；不传时取默认文案 */
+  hint?: string
 }) => {
   const theme = useTheme()
   const t = useI18n()
   if (status == 'idle') return null
   const loading = status == 'loading' || status == 'refreshing'
   const error = status == 'error'
+  const titleText = title ?? t(loading ? 'list_loading' : error ? 'list_load_failed' : search ? 'search_no_results' : 'list_no_content')
+  const hintText = hint ?? t(error ? 'list_load_failed_hint' : search ? 'search_no_results_hint' : 'list_no_content_hint')
   return (
     <View style={styles.container} accessibilityLiveRegion="polite">
       <View style={[styles.icon, { backgroundColor: theme['c-accent-soft'] }]}>
@@ -24,8 +41,8 @@ export default memo(({ status, search = false, onRetry }: {
           ? <ActivityIndicator color={theme['c-accent']} />
           : <Icon name={error ? 'retry' : search ? 'search-2' : 'music'} size={26} color={theme['c-accent']} />}
       </View>
-      <Text style={styles.title} size={17}>{t(loading ? 'list_loading' : error ? 'list_load_failed' : search ? 'search_no_results' : 'list_no_content')}</Text>
-      {!loading && <Text style={styles.hint} size={13} color={theme['c-font-label']}>{t(error ? 'list_load_failed_hint' : search ? 'search_no_results_hint' : 'list_no_content_hint')}</Text>}
+      <Text style={styles.title} size={17}>{titleText}</Text>
+      {!loading && <Text style={styles.hint} size={13} color={theme['c-font-label']}>{hintText}</Text>}
       {error && (
         <TouchableOpacity onPress={onRetry} style={[styles.retry, { backgroundColor: theme['c-accent-soft'] }]} accessibilityRole="button" accessibilityLabel={t('download_retry')} activeOpacity={0.65}>
           <Icon name="retry" size={16} color={theme['c-accent']} />

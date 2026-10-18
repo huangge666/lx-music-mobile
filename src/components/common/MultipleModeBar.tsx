@@ -197,7 +197,7 @@ export default forwardRef<MultipleModeBarType, MultipleModeBarProps>(({
         </TouchableOpacity>
       </View>
 
-      <View style={[styles.modeSwitch, { backgroundColor: theme['c-glass-surface'], borderWidth: 0.5, borderColor: theme['c-glass-border'] }]}>
+      <View style={[styles.modeSwitch, { backgroundColor: theme['c-primary-input-background'] }]}>
         <TouchableOpacity
           onPress={() => { onSwitchMode('single') }}
           style={[

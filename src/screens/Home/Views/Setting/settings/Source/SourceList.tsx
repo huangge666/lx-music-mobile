@@ -35,7 +35,7 @@ const StatusBadge = ({ status }: { status: SourceStatus }) => {
     : status == 'initing'
       ? t('setting_basic_source_status_initing')
       : t('setting_basic_source_status_failed')
-  const color = status == 'success' ? theme['c-primary'] : theme['c-font-label']
+  const color = status == 'success' ? theme['c-accent'] : theme['c-font-label']
 
   return <Text size={11} color={color} style={styles.statusText}>{label}</Text>
 }
@@ -86,21 +86,22 @@ const ListItem = memo(({
     <View style={[
       styles.item,
       {
-        backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(118, 118, 128, 0.06)',
-        borderColor: enabled ? theme['c-primary-alpha-600'] : theme['c-border-background'],
+        // 选中态只用强调色柔光表达，不再用硬编码半透明底
+        backgroundColor: enabled ? theme['c-accent-soft'] : 'transparent',
+        borderColor: enabled ? theme['c-accent'] : theme['c-border-background'],
       },
     ]}>
       <View style={styles.mainRow}>
-        <View style={[styles.iconBubble, { backgroundColor: theme['c-primary-background'] }]}>
-          <Icon name="music_time" size={18} color={theme['c-primary']} />
+        <View style={[styles.iconBubble, { backgroundColor: theme['c-accent-soft'] }]}>
+          <Icon name="music_time" size={18} color={theme['c-accent']} />
         </View>
         <View style={styles.info}>
           <Text size={15} style={styles.name} numberOfLines={1}>{item.name}</Text>
           <View style={styles.metaRow}>
             {isPrimary ? (
               <View style={styles.primaryBadge}>
-                <Icon name="checkbox-marked" size={12} color={theme['c-primary']} />
-                <Text size={12} color={theme['c-primary']}>{t('setting_source_primary')}</Text>
+                <Icon name="checkbox-marked" size={12} color={theme['c-accent']} />
+                <Text size={12} color={theme['c-accent']}>{t('setting_source_primary')}</Text>
               </View>
             ) : null}
             <StatusBadge status={status} />
@@ -113,11 +114,11 @@ const ListItem = memo(({
           value={enabled}
           onValueChange={() => { onToggle(item.id) }}
           trackColor={{
-            false: theme.isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(120, 120, 128, 0.16)',
-            true: theme['c-primary-alpha-400'],
+            false: theme['c-primary-input-background'],
+            true: theme['c-accent'],
           }}
-          thumbColor={enabled ? theme['c-primary'] : theme.isDark ? '#d1d1d6' : '#ffffff'}
-          ios_backgroundColor={theme.isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(120, 120, 128, 0.16)'}
+          thumbColor={theme.isDark ? '#f2f2f7' : '#ffffff'}
+          ios_backgroundColor={theme['c-primary-input-background']}
         />
       </View>
       <View style={[styles.footerRow, { borderTopColor: theme['c-border-background'] }]}>
@@ -131,9 +132,9 @@ const ListItem = memo(({
           <Icon
             name={item.allowShowUpdateAlert ? 'checkbox-marked' : 'checkbox-blank-outline'}
             size={14}
-            color={item.allowShowUpdateAlert ? theme['c-primary'] : theme['c-font-label']}
+            color={item.allowShowUpdateAlert ? theme['c-accent'] : theme['c-font-label']}
           />
-          <Text size={12} color={item.allowShowUpdateAlert ? theme['c-primary'] : theme['c-font-label']}>
+          <Text size={12} color={item.allowShowUpdateAlert ? theme['c-accent'] : theme['c-font-label']}>
             {t('user_api_allow_show_update_alert')}
           </Text>
         </TouchableOpacity>
@@ -143,8 +144,8 @@ const ListItem = memo(({
           onPress={() => { onRemove(item.id, item.name) }}
           accessibilityRole="button"
         >
-          <Icon name="close" size={13} color={theme['c-font-label']} />
-          <Text size={12} color={theme['c-font-label']}>{t('list_remove')}</Text>
+          <Icon name="close" size={13} color={theme['c-danger']} />
+          <Text size={12} color={theme['c-danger']}>{t('list_remove')}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -221,8 +222,8 @@ export default memo(() => {
   if (!list.length) {
     return (
       <View style={[styles.emptyCard, { borderColor: theme['c-border-background'] }]}>
-        <View style={[styles.emptyIcon, { backgroundColor: theme['c-primary-background'] }]}>
-          <Icon name="download-2" size={20} color={theme['c-primary']} />
+        <View style={[styles.emptyIcon, { backgroundColor: theme['c-accent-soft'] }]}>
+          <Icon name="download-2" size={20} color={theme['c-accent']} />
         </View>
         <Text style={styles.emptyText} color={theme['c-font-label']} size={14}>
           {t('user_api_empty')}

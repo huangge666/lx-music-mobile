@@ -51,7 +51,7 @@ export default forwardRef<OpenListType, {}>((props, ref) => {
 
   return (
     <>
-      <Button style={{ ...styles.button, backgroundColor: theme['c-glass-surface'], borderColor: theme['c-glass-border'] }} onPress={() => modalRef.current?.show(songlistInfoRef.current.source)}>
+      <Button style={{ ...styles.button, backgroundColor: theme['c-primary-input-background'] }} onPress={() => modalRef.current?.show(songlistInfoRef.current.source)}>
         <Icon name="playlist" size={14} color={theme['c-font']} />
         <Text color={theme['c-font']} size={13} style={styles.buttonText}>{t('songlist_open')}</Text>
       </Button>
@@ -65,7 +65,6 @@ const styles = createStyle({
     minHeight: 30,
     paddingHorizontal: 12,
     borderRadius: 8,
-    borderWidth: 0.5,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

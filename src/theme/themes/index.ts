@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import { getUserTheme, saveUserTheme } from '@/utils/data'
 import themes from '@/theme/themes/themes'
+import { createSemanticPalette } from '@/theme/themes/palette'
 import settingState from '@/store/setting/state'
 import themeState from '@/store/theme/state'
 import { isUrl } from '@/utils'
@@ -68,10 +69,10 @@ export const buildActiveThemeColors = (theme: LX.Theme): LX.ActiveTheme => {
     theme.config.extInfo[k] = theme.config.themeColors[v.replace(varColorRxp, '$1') as ColorsKey]
   }
 
-  // 液态玻璃语义色：浅色用浅白玻璃，深色用黑玻璃。
-  // 辅色独立于主色，浅色雾青、深色暖沙，避免整屏只剩黑白。
+  // 语义角色（内容底/实色卡片/输入填充/分隔/强调/危险/玻璃）集中在 palette 里，
+  // 浅色雾青、深色暖沙，辅色独立于主色，避免整屏只剩黑白。
+  // 依赖主色的角色（字色、主色半透明层、按钮）继续按主题主色派生。
   const isDark = theme.isDark
-  const accent = isDark ? 'rgb(214, 176, 148)' : 'rgb(92, 132, 146)'
   return {
     'id': theme.id,
     'name': theme.name,
@@ -96,10 +97,6 @@ export const buildActiveThemeColors = (theme: LX.Theme): LX.ActiveTheme => {
     'c-primary-background-active': isDark
       ? theme.config.themeColors['c-primary-alpha-600']
       : theme.config.themeColors['c-primary-alpha-700'],
-    // 输入框背景 — Apple Music 浅灰填充
-    'c-primary-input-background': isDark
-      ? 'rgba(118, 118, 128, 0.24)'
-      : 'rgba(118, 118, 128, 0.12)',
     // 按钮色
     'c-button-font': theme.config.themeColors['c-primary-alpha-100'],
     'c-button-font-selected': theme.config.themeColors['c-primary-dark-100-alpha-100'],
@@ -113,35 +110,7 @@ export const buildActiveThemeColors = (theme: LX.Theme): LX.ActiveTheme => {
     'c-button-background-active': isDark
       ? theme.config.themeColors['c-primary-alpha-600']
       : theme.config.themeColors['c-primary-alpha-700'],
-    'c-list-header-border-bottom': isDark
-      ? 'rgba(255, 255, 255, 0.10)'
-      : 'rgba(255, 255, 255, 0.55)',
-    // 页面底色保留轻微渐变感，玻璃层叠在它上面
-    'c-content-background': isDark ? 'rgb(8, 10, 14)' : 'rgb(236, 240, 244)',
-    'c-border-background': isDark
-      ? 'rgba(255, 255, 255, 0.10)'
-      : 'rgba(255, 255, 255, 0.62)',
-    'c-card-background': isDark
-      ? 'rgba(255, 255, 255, 0.06)'
-      : 'rgba(255, 255, 255, 0.58)',
-    // 柔和辅色：用于选中描边、图标点缀和进度强调，不替代玻璃主色
-    'c-accent': accent,
-    'c-accent-soft': isDark ? 'rgba(214, 176, 148, 0.18)' : 'rgba(92, 132, 146, 0.16)',
-    'c-glass-background': isDark
-      ? 'rgba(12, 14, 18, 0.94)'
-      : 'rgba(255, 255, 255, 0.94)',
-    'c-glass-border': isDark
-      ? 'rgba(255, 255, 255, 0.16)'
-      : 'rgba(255, 255, 255, 0.82)',
-    'c-glass-highlight': isDark
-      ? 'rgba(255, 255, 255, 0.22)'
-      : 'rgba(255, 255, 255, 0.92)',
-    'c-glass-fluid-glow': isDark
-      ? 'rgba(214, 176, 148, 0.10)'
-      : 'rgba(92, 132, 146, 0.12)',
-    'c-glass-surface': isDark
-      ? 'rgba(255, 255, 255, 0.12)'
-      : 'rgba(255, 255, 255, 0.82)',
+    ...createSemanticPalette(isDark),
     'bg-image': bgImg,
   } as const
 }

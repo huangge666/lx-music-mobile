@@ -46,7 +46,7 @@ const Header = memo(({ componentId, transparent }: { componentId: string, transp
           activeOpacity={0.7}
           accessibilityRole="button"
           accessibilityLabel={t('back')}
-          style={[styles.backButton, { backgroundColor: theme['c-accent-soft'], borderWidth: 0.5, borderColor: theme['c-glass-border'] }]}
+          style={[styles.backButton, { backgroundColor: theme['c-accent-soft'] }]}
         >
           <Icon name="chevron-left" size={19} color={theme['c-accent']} />
         </TouchableOpacity>

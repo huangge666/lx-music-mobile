@@ -115,6 +115,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   'playlist': ListMusic,
   'prevMusic': SkipBack,
   'remove': Minus,
+  'refresh': RefreshCw,
   'sd-card': HardDrive,
   'search-2': Search,
   'setting': Settings,

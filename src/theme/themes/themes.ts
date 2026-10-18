@@ -4,7 +4,7 @@
 export default [
   {
     "id": "green",
-    "name": "浅色玻璃",
+    "name": "浅色",
     "isDark": false,
     "isCustom": false,
     "config": {
@@ -256,7 +256,7 @@ export default [
   },
   {
     "id": "black",
-    "name": "深色玻璃",
+    "name": "深色",
     "isDark": true,
     "isCustom": false,
     "config": {

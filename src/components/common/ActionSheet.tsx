@@ -13,6 +13,7 @@ import {
 import { Icon } from '@/components/common/Icon'
 import Text from '@/components/common/Text'
 import { useTheme } from '@/store/theme/hook'
+import { useI18n } from '@/lang'
 import { createStyle } from '@/utils/tools'
 import { BorderRadius, BorderWidths } from '@/theme'
 import GlassSurface from '@/components/common/GlassSurface'
@@ -46,10 +47,10 @@ export interface ActionSheetProps {
 
 const SCREEN_HEIGHT = Dimensions.get('window').height
 const ANIMATION_DURATION = 260
-const DANGER_COLOR = '#FF453A'
 
 export default forwardRef<ActionSheetType, ActionSheetProps>(({ onPress, onHide }, ref) => {
   const theme = useTheme()
+  const t = useI18n()
   const [visible, setVisible] = useState(false)
   const [header, setHeader] = useState<ActionSheetHeader>({ title: '' })
   const [items, setItems] = useState<ActionSheetItem[]>([])
@@ -116,7 +117,7 @@ export default forwardRef<ActionSheetType, ActionSheetProps>(({ onPress, onHide 
     inputRange: [0, 1],
     outputRange: [SCREEN_HEIGHT * 0.7, 0],
   })
-  const headerCoverBg = header.iconBg ?? theme['c-glass-surface']
+  const headerCoverBg = header.iconBg ?? theme['c-primary-input-background']
   const headerCoverColor = header.iconColor ?? theme['c-font-label']
 
   return (
@@ -168,8 +169,10 @@ export default forwardRef<ActionSheetType, ActionSheetProps>(({ onPress, onHide 
               }
             </View>
             <TouchableOpacity
-              style={[styles.closeBtn, { backgroundColor: theme['c-glass-surface'], borderWidth: 0.5, borderColor: theme['c-glass-border'] }]}
+              style={[styles.closeBtn, { backgroundColor: theme['c-primary-input-background'] }]}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={t('close')}
               onPress={() => { closeDrawer() }}
             >
               <Icon name="close" size={13} color={theme['c-font-label']} />
@@ -182,18 +185,19 @@ export default forwardRef<ActionSheetType, ActionSheetProps>(({ onPress, onHide 
             showsVerticalScrollIndicator={false}
             bounces={false}
           >
-            <View style={[styles.menuGroup, { backgroundColor: theme['c-glass-surface'], borderWidth: 0.5, borderColor: theme['c-glass-border'] }]}>
+            <View style={[styles.menuGroup, { backgroundColor: theme['c-card-background'], borderColor: theme['c-border-background'] }]}>
               {items.map((item, index) => {
                 const isLast = index === items.length - 1
+                // 危险项用统一的危险色；禁用项只降透明度并置灰
                 const itemColor = item.danger
-                  ? DANGER_COLOR
+                  ? theme['c-danger']
                   : item.disabled
                     ? theme['c-font-label']
                     : item.selected
                       ? theme['c-accent']
                       : theme['c-font']
                 const iconColor = item.danger
-                  ? DANGER_COLOR
+                  ? theme['c-danger']
                   : item.disabled
                     ? theme['c-font-label']
                     : theme['c-accent']
@@ -207,6 +211,9 @@ export default forwardRef<ActionSheetType, ActionSheetProps>(({ onPress, onHide 
                       item.disabled && styles.menuItemDisabled,
                     ]}
                     activeOpacity={item.disabled ? 1 : 0.6}
+                    accessibilityRole="button"
+                    accessibilityLabel={item.label}
+                    accessibilityState={{ disabled: !!item.disabled, selected: !!item.selected }}
                     onPress={() => { handlePress(item.action, item.disabled) }}
                   >
                     <View
@@ -214,7 +221,7 @@ export default forwardRef<ActionSheetType, ActionSheetProps>(({ onPress, onHide 
                         styles.menuIconBox,
                         {
                           backgroundColor: item.danger
-                            ? 'rgba(255, 69, 58, 0.12)'
+                            ? theme['c-danger-soft']
                             : item.disabled
                               ? 'transparent'
                               : theme['c-accent-soft'],
@@ -329,6 +336,7 @@ const styles = createStyle({
   },
   menuGroup: {
     borderRadius: BorderRadius.large,
+    borderWidth: BorderWidths.hairline,
     overflow: 'hidden',
   },
   menuItem: {

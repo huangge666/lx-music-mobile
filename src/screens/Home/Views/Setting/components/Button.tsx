@@ -8,6 +8,10 @@ import { BorderRadius } from '@/theme'
 
 type ButtonProps = BtnProps
 
+/**
+ * 设置页的次要操作按钮。
+ * Phase 6A：中性填充底 + 强调色文字，浅色下也看得见边界；不再使用玻璃底。
+ */
 export default memo(({ disabled, onPress, children }: ButtonProps) => {
   const theme = useTheme()
 
@@ -15,9 +19,7 @@ export default memo(({ disabled, onPress, children }: ButtonProps) => {
     <Button
       style={{
         ...styles.button,
-        backgroundColor: theme['c-glass-surface'],
-        borderWidth: 0.5,
-        borderColor: theme['c-glass-border'],
+        backgroundColor: theme['c-primary-input-background'],
       }}
       onPress={onPress}
       disabled={disabled}

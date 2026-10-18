@@ -64,6 +64,7 @@
   "dialog_cancel": "No",
   "dialog_confirm": "OK",
   "download_empty": "No downloaded songs yet",
+  "download_empty_hint": "Choose Download from a song's menu; finished files show up here",
   "download_failed": "Download failed, please try again later",
   "download_loading": "Loading download list...",
   "download_cancelled": "Download cancelled",

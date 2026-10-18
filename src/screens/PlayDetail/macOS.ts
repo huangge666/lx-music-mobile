@@ -104,35 +104,10 @@ export const MacShadow = {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// 毛玻璃卡片背景（按主题 isDark 自适应）
-// — 浅色：rgba(255,255,255,0.72) + 极淡描边
-// — 深色：rgba(28,28,30,0.72) + 极淡白色描边
+// 卡片色：Phase 6A 起横屏播放页不再使用独立的玻璃色板，
+// 统一走主题语义色（c-card-background + c-border-background），
+// 避免同一页面出现主题之外的第三套配色。
 // ──────────────────────────────────────────────────────────────────────────────
-export const getMacGlassBackground = (isDark: boolean) => {
-  return isDark
-    ? 'rgba(28, 28, 30, 0.72)'
-    : 'rgba(255, 255, 255, 0.72)'
-}
-
-export const getMacGlassBorder = (isDark: boolean) => {
-  return isDark
-    ? 'rgba(255, 255, 255, 0.08)'
-    : 'rgba(0, 0, 0, 0.06)'
-}
-
-/** 内嵌卡片背景（用于控制按钮 / chip 之类） */
-export const getMacChipBackground = (isDark: boolean) => {
-  return isDark
-    ? 'rgba(255, 255, 255, 0.08)'
-    : 'rgba(0, 0, 0, 0.04)'
-}
-
-/** 悬浮态背景（hover / active） */
-export const getMacPressedBackground = (isDark: boolean) => {
-  return isDark
-    ? 'rgba(255, 255, 255, 0.14)'
-    : 'rgba(0, 0, 0, 0.08)'
-}
 
 // ──────────────────────────────────────────────────────────────────────────────
 // 动效时长（ms）— macOS 风格的弹性过渡
@@ -177,25 +152,10 @@ export const MacProgressHeight = scaleSizeH(4)
 export const MacProgressDotSize = scaleSizeW(14)
 
 // ──────────────────────────────────────────────────────────────────────────────
-// 现代简约红色强调色（与迷你播放栏呼应：圆润、干净、红色点缀）
-// — 不直接覆盖主题 c-primary，避免影响全局；仅在 PlayDetail 中使用
-// — 灵感来自主流中文音乐 App（网易云 / QQ 音乐）的红
-// ──────────────────────────────────────────────────────────────────────────────
-/** 主红色 — 用于播放按钮、进度条、喜欢激活态、歌词高亮 */
-export const MacAccentRed = '#E53935'
-/** 主红色按下态 */
-export const MacAccentRedPressed = '#C62828'
-/** 主红色柔和（次要强调、循环模式激活态） */
-export const MacAccentRedSoft = '#FF6B6B'
-/** 半透明红（用于阴影 / 底色） */
-export const MacAccentRedShadow = 'rgba(229, 57, 53, 0.35)'
-export const MacAccentRedAlpha100 = 'rgba(229, 57, 53, 0.10)'
-export const MacAccentRedAlpha200 = 'rgba(229, 57, 53, 0.20)'
-export const MacAccentRedAlpha300 = 'rgba(229, 57, 53, 0.40)'
-
-// ──────────────────────────────────────────────────────────────────────────────
 // 沉浸式 Now Playing 色板（封面氛围底 + 白色控件）
-// 播放详情竖屏固定走这套对比，不跟随主题主色，保证封面模糊底上的可读性
+// 播放详情竖屏固定走这套对比，不跟随主题主色，保证封面模糊底上的可读性。
+// 这不是「旧主题孤岛」：它压在模糊封面 + 深色遮罩之上，语义是「深底上的浅色控件」，
+// 与浅色/深色主题的内容底色无关，所以保留固定值。
 // ──────────────────────────────────────────────────────────────────────────────
 export const Immersive = {
   /** 主文字 — 纯白 */

@@ -5,6 +5,7 @@ import Button from './Button'
 import { createStyle } from '@/utils/tools'
 import { useI18n } from '@/lang/index'
 import { useTheme } from '@/store/theme/hook'
+import { getOnAccentColor } from '@/theme/themes/palette'
 import Text from './Text'
 import { BorderRadius } from '@/theme'
 
@@ -59,6 +60,8 @@ export interface ConfirmAlertProps {
   confirmText?: string
   showConfirm?: boolean
   disabledConfirm?: boolean
+  /** 危险动作（删除/清空）：确认键改用危险色柔光底 + 危险色文字 */
+  confirmDanger?: boolean
   reverseBtn?: boolean
   children?: React.ReactNode | React.ReactNode[]
 }
@@ -80,6 +83,7 @@ export default forwardRef<ConfirmAlertType, ConfirmAlertProps>(({
   confirmText = '',
   showConfirm = true,
   disabledConfirm = false,
+  confirmDanger = false,
   children,
   reverseBtn = false,
 }: ConfirmAlertProps, ref) => {
@@ -99,8 +103,14 @@ export default forwardRef<ConfirmAlertType, ConfirmAlertProps>(({
     dialogRef.current?.setVisible(false)
   }
 
-  const cancelBg = theme['c-glass-surface']
-  const confirmColor = theme.isDark ? 'rgb(18, 16, 14)' : 'rgb(255, 255, 255)'
+  // 取消键用中性填充底：这是弹层里的控件，不用玻璃色也不算危险动作
+  const cancelBg = theme['c-primary-input-background']
+  const confirmColor = getOnAccentColor(theme.isDark)
+
+  const confirmStyle = confirmDanger
+    ? { ...styles.btn, backgroundColor: theme['c-danger-soft'] }
+    : { ...styles.btn, backgroundColor: theme['c-accent'] }
+  const confirmTextColor = confirmDanger ? theme['c-danger'] : confirmColor
 
   return (
     <Dialog onHide={onHide} keyHide={keyHide} bgHide={bgHide} closeBtn={closeBtn} title={title} ref={dialogRef}>
@@ -110,17 +120,17 @@ export default forwardRef<ConfirmAlertType, ConfirmAlertProps>(({
         </ScrollView>
       </View>
       <View style={{ ...styles.btns, ...(reverseBtn ? styles.btnsReversedDirection : styles.btnsDirection) }}>
-        <Button style={{ ...styles.btn, backgroundColor: cancelBg, borderWidth: 0.5, borderColor: theme['c-glass-border'] }} onPress={handleCancel}>
+        <Button style={{ ...styles.btn, backgroundColor: cancelBg }} onPress={handleCancel}>
           <Text style={styles.btnText} color={theme['c-font']}>{cancelText || t('cancel')}</Text>
         </Button>
         {showConfirm
           ? (
               <Button
-                style={{ ...styles.btn, backgroundColor: theme['c-accent'] }}
+                style={confirmStyle}
                 onPress={onConfirm}
                 disabled={disabledConfirm}
               >
-                <Text style={styles.btnText} color={confirmColor}>{confirmText || t('confirm')}</Text>
+                <Text style={styles.btnText} color={confirmTextColor}>{confirmText || t('confirm')}</Text>
               </Button>
             )
           : null}

@@ -121,9 +121,7 @@ export default forwardRef<DialogType, DialogProps>(({
             style={{
               ...styles.closeBtn,
               top: hasTitle ? (HEADER_HEIGHT - CLOSE_SIZE) / 2 : 10,
-              backgroundColor: theme['c-glass-surface'],
-              borderWidth: 0.5,
-              borderColor: theme['c-glass-border'],
+              backgroundColor: theme['c-primary-input-background'],
             }}
             activeOpacity={0.7}
             onPress={() => modalRef.current?.setVisible(false)}

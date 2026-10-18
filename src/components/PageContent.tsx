@@ -8,6 +8,7 @@ import { scaleSizeAbsHR } from '@/utils/pixelRatio'
 import { defaultHeaders } from './common/Image'
 import SizeView from './SizeView'
 import { useBgPic } from '@/store/common/hook'
+import { getBgPicOverlayColor } from '@/theme/themes/palette'
 
 interface Props {
   children: React.ReactNode
@@ -47,8 +48,8 @@ export default ({ children }: Props) => {
           resizeMode="cover"
           blurRadius={BLUR_RADIUS}
         >
-          {/* 半透明遮罩层 — 保证内容可读性 */}
-          <View style={{ flex: 1, backgroundColor: theme.isDark ? 'rgba(8, 10, 14, 0.62)' : 'rgba(236, 240, 244, 0.58)' }}></View>
+          {/* 半透明遮罩层 — 与内容底色同源，保证图片背景下的可读性 */}
+          <View style={{ flex: 1, backgroundColor: getBgPicOverlayColor(theme.isDark) }}></View>
         </ImageBackground>
         <View style={{ flex: 1, flexDirection: 'column' }}>
           {children}

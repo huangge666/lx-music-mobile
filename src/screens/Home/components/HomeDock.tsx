@@ -39,7 +39,7 @@ export default ({ onLayout }: HomeDockProps) => {
               {showPlayer
                 ? <PlayerBar isHome embedded componentId={commonState.componentIds.home} />
                 : null}
-              {showTabs ? <BottomBar embedded /> : null}
+              {showTabs ? <BottomBar /> : null}
             </GlassSurface>
           )
         : null}

@@ -8,7 +8,7 @@ import PlayInfo from './PlayInfo'
 import ControlBtn from './ControlBtn'
 import { marginLeftRaw } from '../constant'
 import { useTheme } from '@/store/theme/hook'
-import { MacRadius, MacSpacing, getMacGlassBackground, getMacGlassBorder } from '../../macOS'
+import { MacRadius, MacSpacing } from '../../macOS'
 
 
 /**
@@ -27,11 +27,10 @@ import { MacRadius, MacSpacing, getMacGlassBackground, getMacGlassBorder } from 
  */
 export default memo(() => {
   const theme = useTheme()
-  const isDark = !!theme.isDark
 
   const cardBase = {
-    backgroundColor: getMacGlassBackground(isDark),
-    borderColor: getMacGlassBorder(isDark),
+    backgroundColor: theme['c-card-background'],
+    borderColor: theme['c-border-background'],
     borderWidth: 0.5,
     borderRadius: MacRadius.md,
   } as const

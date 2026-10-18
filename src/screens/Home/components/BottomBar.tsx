@@ -8,7 +8,6 @@ import { useTheme } from '@/store/theme/hook'
 import { Icon } from '@/components/common/Icon'
 import Text from '@/components/common/Text'
 import { createStyle, isAndroid } from '@/utils/tools'
-import GlassSurface from '@/components/common/GlassSurface'
 
 /** 底栏内容底边距。iOS 另有系统 Home Indicator；Android 需在栏内留出贴底安全距离。 */
 const TAB_BAR_PADDING_BOTTOM = isAndroid ? 12 : 6
@@ -18,13 +17,12 @@ const TAB_BAR_MENUS = MAIN_NAV_MENUS
 interface BarItemProps {
   id: typeof NAV_MENUS[number]['id']
   icon: typeof NAV_MENUS[number]['icon']
-  floating?: boolean
 }
 
 /**
  * 底栏页签：选中态用辅色胶囊，未选中只保留图标和文字。
  */
-const BarItem = ({ id, icon, floating }: BarItemProps) => {
+const BarItem = ({ id, icon }: BarItemProps) => {
   const theme = useTheme()
   const t = useI18n()
   const activeId = useNavActiveId()
@@ -41,7 +39,7 @@ const BarItem = ({ id, icon, floating }: BarItemProps) => {
   return (
     <TouchableOpacity
       style={[
-        floating ? styles.floatItem : styles.item,
+        styles.item,
         isActive
           ? {
               backgroundColor: theme['c-accent-soft'],
@@ -56,7 +54,7 @@ const BarItem = ({ id, icon, floating }: BarItemProps) => {
     >
       <Icon
         name={icon}
-        size={floating ? 20 : 22}
+        size={22}
         color={isActive ? theme['c-accent'] : theme['c-font-label']}
       />
       <Text
@@ -72,51 +70,20 @@ const BarItem = ({ id, icon, floating }: BarItemProps) => {
 }
 
 /**
- * 底部导航。竖屏悬浮成胶囊，横屏仍贴底；组合 Dock 使用 embedded 模式复用内容而不重复绘制材质。
+ * 底部标签栏内容。
+ *
+ * Phase 6B 起横屏改用侧栏承载主导航，这里只作为竖屏 HomeDock 的内容层：
+ * 材质与真实占用高度由 HomeDock 统一管理，本组件不再自己画表面。
  */
-export default memo(({ floating = false, embedded = false }: { floating?: boolean, embedded?: boolean }) => {
-  const items = TAB_BAR_MENUS.map(item => <BarItem key={item.id} id={item.id} icon={item.icon} floating={floating} />)
-
-  if (embedded) {
-    return <View style={styles.container}>{items}</View>
-  }
-
-  if (!floating) {
-    return (
-      <GlassSurface style={styles.container}>
-        {items}
-      </GlassSurface>
-    )
-  }
-
+export default memo(() => {
   return (
-    <View style={styles.floatWrap}>
-      <GlassSurface style={styles.floating}>
-        {items}
-      </GlassSurface>
+    <View style={styles.container}>
+      {TAB_BAR_MENUS.map(item => <BarItem key={item.id} id={item.id} icon={item.icon} />)}
     </View>
   )
 })
 
 const styles = createStyle({
-  floatWrap: {
-    paddingHorizontal: 18,
-    paddingBottom: TAB_BAR_PADDING_BOTTOM,
-  },
-  floating: {
-    flexDirection: 'row',
-    paddingHorizontal: 6,
-    paddingVertical: 6,
-    borderRadius: 28,
-    borderWidth: 0.5,
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.16,
-    shadowRadius: 20,
-    elevation: 10,
-  },
   container: {
     flexDirection: 'row',
     paddingHorizontal: 4,
@@ -130,14 +97,6 @@ const styles = createStyle({
     minHeight: 48,
     marginHorizontal: 2,
     borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  floatItem: {
-    flex: 1,
-    minHeight: 52,
-    marginHorizontal: 2,
-    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },

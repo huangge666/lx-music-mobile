@@ -18,7 +18,7 @@ export const MoreButton = () => {
 
   return (
     <TouchableOpacity
-      style={[styles.iconButton, { backgroundColor: theme['c-glass-surface'], borderColor: theme['c-glass-border'] }]}
+      style={[styles.iconButton, { backgroundColor: theme['c-primary-input-background'] }]}
       onPress={() => { global.app_event.changeMenuVisible(true) }}
       activeOpacity={0.6}
       accessibilityRole="button"
@@ -39,7 +39,7 @@ export const LeaderboardEntry = () => {
 
   return (
     <Button
-      style={{ ...styles.chip, backgroundColor: theme['c-glass-surface'], borderColor: theme['c-glass-border'] }}
+      style={{ ...styles.chip, backgroundColor: theme['c-primary-input-background'] }}
       onPress={openLeaderboard}
       accessibilityRole="button"
       accessibilityLabel={t('nav_top')}
@@ -56,7 +56,6 @@ const styles = createStyle({
     height: 34,
     marginLeft: 8,
     borderRadius: 17,
-    borderWidth: 0.5,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -65,7 +64,6 @@ const styles = createStyle({
     paddingHorizontal: 12,
     marginRight: 8,
     borderRadius: 8,
-    borderWidth: 0.5,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

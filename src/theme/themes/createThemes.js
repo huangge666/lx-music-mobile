@@ -1,8 +1,9 @@
 //! 更新默认主题配置后，需要执行 npm run build:theme 重新构建 themes.ts
 //!
-//! 液态玻璃只有两套基底：
-//! - green：浅色，浅白玻璃主色 + 雾青辅色
-//! - black：深色，黑色玻璃主色 + 暖沙辅色
+//! 主题只有两套基底：
+//! - green：浅色，近白内容底 + 雾青强调色
+//! - black：深色，近黑内容底 + 暖沙强调色
+//! 玻璃材质只用于导航控制区、抽屉和弹层；内容区使用实色分组。
 //! 其他历史主题 id 已废弃，运行时会回退到这两套。
 
 const fs = require('fs')
@@ -12,7 +13,7 @@ const { createThemeColors } = require('./utils')
 const defaultThemes = [
   {
     id: 'green',
-    name: '浅色玻璃',
+    name: '浅色',
     isDark: false,
     config: {
       // 浅白玻璃上的墨色主色，避免刺眼的纯黑
@@ -31,7 +32,7 @@ const defaultThemes = [
   },
   {
     id: 'black',
-    name: '深色玻璃',
+    name: '深色',
     isDark: true,
     config: {
       // 黑玻璃上的雾白主色，保证图标和选中态可读

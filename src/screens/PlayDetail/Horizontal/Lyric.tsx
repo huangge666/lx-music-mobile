@@ -11,7 +11,7 @@ import { setSpText } from '@/utils/pixelRatio'
 import playerState from '@/store/player/state'
 import { scrollTo } from '@/utils/scroll'
 import PlayLine, { type PlayLineType } from '../components/PlayLine'
-import { MacRadius, MacSpacing, getMacGlassBackground, getMacGlassBorder } from '../macOS'
+import { MacRadius, MacSpacing } from '../macOS'
 // import { screenkeepAwake } from '@/utils/nativeModules/utils'
 // import { log } from '@/utils/log'
 // import { toast } from '@/utils/tools'
@@ -90,7 +90,6 @@ export default () => {
   const listLayoutInfoRef = useRef<{ spaceHeight: number, lineHeights: number[] }>({ spaceHeight: 0, lineHeights: [] })
   const scrollCancelRef = useRef<(() => void) | null>(null)
   const isShowLyricProgressSetting = useSettingValue('playDetail.isShowLyricProgressSetting')
-  const isDark = !!theme.isDark
   // useLock()
   // const [imgUrl, setImgUrl] = useState(null)
   // const theme = useGetter('common', 'theme')
@@ -272,9 +271,9 @@ export default () => {
   ), [handleSpaceLayout])
 
   const cardStyle = useMemo(() => ({
-    backgroundColor: getMacGlassBackground(isDark),
-    borderColor: getMacGlassBorder(isDark),
-  }), [isDark])
+    backgroundColor: theme['c-card-background'],
+    borderColor: theme['c-border-background'],
+  }), [theme])
 
   return (
     <View style={[styles.lyricCard, cardStyle]}>

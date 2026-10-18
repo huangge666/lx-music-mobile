@@ -184,7 +184,7 @@ export default forwardRef<PopupType, PopupProps>(({
   const closeBtnComponent = useMemo(() => closeBtn
     ? (
         <TouchableOpacity
-          style={[styles.closeBtn, { backgroundColor: theme['c-glass-surface'], borderWidth: 0.5, borderColor: theme['c-glass-border'] }]}
+          style={[styles.closeBtn, { backgroundColor: theme['c-primary-input-background'] }]}
           activeOpacity={0.7}
           onPress={() => { closeDrawer() }}
         >

@@ -5,6 +5,7 @@ import { type CheckBoxProps } from '@/components/common/CheckBox'
 import { Icon } from '@/components/common/Icon'
 import Text from '@/components/common/Text'
 import { useTheme } from '@/store/theme/hook'
+import { DISABLED_OPACITY } from '@/theme/themes/palette'
 import { tipDialog } from '@/utils/tools'
 import SettingIcon from './SettingIcon'
 import { settingLayout } from './style'
@@ -82,11 +83,11 @@ export default memo(({
         onValueChange={handleChange}
         disabled={isDisabled}
         trackColor={{
-          false: theme.isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(120, 120, 128, 0.18)',
+          false: theme['c-primary-input-background'],
           true: theme['c-accent'],
         }}
         thumbColor={theme.isDark ? '#f2f2f7' : '#ffffff'}
-        ios_backgroundColor={theme.isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(120, 120, 128, 0.16)'}
+        ios_backgroundColor={theme['c-primary-input-background']}
       />
     </View>
   )
@@ -94,7 +95,7 @@ export default memo(({
 
 const styles = {
   disabled: {
-    opacity: 0.45,
+    opacity: DISABLED_OPACITY,
   },
   helpBtn: {
     paddingHorizontal: 6,

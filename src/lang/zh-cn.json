@@ -64,6 +64,7 @@
   "dialog_cancel": "我不",
   "dialog_confirm": "好的",
   "download_empty": "暂无已下载歌曲",
+  "download_empty_hint": "在歌曲菜单里选择下载，完成的文件会出现在这里",
   "download_failed": "下载失败，请稍后重试",
   "download_loading": "正在加载下载列表...",
   "download_cancelled": "已取消下载",

@@ -666,3 +666,84 @@ test('locale keys: now playing control labels exist in all supported languages',
   }
 })
 
+/* ---- Phase 6A/6B: 语义色板、初始主题态与横屏封面几何 ---- */
+
+function paletteApi() {
+  return loadModule('src/theme/themes/palette.ts', {})
+}
+
+test('palette: light and dark expose the same semantic roles', () => {
+  const api = paletteApi()
+  const light = api.createSemanticPalette(false)
+  const dark = api.createSemanticPalette(true)
+  assert.deepEqual(Object.keys(light).sort(), Object.keys(dark).sort())
+  // 分组/内容/输入/分隔/强调/危险角色都必须存在，新增角色不能只写进深色
+  for (const key of ['c-content-background', 'c-card-background', 'c-primary-input-background', 'c-border-background', 'c-accent', 'c-accent-soft', 'c-danger', 'c-danger-soft']) {
+    assert.ok(typeof light[key] == 'string' && light[key].length, `light ${key}`)
+    assert.ok(typeof dark[key] == 'string' && dark[key].length, `dark ${key}`)
+  }
+  // 分组底与页面底必须能分层，危险色不能与强调色同值
+  assert.notEqual(light['c-content-background'], light['c-card-background'])
+  assert.notEqual(dark['c-content-background'], dark['c-card-background'])
+  assert.notEqual(light['c-accent'], light['c-danger'])
+  assert.notEqual(dark['c-accent'], dark['c-danger'])
+  // 实色分组：卡片底不能再带透明度，否则又变成玻璃
+  assert.ok(!light['c-card-background'].startsWith('rgba'))
+  assert.ok(!dark['c-card-background'].startsWith('rgba'))
+})
+
+test('palette: solid accent surfaces get a contrasting text color', () => {
+  const api = paletteApi()
+  const light = api.createSemanticPalette(false)
+  const dark = api.createSemanticPalette(true)
+  // 浅色主题：实底主色压白字；深色主题：实底辅色压近黑字
+  assert.equal(api.getOnAccentColor(false), 'rgb(255, 255, 255)')
+  assert.equal(api.getOnAccentColor(true), 'rgb(18, 16, 14)')
+  assert.notEqual(light['c-accent'], api.getOnAccentColor(false))
+  assert.notEqual(dark['c-accent'], api.getOnAccentColor(true))
+  assert.ok(api.DISABLED_OPACITY > 0 && api.DISABLED_OPACITY < 1)
+  // 自定义背景图遮罩与内容底色同源，深浅各一套
+  assert.notEqual(api.getBgPicOverlayColor(false), api.getBgPicOverlayColor(true))
+})
+
+test('theme store: the first frame already uses the semantic palette, not old colors', () => {
+  const marker = (isDark) => ({
+    'c-content-background': isDark ? 'dark-content' : 'light-content',
+    'c-card-background': isDark ? 'dark-card' : 'light-card',
+    'c-danger': isDark ? 'dark-danger' : 'light-danger',
+  })
+  const state = loadModule('src/store/theme/state.ts', {
+    'react': { createContext: value => ({ _value: value }) },
+    '@/theme/themes/palette': { createSemanticPalette: marker },
+  })
+  const theme = state.default.theme
+  // 启动首帧直接取浅色语义角色，不会先闪一帧旧主色/旧玻璃色
+  assert.equal(theme['c-content-background'], 'light-content')
+  assert.equal(theme['c-card-background'], 'light-card')
+  assert.equal(theme['c-danger'], 'light-danger')
+  assert.equal(state.default.shouldUseDarkColors, false)
+})
+
+test('landscape now playing: artwork shrinks into the measured box instead of pushing controls out', () => {
+  const api = loadModule('src/screens/PlayDetail/Horizontal/coverSize.ts', {})
+  // 常规横屏：实测空间大于设计值 → 沿用设计值，观感与改前一致
+  assert.equal(api.getHorizontalCoverSize({ width: 320, height: 240 }, 182), 182)
+  // 360dp 高的短屏：左栏只剩 80 → 封面收缩，播放控制不被裁掉
+  assert.equal(api.getHorizontalCoverSize({ width: 320, height: 80 }, 182), 80)
+  // 未测量时回退设计值，避免首帧归零
+  assert.equal(api.getHorizontalCoverSize({ width: 0, height: 0 }, 182), 182)
+  assert.equal(api.getHorizontalCoverSize({ width: Number.NaN, height: 120 }, 182), 182)
+  // 设计值非法时按实测走，仍然不会返回 0
+  assert.ok(api.getHorizontalCoverSize({ width: 200, height: 160 }, Number.NaN) > 0)
+  assert.ok(api.getHorizontalCoverSize({ width: 200, height: 160 }, 0) > 0)
+  // 极端窄条也保留最小兜底
+  assert.ok(api.getHorizontalCoverSize({ width: 30, height: 30 }, 182) >= 30)
+})
+
+test('locale keys: download empty hint exists in all supported languages', () => {
+  const languages = ['zh-cn', 'zh-tw', 'en-us'].map(language => JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'src/lang', `${language}.json`), 'utf8')))
+  for (const language of languages) {
+    assert.ok(typeof language.download_empty_hint == 'string' && language.download_empty_hint.length)
+  }
+})
+

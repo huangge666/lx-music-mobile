@@ -16,6 +16,7 @@ import Text from './Text'
 import { Icon } from './Icon'
 import { getPlaylistCoverTint, getPlaylistInitial } from './playlistCover'
 import { useTheme } from '@/store/theme/hook'
+import { getOnAccentColor } from '@/theme/themes/palette'
 import { BorderRadius } from '@/theme'
 import { scaleSizeH, scaleSizeW } from '@/utils/pixelRatio'
 import { createStyle } from '@/utils/tools'
@@ -166,7 +167,7 @@ const PlaylistHero = ({
   const initial = placeholderText ?? getPlaylistInitial(title)
   // c-primary 是「反色实底」（浅色主题近黑、深色主题近白），
   // c-primary-font 与它同值，不能当作实底上的文字色，这里与 ButtonPrimary 一样取反色
-  const onPrimaryColor = theme.isDark ? 'rgb(18, 16, 14)' : 'rgb(255, 255, 255)'
+  const onPrimaryColor = getOnAccentColor(theme.isDark)
   const disabled = busy || disabledProp || status === 'loading'
   const showLoading = status === 'loading'
   const showError = status === 'error'

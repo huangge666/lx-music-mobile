@@ -436,6 +436,7 @@ Phase 1–3 是基础结构里程碑；Phase 4–5 是竖屏主要页面里程�
 - Phase 2、3：见对应提交说明
 - Phase 4：`docs/apple-music-ui-phase4.md`（代码已完成，缺真机验收，故 4A/4B 仍未勾选）
 - Phase 5：`docs/apple-music-ui-phase5.md`（代码已完成，缺真机验收，故仍未勾选）
+- Phase 6：`docs/apple-music-ui-phase6.md`（代码已完成，缺真机验收，故 6A/6B 仍未勾选）
 
 滚动折叠大标题、原生背景模糊、交互式播放器展开/下滑关闭是后续增强项。若用户要求精确复刻某版本，应重新纳入必需范围，而非沿用本方案的适配完成定义。
 

@@ -3,29 +3,25 @@ import { BorderRadius, BorderWidths } from '@/theme'
 import { createStyle } from '@/utils/tools'
 
 /**
- * 弥散流体水光玻璃风格 — 设置卡片质感
- * — 柔润水光半透底
- * — 细致微光边框与环境色漫反射阴影
+ * 设置分组卡（Phase 6A）
+ *
+ * 内容区不再使用玻璃：实色卡片压在页面底上，只用一条中性发丝线描边，
+ * 不带阴影、不带顶部高光，避免设置页保留第二套玻璃风格。
+ * 玻璃仍然只用于导航控制区、抽屉和弹层。
  */
 export const useSettingCardStyle = () => {
   const theme = useTheme()
-  const isDark = theme.isDark
 
   return {
-    backgroundColor: theme['c-glass-background'],
+    backgroundColor: theme['c-card-background'],
     borderWidth: BorderWidths.hairline,
-    borderColor: theme['c-glass-border'],
-    shadowColor: isDark ? '#000000' : theme['c-accent'],
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: isDark ? 0.28 : 0.06,
-    shadowRadius: 18,
-    elevation: 2,
+    borderColor: theme['c-border-background'],
   }
 }
 
 export const settingLayout = createStyle({
   card: {
-    borderRadius: BorderRadius.xlarge,
+    borderRadius: BorderRadius.large,
     paddingHorizontal: 18,
     paddingTop: 16,
     paddingBottom: 14,
@@ -46,7 +42,7 @@ export const settingLayout = createStyle({
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
-    borderWidth: 0.5,
+    borderWidth: BorderWidths.hairline,
   },
   // NavRow 按压弹簧缩放作用在外层包装上，避免与瓷贴自身布局样式冲突
   iconBubbleWrapper: {

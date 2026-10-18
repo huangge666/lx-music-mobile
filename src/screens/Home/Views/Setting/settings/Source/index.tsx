@@ -42,8 +42,8 @@ export default memo(() => {
             {t('setting_source_desc')}
           </Text>
         </View>
-        <View style={[styles.chevron, { backgroundColor: theme['c-primary-background'] }]}>
-          <Icon name="chevron-right" size={16} color={theme['c-primary']} />
+        <View style={[styles.chevron, { backgroundColor: theme['c-accent-soft'] }]}>
+          <Icon name="chevron-right" size={16} color={theme['c-accent']} />
         </View>
       </TouchableOpacity>
     </Section>

@@ -12,7 +12,11 @@ export interface ChoiceOption<T extends string> {
 }
 
 /**
- * 胶囊单选：少量选项铺成整行分段，多选项自动折行
+ * 胶囊单选：少量选项铺成整行分段，多选项自动折行。
+ *
+ * Phase 6A 配色：
+ * - 未选中 = 中性填充底 + 次要文字色（浅色下不会和卡片白底糊在一起）
+ * - 选中 = 强调色柔光底 + 强调色文字；分段器选中块用实色卡片底，形成 iOS 分段控件观感
  */
 function ChoicePills<T extends string>({
   value,
@@ -30,11 +34,7 @@ function ChoicePills<T extends string>({
     return (
       <View style={[
         styles.track,
-        {
-          backgroundColor: theme['c-glass-surface'],
-          borderColor: theme['c-glass-border'],
-          borderWidth: 0.5,
-        },
+        { backgroundColor: theme['c-primary-input-background'] },
       ]}>
         {options.map(item => {
           const selected = item.id == value
@@ -44,14 +44,12 @@ function ChoicePills<T extends string>({
               style={[
                 styles.segment,
                 selected
-                  ? {
-                      backgroundColor: theme['c-accent-soft'],
-                      borderWidth: 0.5,
-                      borderColor: theme['c-glass-border'],
-                    }
-                  : null,
+                  ? { backgroundColor: theme['c-card-background'] }
+                  : { backgroundColor: 'transparent' },
               ]}
               activeOpacity={0.7}
+              accessibilityRole="radio"
+              accessibilityState={{ selected }}
               onPress={() => { onChange(item.id) }}
             >
               <Text
@@ -81,12 +79,12 @@ function ChoicePills<T extends string>({
               {
                 backgroundColor: selected
                   ? theme['c-accent-soft']
-                  : theme['c-glass-surface'],
-                borderWidth: 0.5,
-                borderColor: selected ? theme['c-glass-border'] : theme['c-border-background'],
+                  : theme['c-primary-input-background'],
               },
             ]}
             activeOpacity={0.7}
+            accessibilityRole="radio"
+            accessibilityState={{ selected }}
             onPress={() => { onChange(item.id) }}
           >
             <Text
@@ -111,7 +109,6 @@ const styles = createStyle({
     flexDirection: 'row',
     borderRadius: BorderRadius.round,
     padding: 4,
-    borderWidth: 0.5,
   },
   segment: {
     flex: 1,

@@ -6,6 +6,7 @@ import { type SearchType } from '@/store/search/state'
 import { useI18n } from '@/lang'
 import Text from '@/components/common/Text'
 import { useTheme } from '@/store/theme/hook'
+import { getOnAccentColor } from '@/theme/themes/palette'
 import { getSearchSetting } from '@/utils/data'
 
 const SEARCH_TYPE_LIST = [
@@ -37,7 +38,7 @@ export default () => {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme['c-glass-surface'] }]}>
+    <View style={[styles.container, { backgroundColor: theme['c-primary-input-background'] }]}>
       {list.map(item => {
         const active = type == item.id
         return (
@@ -55,7 +56,7 @@ export default () => {
             <Text
               size={12}
               style={styles.tabText}
-              color={active ? (theme.isDark ? 'rgb(18, 16, 14)' : 'rgb(255, 255, 255)') : theme['c-font-label']}
+              color={active ? getOnAccentColor(theme.isDark) : theme['c-font-label']}
             >
               {item.label}
             </Text>

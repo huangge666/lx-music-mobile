@@ -5,7 +5,7 @@ import QueueBtn from './QueueBtn'
 import MusicAddBtn from './MusicAddBtn'
 import TimeoutExitBtn from './TimeoutExitBtn'
 import { useTheme } from '@/store/theme/hook'
-import { MacRadius, MacSpacing, MacShadow, getMacGlassBackground, getMacGlassBorder } from '../../macOS'
+import { MacRadius, MacSpacing, MacShadow } from '../../macOS'
 
 
 /**
@@ -18,14 +18,13 @@ import { MacRadius, MacSpacing, MacShadow, getMacGlassBackground, getMacGlassBor
  */
 export default () => {
   const theme = useTheme()
-  const isDark = !!theme.isDark
 
   return (
     <View style={[
       styles.container,
       {
-        backgroundColor: getMacGlassBackground(isDark),
-        borderColor: getMacGlassBorder(isDark),
+        backgroundColor: theme['c-card-background'],
+        borderColor: theme['c-border-background'],
       },
       MacShadow.small,
     ]}>

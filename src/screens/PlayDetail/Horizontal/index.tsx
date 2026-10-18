@@ -84,11 +84,15 @@ const styles = createStyle({
     flex: 1,
     width: '45%',
     paddingBottom: 10,
+    minHeight: 0,
+    overflow: 'hidden',
     // backgroundColor: 'rgba(0,0,0,0.1)',
   },
   leftContent: {
+    // 中间区域吃掉页头与播放控制之间的剩余空间，封面按实测收缩
     flexShrink: 1,
-    flexGrow: 0,
+    flexGrow: 1,
+    minHeight: 0,
     marginLeft: marginLeftRaw,
     // flexDirection: 'row',
     // backgroundColor: 'rgba(0,0,0,0.1)',

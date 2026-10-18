@@ -6,9 +6,9 @@ import Text from '@/components/common/Text'
 import { settingLayout, useSettingCardStyle } from './style'
 
 /**
- * CyShineMusic 风格设置分组卡
+ * 设置分组卡（Phase 6A）
  * — 标题在卡片内，小号字距拉开
- * — 大圆角 + 轻阴影
+ * — 实色卡片 + 中性发丝线，不再叠玻璃、阴影和顶部高光
  * — 子项作为卡片内的行，不再各自套一层底板
  */
 interface Props {
@@ -29,19 +29,6 @@ export default ({ title, style, children }: Props) => {
       title ? null : styles.cardNoTitle,
       style,
     ]}>
-      {/* 卡片顶部水面微光反射 */}
-      <View
-        pointerEvents="none"
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 1,
-          backgroundColor: theme['c-glass-highlight'],
-          opacity: 0.6,
-        }}
-      />
       {title
         ? <Text style={settingLayout.cardTitle} size={13} color={theme['c-font-label']}>{title}</Text>
         : null}

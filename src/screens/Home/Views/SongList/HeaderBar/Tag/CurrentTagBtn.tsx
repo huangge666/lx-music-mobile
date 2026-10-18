@@ -37,8 +37,8 @@ export default forwardRef<CurrentTagBtnType, CurrentTagBtnProps>(({ onShowList }
       onPress={onShowList}
       style={{
         ...styles.btn,
-        backgroundColor: theme['c-glass-background'],
-        borderColor: theme['c-glass-border'],
+        backgroundColor: theme['c-card-background'],
+        borderColor: theme['c-border-background'],
       }}
     >
       <Icon name="slider" size={15} color={theme['c-accent']} />

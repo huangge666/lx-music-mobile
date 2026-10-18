@@ -36,8 +36,8 @@ const IdInput = forwardRef<IdInputType, { onSubmit: () => void }>((props, ref) =
   return (
     <View style={{
       ...styles.inputWrap,
-      backgroundColor: theme['c-glass-surface'],
-      borderColor: theme['c-glass-border'],
+      backgroundColor: theme['c-primary-input-background'],
+      borderColor: theme['c-border-background'],
     }}>
       <Icon name="search-2" size={16} color={theme['c-accent']} />
       <Input
@@ -138,8 +138,8 @@ export default forwardRef<ModalType, ModalProps>(({ onOpenId }, ref) => {
             <IdInput ref={inputRef} onSubmit={handleConfirm} />
             <View style={{
               ...styles.tipCard,
-              backgroundColor: theme['c-glass-surface'],
-              borderColor: theme['c-glass-border'],
+              backgroundColor: theme['c-primary-input-background'],
+              borderColor: theme['c-border-background'],
             }}>
               <TipList text={t('songlist_open_input_tip')} />
             </View>

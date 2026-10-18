@@ -3,6 +3,7 @@ import { ScrollView, TouchableOpacity, View } from 'react-native'
 import { useNavActiveId, useStatusbarHeight } from '@/store/common/hook'
 import { useTheme } from '@/store/theme/hook'
 import { Icon } from '@/components/common/Icon'
+import { useI18n } from '@/lang'
 import { confirmDialog, createStyle, exitApp as backHome } from '@/utils/tools'
 import { isMainNavId, MAIN_NAV_MENUS, NAV_MENUS } from '@/config/constant'
 import type { InitState } from '@/store/common/state'
@@ -12,15 +13,16 @@ import GlassSurface from '@/components/common/GlassSurface'
 import { useSettingValue } from '@/store/setting/hook'
 
 /**
- * 横屏液态玻璃侧栏：窄栏只放图标，选中态用辅色玻璃底。
+ * 横屏侧栏（Phase 6B）
+ *
+ * 横屏不再显示底部标签栏，主导航与辅助入口统一收进这一列：
+ * 主标签在上，覆盖页入口（排行榜/下载/设置）在下，返回/退出固定在底部。
+ * 玻璃材质只用于这块导航控制区；选中态用辅色柔光胶囊 + 辅色图标。
  */
 const NAV_WIDTH = 68
 
-/** 主标签在前，覆盖页入口在后，避免侧栏和底栏给出两种主标签顺序 */
-const ASIDE_MENUS = [
-  ...MAIN_NAV_MENUS,
-  ...NAV_MENUS.filter(menu => !isMainNavId(menu.id)),
-]
+/** 主标签之外仍需要入口的覆盖页；排行榜从浏览进入，这里同样先固定父级 */
+const AUX_MENUS = NAV_MENUS.filter(menu => !isMainNavId(menu.id))
 
 const styles = createStyle({
   container: {
@@ -36,17 +38,17 @@ const styles = createStyle({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  headerText: {
-    textAlign: 'center',
-    marginLeft: 16,
-  },
   menus: {
     flex: 1,
   },
   list: {
-    paddingBottom: 15,
+    paddingBottom: 8,
   },
-  // Apple Music 风格菜单项 — 圆角选中态容器
+  divider: {
+    height: BorderWidths.hairline,
+    marginHorizontal: 14,
+    marginBottom: 8,
+  },
   menuItem: {
     flexDirection: 'row',
     paddingTop: 12,
@@ -55,12 +57,11 @@ const styles = createStyle({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 12,
+    borderWidth: BorderWidths.hairline,
+    borderColor: 'transparent',
   },
   iconContent: {
     alignItems: 'center',
-  },
-  text: {
-    paddingLeft: 15,
   },
 })
 
@@ -85,19 +86,35 @@ const MenuItem = ({ id, icon, onPress }: {
 }) => {
   const activeId = useNavActiveId()
   const theme = useTheme()
+  const t = useI18n()
   const isActive = activeId == id
+  // 三个主标签在侧栏里仍是「标签」，覆盖页与退出是普通按钮
+  const isTab = isMainNavId(id)
+  const label = id == 'nav_exit'
+    ? t('nav_exit')
+    : id == 'back_home'
+      ? t('back_home')
+      : t(id)
 
-  return isActive
-    ? <View style={{ ...styles.menuItem, backgroundColor: theme['c-accent-soft'], borderColor: theme['c-glass-border'], borderWidth: 0.5 }}>
-        <View style={styles.iconContent}>
-          <Icon name={icon} size={20} color={theme['c-accent']} />
-        </View>
+  return (
+    <TouchableOpacity
+      style={[
+        styles.menuItem,
+        isActive
+          ? { backgroundColor: theme['c-accent-soft'], borderColor: theme['c-border-background'] }
+          : null,
+      ]}
+      onPress={() => { onPress(id) }}
+      activeOpacity={0.6}
+      accessibilityRole={isTab ? 'tab' : 'button'}
+      accessibilityLabel={label}
+      accessibilityState={isTab ? { selected: isActive } : undefined}
+    >
+      <View style={styles.iconContent}>
+        <Icon name={icon} size={20} color={isActive ? theme['c-accent'] : theme['c-font-label']} />
       </View>
-    : <TouchableOpacity style={styles.menuItem} onPress={() => { onPress(id) }} activeOpacity={0.6}>
-        <View style={styles.iconContent}>
-          <Icon name={icon} size={20} color={theme['c-font-label']} />
-        </View>
-      </TouchableOpacity>
+    </TouchableOpacity>
+  )
 }
 
 export default memo(() => {
@@ -131,13 +148,22 @@ export default memo(() => {
   }
 
   return (
-    <GlassSurface highlight="none" style={{ ...styles.container, borderRightColor: theme['c-glass-border'] }}>
+    <GlassSurface highlight="none" style={{ ...styles.container, borderRightColor: theme['c-border-background'] }}>
       <Header />
       <ScrollView style={styles.menus}>
         <View style={styles.list}>
-          {ASIDE_MENUS.map(menu => <MenuItem key={menu.id} id={menu.id} icon={menu.icon} onPress={handlePress} />)}
+          {MAIN_NAV_MENUS.map(menu => <MenuItem key={menu.id} id={menu.id} icon={menu.icon} onPress={handlePress} />)}
+        </View>
+        <View style={[styles.divider, { backgroundColor: theme['c-border-background'] }]} />
+        <View style={styles.list}>
+          {AUX_MENUS.map(menu => <MenuItem key={menu.id} id={menu.id} icon={menu.icon} onPress={handlePress} />)}
         </View>
       </ScrollView>
+      {
+        showBackBtn || showExitBtn
+          ? <View style={[styles.divider, { backgroundColor: theme['c-border-background'] }]} />
+          : null
+      }
       {
         showBackBtn ? <MenuItem id="back_home" icon="home" onPress={handlePress} /> : null
       }

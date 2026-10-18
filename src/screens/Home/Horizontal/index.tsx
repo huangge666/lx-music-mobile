@@ -5,7 +5,6 @@ import StatusBar from '@/components/common/StatusBar'
 import Header from './Header'
 import Main from './Main'
 import { createStyle } from '@/utils/tools'
-import BottomBar from '../components/BottomBar'
 import { useNavActiveId } from '@/store/common/hook'
 
 const styles = createStyle({
@@ -19,12 +18,16 @@ const styles = createStyle({
   },
 })
 
+/**
+ * 横屏首页。
+ *
+ * 三个主标签与辅助入口（排行榜/下载/设置）统一由左侧栏承载，
+ * 不再同时显示底部标签栏 — 否则同一层级会出现两套主导航。
+ * 迷你播放器仍贴底显示，设置页保持原有「隐藏播放器」规则。
+ */
 export default () => {
   const navActiveId = useNavActiveId()
-  const isDownloadPage = navActiveId == 'nav_download'
   const isSettingPage = navActiveId == 'nav_setting'
-  // 排行榜是覆盖页，横屏同样隐藏主标签栏；辅助入口仍由常驻侧栏承担
-  const isLeaderboardPage = navActiveId == 'nav_top'
 
   return (
     <>
@@ -35,7 +38,6 @@ export default () => {
           <Header />
           <Main />
           {!isSettingPage ? <PlayerBar isHome /> : null}
-          {!isDownloadPage && !isSettingPage && !isLeaderboardPage ? <BottomBar /> : null}
         </View>
       </View>
     </>

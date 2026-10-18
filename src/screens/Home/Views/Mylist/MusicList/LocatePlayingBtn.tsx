@@ -30,8 +30,8 @@ export default memo(({ onPress }: LocatePlayingBtnProps) => {
       onPress={onPress}
       style={{
         ...styles.btn,
-        backgroundColor: theme['c-glass-background'],
-        borderColor: theme['c-glass-border'],
+        backgroundColor: theme['c-card-background'],
+        borderColor: theme['c-border-background'],
       }}
     >
       <Icon name="crosshair" size={18} color={theme['c-accent']} />

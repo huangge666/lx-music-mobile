@@ -14,19 +14,18 @@ import CommentBtn from './CommentBtn'
 import Btn from './Btn'
 import SettingPopup, { type SettingPopupType } from '../../components/SettingPopup'
 import DesktopLyricBtn from './DesktopLyricBtn'
-import { MacRadius, MacSpacing, MacFontSize, getMacGlassBackground, getMacGlassBorder } from '../../macOS'
+import { MacRadius, MacSpacing, MacFontSize } from '../../macOS'
 
 export const HEADER_HEIGHT = scaleSizeH(_HEADER_HEIGHT)
 
 const Title = () => {
   const theme = useTheme()
   const musicInfo = usePlayerMusicInfo()
-  const isDark = !!theme.isDark
 
   return (
     <View style={[styles.titleCard, {
-      backgroundColor: getMacGlassBackground(isDark),
-      borderColor: getMacGlassBorder(isDark),
+      backgroundColor: theme['c-card-background'],
+      borderColor: theme['c-border-background'],
     }]}>
       <Text numberOfLines={1} style={styles.title} size={MacFontSize.body} color={theme['c-font']}>{musicInfo.name}</Text>
       <Text numberOfLines={1} style={styles.subtitle} size={MacFontSize.caption} color={theme['c-font-label']}>{musicInfo.singer}</Text>

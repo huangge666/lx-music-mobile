@@ -53,14 +53,14 @@ const Tabs = <T extends LX.OnlineSource>({ list, source, onChangeSource }: {
               onPress={() => { onChangeSource(s.action as T) }}
               style={{
                 ...styles.tabButton,
-                backgroundColor: active ? theme['c-accent-soft'] : theme['c-glass-surface'],
-                borderColor: active ? theme['c-primary-alpha-700'] : theme['c-border-background'],
+                backgroundColor: active ? theme['c-accent-soft'] : theme['c-primary-input-background'],
+                borderColor: active ? theme['c-accent'] : theme['c-border-background'],
               }}
             >
               <Text
                 size={13}
                 style={styles.tabButtonText}
-                color={active ? theme['c-primary-font'] : theme['c-font-label']}
+                color={active ? theme['c-accent'] : theme['c-font-label']}
               >
                 {s.label}
               </Text>

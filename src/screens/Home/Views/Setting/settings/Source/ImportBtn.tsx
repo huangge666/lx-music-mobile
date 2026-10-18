@@ -7,6 +7,7 @@ import { useI18n } from '@/lang'
 import { state } from '@/store/userApi'
 import { tipDialog, createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
+import { getOnAccentColor } from '@/theme/themes/palette'
 import { BorderRadius, BorderWidths } from '@/theme'
 import ScriptImportExport, { type ScriptImportExportType } from '../Basic/UserApiEditModal/ScriptImportExport'
 import ScriptImportOnline, { type ScriptImportOnlineType } from '../Basic/UserApiEditModal/ScriptImportOnline'
@@ -45,26 +46,26 @@ export default () => {
     <>
       <View style={styles.row}>
         <TouchableOpacity
-          style={[styles.button, styles.primaryButton, { backgroundColor: theme['c-button-background'] }]}
+          style={[styles.button, styles.primaryButton, { backgroundColor: theme['c-accent'] }]}
           onPress={importLocal}
           activeOpacity={0.82}
           accessibilityRole="button"
           accessibilityLabel={t('user_api_btn_import_local')}
         >
-          <Icon name="download-2" size={17} color={theme['c-button-font']} />
-          <Text size={14} color={theme['c-button-font']} style={styles.buttonText}>
+          <Icon name="download-2" size={17} color={getOnAccentColor(theme.isDark)} />
+          <Text size={14} color={getOnAccentColor(theme.isDark)} style={styles.buttonText}>
             {t('user_api_btn_import_local')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.button, styles.secondaryButton, { borderColor: theme['c-primary'] }]}
+          style={[styles.button, styles.secondaryButton, { borderColor: theme['c-accent'] }]}
           onPress={importOnline}
           activeOpacity={0.82}
           accessibilityRole="button"
           accessibilityLabel={t('user_api_btn_import_online')}
         >
-          <Icon name="share" size={17} color={theme['c-primary']} />
-          <Text size={14} color={theme['c-primary']} style={styles.buttonText}>
+          <Icon name="share" size={17} color={theme['c-accent']} />
+          <Text size={14} color={theme['c-accent']} style={styles.buttonText}>
             {t('user_api_btn_import_online')}
           </Text>
         </TouchableOpacity>

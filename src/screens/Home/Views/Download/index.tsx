@@ -13,6 +13,7 @@ import { handleFileMusicAction } from '@/core/init/deeplink/fileAction'
 import { useI18n } from '@/lang'
 import ConfirmAlert, { type ConfirmAlertType } from '@/components/common/ConfirmAlert'
 import CheckBox from '@/components/common/CheckBox'
+import ListState from '@/components/common/ListState'
 import { useBackHandler } from '@/utils/hooks/useBackHandler'
 import commonState from '@/store/common/state'
 import { backToHomeTab } from '@/core/common'
@@ -35,7 +36,7 @@ const ProgressBar = memo(({ progress }: { progress: number }) => {
   const theme = useTheme()
   return (
     <View style={[styles.progressTrack, { backgroundColor: theme['c-border-background'] }]}>
-      <View style={[styles.progressBar, { width: `${Math.max(0, Math.min(progress, 1)) * 100}%`, backgroundColor: theme['c-primary'] }]} />
+      <View style={[styles.progressBar, { width: `${Math.max(0, Math.min(progress, 1)) * 100}%`, backgroundColor: theme['c-accent'] }]} />
     </View>
   )
 })
@@ -54,13 +55,13 @@ const IconAction = memo(({
   const theme = useTheme()
   return (
     <TouchableOpacity
-      style={[styles.iconBtn, { backgroundColor: danger ? theme['c-primary-background-hover'] : theme['c-button-background'] }]}
+      style={[styles.iconBtn, { backgroundColor: danger ? theme['c-danger-soft'] : theme['c-primary-input-background'] }]}
       onPress={onPress}
       activeOpacity={0.75}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
     >
-      <Icon name={name} size={14} color={danger ? theme['c-font'] : theme['c-button-font']} />
+      <Icon name={name} size={14} color={danger ? theme['c-danger'] : theme['c-font']} />
     </TouchableOpacity>
   )
 })
@@ -87,19 +88,26 @@ const DownloadRow = memo(({
   const isCompleted = item.status === 'completed'
   const isError = item.status === 'error'
   const subtitle = [item.quality, item.statusText || item.status, sizeText].filter(Boolean).join(' · ')
+  // 行底色只表达状态：失败用危险柔光底，其余回归实色卡片底
+  const rowBackground = isError ? theme['c-danger-soft'] : theme['c-card-background']
+  const iconColor = isError
+    ? theme['c-danger']
+    : isCompleted
+      ? theme['c-accent']
+      : theme['c-font-label']
 
   return (
     <View style={[
       styles.row,
       {
         borderColor: theme['c-border-background'],
-        backgroundColor: isCompleted ? theme['c-primary-alpha-800'] : 'rgba(0,0,0,0.03)',
+        backgroundColor: rowBackground,
       },
     ]}>
-      <Icon name="album" size={16} color={isCompleted ? theme['c-primary-font-active'] : theme['c-primary-font']} />
+      <Icon name="album" size={16} color={iconColor} />
       <View style={styles.rowCenter}>
         <Text numberOfLines={1}>{item.name}</Text>
-        <Text size={11} color={theme['c-font-label']} numberOfLines={1}>{subtitle}</Text>
+        <Text size={11} color={isError ? theme['c-danger'] : theme['c-font-label']} numberOfLines={1}>{subtitle}</Text>
         {isRunning ? <ProgressBar progress={item.progress || 0} /> : null}
       </View>
       <View style={styles.rowActions}>
@@ -166,6 +174,7 @@ const RemoveConfirm = forwardRef<RemoveConfirmType, RemoveConfirmProps>(({ onCon
           ref={alertRef}
           title={t('download_remove_title')}
           onConfirm={handleConfirm}
+          confirmDanger
         >
           <View style={styles.removeContent}>
             <Text style={styles.removeMessage}>{t('download_remove_message', { name: item?.name ?? '' })}</Text>
@@ -329,14 +338,37 @@ export default () => {
         styles.header,
         { borderBottomColor: theme['c-border-background'] },
       ]}>
-        <Text style={styles.title} size={17}>{t('nav_download')}</Text>
-        <TouchableOpacity style={styles.refreshBtn} onPress={handleRefreshPress} activeOpacity={0.75}>
-          <Text size={12}>{t('download_refresh')}</Text>
+        {/* 页面标题由独立返回栏承担，这里只留列表信息与刷新操作 */}
+        <Text
+          style={styles.countText}
+          size={12}
+          color={theme['c-font-label']}
+          numberOfLines={1}
+        >
+          {mergedList.length ? t('list_music_count', { num: mergedList.length }) : ''}
+        </Text>
+        <TouchableOpacity
+          style={[styles.refreshBtn, { backgroundColor: theme['c-primary-input-background'] }]}
+          onPress={handleRefreshPress}
+          activeOpacity={0.75}
+          accessibilityRole="button"
+          accessibilityLabel={t('download_refresh')}
+        >
+          <Icon name="refresh" size={13} color={theme['c-accent']} />
+          <Text size={12} color={theme['c-accent']} style={styles.refreshText}>{t('download_refresh')}</Text>
         </TouchableOpacity>
       </View>
       {
         isLoading
-          ? <Text style={styles.tip} color={theme['c-font-label']}>{t('download_loading')}</Text>
+          ? (
+              <View style={styles.stateWrap}>
+                <ListState
+                  status="loading"
+                  onRetry={() => { refresh(false).catch(() => {}) }}
+                  title={t('download_loading')}
+                />
+              </View>
+            )
           : mergedList.length
             ? (
               <FlatList
@@ -353,7 +385,16 @@ export default () => {
                 )}
               />
               )
-            : <Text style={styles.tip} color={theme['c-font-label']}>{t('download_empty')}</Text>
+            : (
+                <View style={styles.stateWrap}>
+                  <ListState
+                    status="end"
+                    onRetry={() => { refresh(false).catch(() => {}) }}
+                    title={t('download_empty')}
+                    hint={t('download_empty_hint')}
+                  />
+                </View>
+              )
       }
       <RemoveConfirm ref={removeConfirmRef} onConfirm={handleRemoveConfirm} />
     </View>
@@ -365,7 +406,7 @@ const styles = createStyle({
     flex: 1,
   },
   header: {
-    borderBottomWidth: BorderWidths.normal,
+    borderBottomWidth: BorderWidths.hairline,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -373,23 +414,33 @@ const styles = createStyle({
     paddingBottom: 10,
     paddingHorizontal: 14,
   },
-  title: {
-    fontWeight: '700',
+  countText: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  stateWrap: {
+    flex: 1,
+    justifyContent: 'center',
   },
   refreshBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 14,
+    paddingHorizontal: 12,
+    minHeight: 32,
+    borderRadius: 16,
+  },
+  refreshText: {
+    marginLeft: 5,
+    fontWeight: '600',
   },
   list: {
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 24,
   },
   row: {
-    borderWidth: BorderWidths.normal,
-    borderRadius: 12,
+    borderWidth: BorderWidths.hairline,
+    borderRadius: BorderRadius.medium,
     marginBottom: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -398,7 +449,7 @@ const styles = createStyle({
   },
   rowCenter: {
     flex: 1,
-    paddingLeft: 8,
+    paddingLeft: 10,
   },
   rowActions: {
     flexDirection: 'row',
@@ -406,9 +457,9 @@ const styles = createStyle({
     marginLeft: 8,
   },
   iconBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 6,
@@ -422,10 +473,6 @@ const styles = createStyle({
   progressBar: {
     height: '100%',
     borderRadius: BorderRadius.medium,
-  },
-  tip: {
-    textAlign: 'center',
-    paddingVertical: 24,
   },
   removeContent: {
     flexGrow: 1,
