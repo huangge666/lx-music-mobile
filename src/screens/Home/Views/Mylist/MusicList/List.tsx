@@ -1,6 +1,6 @@
 import { playList } from '@/core/player/player'
-import { useMemo, useRef, useState, useEffect, forwardRef, useImperativeHandle } from 'react'
-import { FlatList, type NativeScrollEvent, type NativeSyntheticEvent, type FlatListProps } from 'react-native'
+import { useMemo, useRef, useState, useEffect, forwardRef, useImperativeHandle, useCallback, type ReactNode } from 'react'
+import { FlatList, View, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent, type FlatListProps } from 'react-native'
 
 import listState from '@/store/list/state'
 import playerState from '@/store/player/state'
@@ -33,6 +33,8 @@ export interface ListProps {
   onMuiltSelectMode: () => void
   onSelectAll: (isAll: boolean) => void
   onScroll?: (offset: number) => void
+  /** 歌单主视觉等随列表滚动的头部；高度实测后计入 getItemLayout 的偏移 */
+  ListHeaderComponent?: ReactNode
 }
 export interface ListType {
   setIsMultiSelectMode: (isMultiSelectMode: boolean) => void
@@ -56,7 +58,7 @@ const usePlayIndex = () => {
 }
 
 
-const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, onSelectAll, onScroll }, ref) => {
+const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, onSelectAll, onScroll, ListHeaderComponent }, ref) => {
   // const t = useI18n()
   const flatListRef = useRef<FlatList>(null)
   const [currentList, setList] = useState<LX.List.ListMusics>([])
@@ -80,6 +82,19 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
   rowHeightRef.current = rowHeight
   const isShowAlbumName = useSettingValue('list.isShowAlbumName')
   const isShowInterval = useSettingValue('list.isShowInterval')
+  // 头部高度实测值：可变高度（简介展开、字号变化）不能用写死的偏移
+  const headerHeightRef = useRef(0)
+  const [headerHeight, setHeaderHeight] = useState(0)
+  const handleHeaderLayout = useCallback((e: LayoutChangeEvent) => {
+    const nextHeight = e.nativeEvent.layout.height
+    if (Math.abs(nextHeight - headerHeightRef.current) < 0.5) return
+    headerHeightRef.current = nextHeight
+    setHeaderHeight(nextHeight)
+  }, [])
+  // 包裹一层只用于测量高度，头部元素自身仍由调用方提供
+  const headerComponent = useMemo(() => ListHeaderComponent == null
+    ? null
+    : <View onLayout={handleHeaderLayout}>{ListHeaderComponent}</View>, [ListHeaderComponent, handleHeaderLayout])
   // console.log('render music list')
 
   useImperativeHandle(ref, () => ({
@@ -144,7 +159,8 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
                 } catch {}
               }
             }
-            flatListRef.current?.scrollToOffset({ offset: position, animated: false })
+            // 保存的是首曲到视口顶部的距离，恢复时补上随列表滚动的头部高度
+            flatListRef.current?.scrollToOffset({ offset: position + headerHeightRef.current, animated: false })
           })
         })
       })
@@ -269,7 +285,8 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
       listFirstScrollRef.current = false
       return
     }
-    void saveMusicListPosition(listState.activeListId, nativeEvent.contentOffset.y, rowHeight, rowInfo.current.rowNum ?? 1)
+    // 头部会随列表滚走，按「首曲到视口顶部」的距离保存，换行高/加头部都不会错位
+    void saveMusicListPosition(listState.activeListId, Math.max(nativeEvent.contentOffset.y - headerHeightRef.current, 0), rowHeight, rowInfo.current.rowNum ?? 1)
   }
 
 
@@ -299,7 +316,8 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
   const getkey: FlatListType['keyExtractor'] = item => item.id
   const getItemLayout: FlatListType['getItemLayout'] = (data, index) => {
     const rowIndex = Math.floor(index / (rowInfo.current.rowNum ?? 1))
-    return { length: rowHeight, offset: rowHeight * rowIndex, index }
+    // 偏移从内容起点算起，必须加上随列表滚动的头部高度，否则 scrollToIndex 会跳错位置
+    return { length: rowHeight, offset: headerHeightRef.current + rowHeight * rowIndex, index }
   }
 
   return (
@@ -322,8 +340,9 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
       initialNumToRender={initialNumToRender}
       renderItem={renderItem}
       keyExtractor={getkey}
-      extraData={activeIndex}
+      extraData={`${activeIndex}_${headerHeight}`}
       getItemLayout={getItemLayout}
+      ListHeaderComponent={headerComponent}
       contentContainerStyle={{ paddingBottom: bottomInset + 16 }}
     />
   )

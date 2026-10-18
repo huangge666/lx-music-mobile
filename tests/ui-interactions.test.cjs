@@ -488,3 +488,109 @@ test('locale keys: navigation labels exist in all supported languages', () => {
     }
   }
 })
+
+/* ---- Phase 4: 资料库网格几何、封面占位与真实随机 ---- */
+
+function gridMetrics(input) {
+  const base = { contentPadding: 16, columnGap: 12, minCardWidth: 148, rowSpacing: 18, titleBlockHeight: 34, metaBlockHeight: 28 }
+  return loadModule('src/screens/Home/Views/Mylist/MyList/gridLayout.ts', {}).getLibraryGridMetrics({ ...base, ...input })
+}
+
+test('library grid: portrait uses two columns whose width follows the measured container', () => {
+  const m = gridMetrics({ width: 360 })
+  assert.equal(m.columns, 2)
+  // (360 - 16*2 - 12) / 2
+  assert.equal(m.cardWidth, 158)
+  // 行高必须等于卡片高度加行间距，getItemLayout 用的是同一个值
+  assert.equal(m.cardHeight, 158 + 34 + 28)
+  assert.equal(m.rowHeight, m.cardHeight + 18)
+})
+
+test('library grid: wider containers add columns, narrow ones keep the two-column floor', () => {
+  assert.equal(gridMetrics({ width: 800 }).columns, 4)
+  assert.equal(gridMetrics({ width: 200 }).columns, 2)
+  assert.equal(gridMetrics({ width: 0 }).cardWidth, 0)
+  assert.equal(gridMetrics({ width: 0 }).columns, 2)
+  // 列宽和间距一起不能超出可用宽度
+  for (const width of [320, 375, 411, 600, 900]) {
+    const m = gridMetrics({ width })
+    const used = m.cardWidth * m.columns + m.columnGap * (m.columns - 1)
+    assert.ok(used <= width - m.contentPadding * 2, `overflow at ${width}`)
+  }
+})
+
+test('playlist cover placeholder: stable id gives a stable tint and initial', () => {
+  const api = loadModule('src/components/common/playlistCover.ts', {})
+  const a = api.getPlaylistCoverTint('userlist_1')
+  assert.deepEqual(a, api.getPlaylistCoverTint('userlist_1'))
+  assert.match(a.backgroundColor, /^hsl\(\d+, \d+%, \d+%\)$/)
+  const distinct = new Set(['a', 'b', 'userlist_1', 'userlist_2', 'kw__123', 'love'].map(id => api.getPlaylistCoverTint(id).backgroundColor))
+  assert.ok(distinct.size > 1, 'different ids must not all share one tint')
+  assert.equal(api.getPlaylistInitial('  后来 '), '后')
+  assert.equal(api.getPlaylistInitial(''), '')
+  assert.equal(api.getPlaylistInitial('   '), '')
+})
+
+test('shuffle: the start index stays inside the playlist for any random value', () => {
+  const { getShuffleStartIndex } = loadModule('src/utils/shuffle.ts', {})
+  assert.equal(getShuffleStartIndex(0), 0)
+  assert.equal(getShuffleStartIndex(-3), 0)
+  assert.equal(getShuffleStartIndex(Number.NaN), 0)
+  assert.equal(getShuffleStartIndex(5, () => 0), 0)
+  assert.equal(getShuffleStartIndex(5, () => 0.999999), 4)
+  assert.equal(getShuffleStartIndex(5, () => 1), 4)
+  assert.equal(getShuffleStartIndex(5, () => Number.NaN), 0)
+  for (const value of [0, 0.1, 0.5, 0.99]) {
+    const index = getShuffleStartIndex(9, () => value)
+    assert.ok(index >= 0 && index <= 8, `out of range: ${index}`)
+  }
+})
+
+function positionFixture() {
+  const storage = {}
+  const api = loadModule('src/utils/data.ts', {
+    '@/plugins/storage': {
+      async getData(key) { return storage[key] ?? null },
+      async saveData(key, value) { storage[key] = value },
+      async getDataMultiple(keys) { return keys.map(key => storage[key] ?? null) },
+      async saveDataMultiple() {},
+      async getAllKeys() { return Object.keys(storage) },
+      async removeDataMultiple() {},
+      async removeData(key) { delete storage[key] },
+    },
+    '@/config/constant': constants,
+    '@/utils/pixelRatio': {
+      scaleSizeH: size => size,
+      scaleSizeW: size => size,
+      setSpText: size => size,
+    },
+    './common': { throttle: fn => fn },
+  })
+  return api
+}
+
+test('library position: an unknown layout resets only this view instead of reusing old pixels', async() => {
+  const api = positionFixture()
+  // 旧版本只存了像素偏移，没有行高/列数记录
+  await api.saveListPosition('__LIST_SCROLL_POSITION_KEY__', 640)
+  assert.equal(await api.getMusicListPosition('__LIST_SCROLL_POSITION_KEY__', 238, 2, { resetWhenLayoutUnknown: true }), 0)
+  // 其他调用方（歌曲列表）仍按旧基线换算，行为不变
+  await api.saveListPosition('music_list', 108)
+  assert.equal(await api.getMusicListPosition('music_list', 60, 1), 120)
+})
+
+test('library position: a recorded layout restores pixels and a column change resets', async() => {
+  const api = positionFixture()
+  await api.saveMusicListPosition('__LIST_SCROLL_POSITION_KEY__', 476, 238, 2)
+  assert.equal(await api.getMusicListPosition('__LIST_SCROLL_POSITION_KEY__', 238, 2), 476)
+  // 旋转后列数变了，没有稳定的首项可以换算
+  assert.equal(await api.getMusicListPosition('__LIST_SCROLL_POSITION_KEY__', 180, 4), 0)
+})
+
+test('locale keys: playlist shuffle failure message exists in all supported languages', () => {
+  const languages = ['zh-cn', 'zh-tw', 'en-us'].map(language => JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'src/lang', `${language}.json`), 'utf8')))
+  for (const language of languages) {
+    assert.ok(typeof language.playlist_shuffle_failed == 'string' && language.playlist_shuffle_failed.length)
+  }
+})
+

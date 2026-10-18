@@ -34,8 +34,15 @@ export default forwardRef<MusicListType, MusicListProps>(({ componentId }, ref) 
   const t = useI18n()
   const statusBarHeight = useStatusbarHeight()
   const hasDynamicBg = useBgPic() != null
-  // 头部内部的操作栏会读取列表上下文，不能提前 memo，否则首次渲染会拿到未定义的 info
-  const header = <Header ref={headerRef} componentId={componentId} />
+  // 列表状态同时同步到主视觉：加载中显示占位、失败时可重试
+  const updateStatus = useCallback((status: Parameters<NonNullable<OnlineListType['setStatus']>>[0]) => {
+    headerRef.current?.setStatus(status == 'refreshing'
+      ? 'loading'
+      : status == 'error'
+        ? 'error'
+        : 'idle')
+    listRef.current?.setStatus(status)
+  }, [])
   const [showScrollTop, setShowScrollTop] = useState(false)
   const showScrollTopRef = useRef(false)
   const handleScroll = useCallback((offset: number) => {
@@ -70,7 +77,7 @@ export default forwardRef<MusicListType, MusicListProps>(({ componentId }, ref) 
           })
         })
       } else {
-        listRef.current?.setStatus('loading')
+        updateStatus('loading')
         const page = 1
         if (info) setListDetailInfo(info.source, info.id)
         headerRef.current?.setInfo({
@@ -94,11 +101,11 @@ export default forwardRef<MusicListType, MusicListProps>(({ componentId }, ref) 
               total: result.total,
             })
             listRef.current?.setList(result.list)
-            listRef.current?.setStatus(songlistState.listDetailInfo.maxPage <= page ? 'end' : 'idle')
+            updateStatus(songlistState.listDetailInfo.maxPage <= page ? 'end' : 'idle')
           })
         }).catch(() => {
           if (songlistState.listDetailInfo.list.length && page == 1) clearListDetail()
-          listRef.current?.setStatus('error')
+          updateStatus('error')
         })
       }
     },
@@ -119,12 +126,12 @@ export default forwardRef<MusicListType, MusicListProps>(({ componentId }, ref) 
   }
   const handleRefresh: OnlineListProps['onRefresh'] = () => {
     const page = 1
-    listRef.current?.setStatus('refreshing')
+    updateStatus('refreshing')
     getListDetail(songlistState.listDetailInfo.id, songlistState.listDetailInfo.source, page, true).then((listDetail) => {
       const result = setListDetail(listDetail, songlistState.listDetailInfo.id, page)
       if (isUnmountedRef.current) return
       listRef.current?.setList(result.list)
-      listRef.current?.setStatus(songlistState.listDetailInfo.maxPage <= page ? 'end' : 'idle')
+      updateStatus(songlistState.listDetailInfo.maxPage <= page ? 'end' : 'idle')
       headerRef.current?.setInfo({
         name: (info?.name || result.info.name) ?? '',
         // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
@@ -135,22 +142,25 @@ export default forwardRef<MusicListType, MusicListProps>(({ componentId }, ref) 
       })
     }).catch(() => {
       if (songlistState.listDetailInfo.list.length && page == 1) clearListDetail()
-      listRef.current?.setStatus('error')
+      updateStatus('error')
     })
   }
   const handleLoadMore: OnlineListProps['onLoadMore'] = () => {
-    listRef.current?.setStatus('loading')
+    updateStatus('loading')
     const page = songlistState.listDetailInfo.list.length ? songlistState.listDetailInfo.page + 1 : 1
     getListDetail(songlistState.listDetailInfo.id, songlistState.listDetailInfo.source, page).then((listDetail) => {
       const result = setListDetail(listDetail, songlistState.listDetailInfo.id, page)
       if (isUnmountedRef.current) return
       listRef.current?.setList(result.list, true)
-      listRef.current?.setStatus(songlistState.listDetailInfo.maxPage <= page ? 'end' : 'idle')
+      updateStatus(songlistState.listDetailInfo.maxPage <= page ? 'end' : 'idle')
     }).catch(() => {
       if (songlistState.listDetailInfo.list.length && page == 1) clearListDetail()
-      listRef.current?.setStatus('error')
+      updateStatus('error')
     })
   }
+
+  // 头部内部的动作与主视觉会读取列表上下文，不能提前 memo，否则首次渲染会拿到未定义的 info
+  const header = <Header ref={headerRef} componentId={componentId} onRetry={handleRefresh} />
 
   return (
     <View style={styles.container}>

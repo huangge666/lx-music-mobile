@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState, forwardRef, useImperativeHandle } from 'react'
-import { FlatList, type FlatListProps, type NativeScrollEvent, type NativeSyntheticEvent, RefreshControl, View } from 'react-native'
+import { useCallback, useMemo, useRef, useState, forwardRef, useImperativeHandle, type ReactNode } from 'react'
+import { FlatList, type FlatListProps, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent, RefreshControl, View } from 'react-native'
 
 // import { useMusicList } from '@/store/list/hook'
 import ListItem from './ListItem'
@@ -32,7 +32,7 @@ export interface ListProps {
   onLoadMore: () => void
   onPlayList?: (index: number) => void
   progressViewOffset?: number
-  ListHeaderComponent?: FlatListType['ListEmptyComponent']
+  ListHeaderComponent?: ReactNode
   checkHomePagerIdle: boolean
   rowType?: RowInfoType
   onScroll?: (offset: number) => void
@@ -80,6 +80,18 @@ const List = forwardRef<ListType, ListProps>(({
   const selectedListRef = useRef<LX.Music.MusicInfoOnline[]>([])
   const bottomInset = useBottomInset()
   const [status, setStatus] = useState<Status>('idle')
+  // 头部（歌单主视觉）高度实测值，参与 getItemLayout 的偏移计算
+  const headerHeightRef = useRef(0)
+  const [headerHeight, setHeaderHeight] = useState(0)
+  const handleHeaderLayout = useCallback((e: LayoutChangeEvent) => {
+    const nextHeight = e.nativeEvent.layout.height
+    if (Math.abs(nextHeight - headerHeightRef.current) < 0.5) return
+    headerHeightRef.current = nextHeight
+    setHeaderHeight(nextHeight)
+  }, [])
+  const headerComponent = useMemo(() => ListHeaderComponent == null
+    ? null
+    : <View onLayout={handleHeaderLayout}>{ListHeaderComponent}</View>, [ListHeaderComponent, handleHeaderLayout])
   const rowInfo = useRef(getRowInfo(rowType))
   useFontSize()
   const rowHeight = getMusicRowHeight()
@@ -215,7 +227,8 @@ const List = forwardRef<ListType, ListProps>(({
   const getkey: FlatListType['keyExtractor'] = item => item.id
   const getItemLayout: FlatListType['getItemLayout'] = (data, index) => {
     const rowIndex = Math.floor(index / (rowInfo.current.rowNum ?? 1))
-    return { length: rowHeight, offset: rowHeight * rowIndex, index }
+    // 内容起点包含随列表滚动的头部，偏移不加上它会让定位落在错误行
+    return { length: rowHeight, offset: headerHeightRef.current + rowHeight * rowIndex, index }
   }
   const refreshControl = useMemo(() => (
     <RefreshControl
@@ -265,12 +278,13 @@ const List = forwardRef<ListType, ListProps>(({
       renderItem={renderItem}
       keyExtractor={getkey}
       getItemLayout={getItemLayout}
+      extraData={headerHeight}
       // onRefresh={onRefresh}
       // refreshing={refreshing}
       onEndReachedThreshold={0.5}
       onEndReached={handleLoadMore}
       progressViewOffset={progressViewOffset}
-      ListHeaderComponent={ListHeaderComponent}
+      ListHeaderComponent={headerComponent}
       ListEmptyComponent={<ListState status={status} search={search} onRetry={onRefresh} />}
       refreshControl={refreshControl}
       ListFooterComponent={footerComponent}

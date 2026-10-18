@@ -15,6 +15,8 @@ import { useBottomInset } from '@/components/common/BottomInset'
 
 type FlatListType = FlatListProps<ListInfoItem>
 
+// 与资料库封面网格统一：左右内容间距 16、列间距 12
+const CONTENT_PADDING = scaleSizeW(16)
 // const MAX_WIDTH = scaleSizeW(110)
 const MIN_WIDTH = scaleSizeW(120)
 const GAP = scaleSizeW(12)
@@ -116,14 +118,14 @@ export default forwardRef<ListType, ListProps>(({ onRefresh, onLoadMore, onOpenD
   // console.log(Math.trunc(width * 0.125), itemWidth)
   // console.log(itemWidth, MIN_WIDTH, GAP, width)
   const rowInfo = useMemo(() => {
-    let w = width - GAP
-    let n = width / (MIN_WIDTH + GAP)
+    const available = Math.max(width - CONTENT_PADDING * 2, 0)
+    let n = Math.floor((available + GAP) / (MIN_WIDTH + GAP))
+    if (!Number.isFinite(n) || n < 2) n = 2
     if (n > 10) n = 10
-    let computedItemWidth = Math.floor(w / n)
-    const num = Math.max(Math.floor(width / computedItemWidth), 2)
+    // 列宽与列数、间距出自同一份计算，避免卡片被 content 的左右 pading 挤出屏幕
     return {
-      num,
-      width: (width - GAP) / num,
+      num: n,
+      width: available > 0 ? (available - GAP * (n - 1)) / n : 0,
     }
   }, [width])
   // console.log(rowNum)
@@ -157,8 +159,8 @@ export default forwardRef<ListType, ListProps>(({ onRefresh, onLoadMore, onOpenD
                 key={String(rowInfo.num)}
                 ref={flatListRef}
                 style={styles.list}
-                contentContainerStyle={[styles.listContent, { paddingBottom: bottomInset + 16 }]}
-                columnWrapperStyle={styles.row}
+                contentContainerStyle={[styles.listContent, { paddingHorizontal: CONTENT_PADDING, paddingBottom: bottomInset + 16 }]}
+                columnWrapperStyle={{ gap: GAP }}
                 numColumns={rowInfo.num}
                 data={list}
                 maxToRenderPerBatch={4}
@@ -217,10 +219,6 @@ const styles = createStyle({
   listContent: {
     paddingTop: 6,
     paddingBottom: 12,
-  },
-  row: {
-    justifyContent: 'space-evenly',
-    paddingHorizontal: 8,
   },
   footer: {
     textAlign: 'center',

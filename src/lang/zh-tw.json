@@ -252,6 +252,7 @@
   "play_list_loop": "重複播放清單",
   "play_list_order": "順序播放",
   "play_list_random": "隨機播放",
+  "playlist_shuffle_failed": "隨機播放失敗，請重試",
   "play_next": "下一曲",
   "play_prev": "上一曲",
   "play_single": "停用歌曲切換",

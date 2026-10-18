@@ -430,6 +430,12 @@ https://support.apple.com/guide/iphone/play-music-iph0138fb328/18.0/ios/18.0
 
 Phase 1–3 是基础结构里程碑；Phase 4–5 是竖屏主要页面里程碑；只有 Phase 6 和全局验收也完成，才称为“整体 Apple Music 风格改造完成”。不能在保留旧设置/横屏/色板的情况下提前宣称全局完成。
 
+各阶段的交接记录（改动文件、入口迁移、已执行/未验证项）：
+
+- Phase 1：`docs/apple-music-ui-phase1.md`
+- Phase 2、3：见对应提交说明
+- Phase 4：`docs/apple-music-ui-phase4.md`（代码已完成，缺真机验收，故 4A/4B 仍未勾选）
+
 滚动折叠大标题、原生背景模糊、交互式播放器展开/下滑关闭是后续增强项。若用户要求精确复刻某版本，应重新纳入必需范围，而非沿用本方案的适配完成定义。
 
 ## 10. 本次审查修正记录

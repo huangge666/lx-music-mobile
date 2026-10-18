@@ -4,13 +4,11 @@ import { createStyle } from '@/utils/tools'
 import { BorderRadius } from '@/theme'
 import { type ListInfoItem } from '@/store/songlist/state'
 import Text from '@/components/common/Text'
-import { scaleSizeW } from '@/utils/pixelRatio'
 import { NAV_SHEAR_NATIVE_IDS } from '@/config/constant'
 import { useTheme } from '@/store/theme/hook'
 import Image from '@/components/common/Image'
 import { Icon } from '@/components/common/Icon'
 
-const gap = scaleSizeW(10)
 export default memo(({ item, index, width, showSource, onPress }: {
   item: ListInfoItem
   index: number
@@ -19,7 +17,8 @@ export default memo(({ item, index, width, showSource, onPress }: {
   onPress: (item: ListInfoItem, index: number) => void
 }) => {
   const theme = useTheme()
-  const itemWidth = width - gap
+  // 列宽与列间距由列表统一计算，这里只按给定宽度渲染
+  const itemWidth = width
   const handlePress = () => {
     onPress(item, index)
   }
@@ -55,7 +54,6 @@ export default memo(({ item, index, width, showSource, onPress }: {
 
 const styles = createStyle({
   listItem: {
-    marginHorizontal: 5,
     marginBottom: 14,
   },
   listItemImg: {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 
 import listState from '@/store/list/state'
 import ListMenu, { type ListMenuType, type Position, type SelectInfo } from './ListMenu'
@@ -19,7 +19,7 @@ import ScrollTopBtn from '@/components/common/ScrollTopBtn'
 import RemoveUndo, { type RemoveUndoType } from './RemoveUndo'
 
 
-export default () => {
+export default ({ ListHeaderComponent }: { ListHeaderComponent?: ReactNode }) => {
   // const t = useI18n()
   const listMusicSearchRef = useRef<ListMusicSearchType>(null)
   const listRef = useRef<ListType>(null)
@@ -173,6 +173,7 @@ export default () => {
           onMuiltSelectMode={hancelMultiSelect}
           onSelectAll={syncSelectBar}
           onScroll={handleScroll}
+          ListHeaderComponent={ListHeaderComponent}
         />
         <ListMusicSearch
           ref={listMusicSearchRef}

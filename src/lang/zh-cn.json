@@ -252,6 +252,7 @@
   "play_list_loop": "列表循环播放",
   "play_list_order": "顺序播放",
   "play_list_random": "随机播放",
+  "playlist_shuffle_failed": "随机播放失败，请重试",
   "play_next": "下一曲",
   "play_prev": "上一曲",
   "play_single": "禁用歌曲切换",

@@ -114,8 +114,10 @@ export const getListPosition = async(id: string): Promise<number> => {
  * Legacy offsets only contain pixels, so they are migrated by the confirmed 54px design baseline.
  * When a previously recorded column count changes, there is no stable item index to recover; reset
  * only that music-list view and let the next scroll save the new layout.
+ * `resetWhenLayoutUnknown` is for views whose geometry was replaced outright (资料库的行列表 → 封面网格)：
+ * 没有布局记录时旧像素换算没有意义，只重置这一处视图，其他列表位置继续保留。
  */
-export const getMusicListPosition = async(id: string, rowHeight: number, rowNum: number): Promise<number> => {
+export const getMusicListPosition = async(id: string, rowHeight: number, rowNum: number, options?: { resetWhenLayoutUnknown?: boolean }): Promise<number> => {
   await Promise.all([initPosition(), initMusicListPositionLayout()])
   const currentRowNum = Math.max(1, rowNum)
   const previous = musicListPositionLayout!.positions[id]
@@ -123,12 +125,12 @@ export const getMusicListPosition = async(id: string, rowHeight: number, rowNum:
   let migratedPosition = position
 
   if (position > 0) {
-    if (previous && previous.rowNum > 0 && previous.rowNum != currentRowNum) {
+    if (!previous) {
+      migratedPosition = options?.resetWhenLayoutUnknown ? 0 : position * rowHeight / scaleSizeH(LEGACY_LIST_ITEM_HEIGHT)
+    } else if (previous.rowNum > 0 && previous.rowNum != currentRowNum) {
       migratedPosition = 0
     } else {
-      const previousRowHeight = previous && previous.rowHeight > 0
-        ? previous.rowHeight
-        : scaleSizeH(LEGACY_LIST_ITEM_HEIGHT)
+      const previousRowHeight = previous.rowHeight > 0 ? previous.rowHeight : scaleSizeH(LEGACY_LIST_ITEM_HEIGHT)
       migratedPosition = position * rowHeight / previousRowHeight
     }
   }

@@ -1,4 +1,4 @@
-import { addListMusics, removeListMusics, updateListMusicPosition, updateListMusics } from '@/core/list'
+import { addListMusics, getListMusics, removeListMusics, updateListMusicPosition, updateListMusics } from '@/core/list'
 import { playList, playListById, playNext } from '@/core/player/player'
 import { addTempPlayList } from '@/core/player/tempPlayList'
 import settingState from '@/store/setting/state'
@@ -6,6 +6,9 @@ import { similar, sortInsert, toOldMusicInfo } from '@/utils'
 import { confirmDialog, openUrl, shareMusic, toast } from '@/utils/tools'
 import { addDislikeInfo, hasDislike } from '@/core/dislikeList'
 import playerState from '@/store/player/state'
+import { updateSetting } from '@/core/common'
+import { MUSIC_TOGGLE_MODE } from '@/config/constant'
+import { getShuffleStartIndex } from '@/utils/shuffle'
 
 import type { SelectInfo } from './ListMenu'
 import { type Metadata } from '@/components/MetadataEditModal'
@@ -15,6 +18,21 @@ import { downloadMusicToLocal, isMusicDownloading } from '@/core/music/downloade
 
 export const handlePlay = (listId: SelectInfo['listId'], index: SelectInfo['index']) => {
   void playList(listId, index)
+}
+
+/**
+ * 真正切换到随机模式后再从随机位置开播。
+ * 只换图标、或者只把第一首随机出来之后继续顺序播，都不算随机播放，因此顺序是：
+ * 1. 先读出歌单校验是否为空（为空则不动当前队列和播放模式）
+ * 2. 切到 random 模式，让内核接管后续自动切歌
+ * 3. 用随机起点调用现有的 playList
+ */
+export const handleShufflePlay = async(listId: SelectInfo['listId']): Promise<boolean> => {
+  const list = await getListMusics(listId)
+  if (!list.length) return false
+  updateSetting({ 'player.togglePlayMethod': MUSIC_TOGGLE_MODE.random })
+  await playList(listId, getShuffleStartIndex(list.length))
+  return true
 }
 export const handlePlayLater = (listId: SelectInfo['listId'], musicInfo: SelectInfo['musicInfo'], selectedList: SelectInfo['selectedList'], onCancelSelect: () => void) => {
   if (selectedList.length) {
