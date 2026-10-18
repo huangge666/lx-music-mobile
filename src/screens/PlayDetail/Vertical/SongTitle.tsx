@@ -3,7 +3,7 @@ import { View, TouchableOpacity } from 'react-native'
 import Text from '@/components/common/Text'
 import { Icon } from '@/components/common/Icon'
 import { usePlayerMusicInfo } from '@/store/player/hook'
-import { useTheme } from '@/store/theme/hook'
+import { useI18n } from '@/lang'
 import { createStyle, toast } from '@/utils/tools'
 import { collectMusic, uncollectMusic } from '@/core/player/player'
 import { getListMusicSync } from '@/utils/listManage'
@@ -28,12 +28,14 @@ const checkIsLove = (musicId: string | null | undefined): boolean => {
  * Apple Music 风格标题行
  * — 左：粗体歌名 + 浅色歌手
  * — 右：半透明圆钮 收藏 + 更多（歌曲操作抽屉）
+ * — 收藏按钮已收藏时用心形实心填充，读屏同时给出选中态；无当前曲目时整行禁用
  */
 const SongTitle = () => {
-  const theme = useTheme()
+  const t = useI18n()
   const musicInfo = usePlayerMusicInfo()
   const moreMenuRef = useRef<MoreMenuType>(null)
   const [isLove, setIsLove] = useState(() => checkIsLove(musicInfo.id))
+  const hasTrack = !!musicInfo.id
 
   const syncLoveState = useCallback(() => {
     setIsLove(checkIsLove(musicInfo.id))
@@ -90,6 +92,7 @@ const SongTitle = () => {
           size={MacFontSize.title}
           color={Immersive.text}
           numberOfLines={1}
+          accessibilityLabel={musicInfo.name ? musicInfo.name : undefined}
         >
           {musicInfo.name || ''}
         </Text>
@@ -104,22 +107,31 @@ const SongTitle = () => {
       </View>
 
       <View style={styles.actions}>
-        <TouchableOpacity style={styles.circleBtn} activeOpacity={0.7} onPress={handleLove}>
-          {isLove ? (
-            <Icon
-              name="heart"
-              color={theme['c-primary']}
-              size={MacIconSize.md}
-            />
-          ) : (
-            <Icon
-              name="love"
-              color={Immersive.text}
-              size={MacIconSize.md}
-            />
-          )}
+        <TouchableOpacity
+          style={[styles.circleBtn, hasTrack ? null : styles.disabled]}
+          activeOpacity={0.7}
+          onPress={handleLove}
+          disabled={!hasTrack}
+          accessibilityRole="button"
+          accessibilityLabel={t('collect')}
+          accessibilityState={{ selected: isLove, disabled: !hasTrack }}
+        >
+          <Icon
+            name={isLove ? 'heart' : 'love'}
+            color={isLove ? Immersive.accent : Immersive.text}
+            fill={isLove ? Immersive.accent : 'none'}
+            size={MacIconSize.md}
+          />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.circleBtn} activeOpacity={0.7} onPress={handleMore}>
+        <TouchableOpacity
+          style={[styles.circleBtn, hasTrack ? null : styles.disabled]}
+          activeOpacity={0.7}
+          onPress={handleMore}
+          disabled={!hasTrack}
+          accessibilityRole="button"
+          accessibilityLabel={t('play_detail_action_more')}
+          accessibilityState={{ disabled: !hasTrack }}
+        >
           <Icon name="dots-vertical" color={Immersive.text} size={MacIconSize.md} />
         </TouchableOpacity>
       </View>
@@ -171,6 +183,10 @@ const styles = createStyle({
     borderColor: 'rgba(255, 255, 255, 0.14)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  // 无当前曲目：置灰但仍占位
+  disabled: {
+    opacity: 0.35,
   },
 })
 

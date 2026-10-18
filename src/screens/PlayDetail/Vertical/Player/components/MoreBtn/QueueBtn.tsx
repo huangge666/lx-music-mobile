@@ -1,5 +1,6 @@
 import { useRef } from 'react'
 import Btn from './Btn'
+import { useI18n } from '@/lang'
 import PlayQueuePopup, { type PlayQueuePopupType } from '../../../../components/PlayQueuePopup'
 
 
@@ -8,11 +9,12 @@ import PlayQueuePopup, { type PlayQueuePopupType } from '../../../../components/
  * 从底部弹出抽屉查看并切换当前播放列表
  */
 export default () => {
+  const t = useI18n()
   const popupRef = useRef<PlayQueuePopupType>(null)
 
   return (
     <>
-      <Btn icon="playlist" onPress={() => { popupRef.current?.show() }} />
+      <Btn icon="playlist" label={t('play_detail_queue')} onPress={() => { popupRef.current?.show() }} />
       <PlayQueuePopup ref={popupRef} />
     </>
   )

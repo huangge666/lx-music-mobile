@@ -5,6 +5,8 @@ import { type Line, useLrcPlay, useLrcSet } from '@/plugins/lyric'
 import { createStyle } from '@/utils/tools'
 // import { useComponentIds } from '@/store/common/hook'
 import { useSettingValue } from '@/store/setting/hook'
+import { useI18n } from '@/lang'
+import { useReduceMotion } from '@/utils/hooks/useReduceMotion'
 import { AnimatedColorText } from '@/components/common/Text'
 import { setSpText } from '@/utils/pixelRatio'
 import playerState from '@/store/player/state'
@@ -123,6 +125,8 @@ const LrcLine = memo(({ line, lineNum, activeLine, onLayout }: LineProps) => {
 const wait = async() => new Promise(resolve => setTimeout(resolve, 100))
 
 export default ({ onPress }: { onPress?: () => void }) => {
+  const t = useI18n()
+  const reduceMotion = useReduceMotion()
   const lyricLines = useLrcSet()
   const { line } = useLrcPlay()
   const flatListRef = useRef<FlatList>(null)
@@ -153,6 +157,21 @@ export default ({ onPress }: { onPress?: () => void }) => {
     if (index < 0) return
     if (flatListRef.current) {
       // console.log('handleScrollToActive', index)
+      // 系统开启「减少动态效果」时不做缓动滚动，直接定位到当前行
+      if (reduceMotion) {
+        if (scrollCancelRef.current) {
+          scrollCancelRef.current()
+          scrollCancelRef.current = null
+        }
+        try {
+          flatListRef.current.scrollToIndex({
+            index,
+            animated: false,
+            viewPosition: 0.42,
+          })
+        } catch {}
+        return
+      }
       if (scrollInfoRef.current && lineRef.current.line - lineRef.current.prevLine == 1) {
         let offset = listLayoutInfoRef.current.spaceHeight
         for (let line = 0; line < index; line++) {
@@ -326,7 +345,7 @@ export default ({ onPress }: { onPress?: () => void }) => {
               onPress={onPress}
               activeOpacity={0.7}
               accessibilityRole="button"
-              accessibilityLabel="返回封面"
+              accessibilityLabel={t('player_show_cover')}
             >
               <View style={styles.tapBackHit} />
             </TouchableOpacity>

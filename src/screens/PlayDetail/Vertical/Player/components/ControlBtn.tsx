@@ -2,6 +2,7 @@ import { TouchableOpacity, View } from 'react-native'
 import { Icon } from '@/components/common/Icon'
 import { playNext, playPrev, togglePlay } from '@/core/player/player'
 import { useIsPlay } from '@/store/player/hook'
+import { useI18n } from '@/lang'
 import { createStyle } from '@/utils/tools'
 import { useWindowSize } from '@/utils/hooks'
 import { Immersive, MacSpacing } from '../../../macOS'
@@ -9,8 +10,11 @@ import { Immersive, MacSpacing } from '../../../macOS'
 
 /**
  * 主控制 — 无卡片、无圆形色底，纯白图标浮层
+ * — 尺寸按屏宽自适应并夹在 58~72 之间，小屏与最大应用字号下都不会挤出控制区
+ * — 全部按钮提供本地化读屏文字
  */
 const PrevBtn = ({ size }: { size: number }) => {
+  const t = useI18n()
   const handlePlayPrev = () => {
     void playPrev()
   }
@@ -20,6 +24,8 @@ const PrevBtn = ({ size }: { size: number }) => {
       activeOpacity={0.55}
       onPress={handlePlayPrev}
       hitSlop={10}
+      accessibilityRole="button"
+      accessibilityLabel={t('play_detail_action_prev')}
     >
       <Icon name="prevMusic" color={Immersive.text} rawSize={size * 0.5} />
     </TouchableOpacity>
@@ -27,6 +33,7 @@ const PrevBtn = ({ size }: { size: number }) => {
 }
 
 const NextBtn = ({ size }: { size: number }) => {
+  const t = useI18n()
   const handlePlayNext = () => {
     void playNext()
   }
@@ -36,6 +43,8 @@ const NextBtn = ({ size }: { size: number }) => {
       activeOpacity={0.55}
       onPress={handlePlayNext}
       hitSlop={10}
+      accessibilityRole="button"
+      accessibilityLabel={t('play_detail_action_next')}
     >
       <Icon name="nextMusic" color={Immersive.text} rawSize={size * 0.5} />
     </TouchableOpacity>
@@ -44,6 +53,7 @@ const NextBtn = ({ size }: { size: number }) => {
 
 const TogglePlayBtn = ({ size }: { size: number }) => {
   const isPlay = useIsPlay()
+  const t = useI18n()
   return (
     <TouchableOpacity
       style={{
@@ -54,6 +64,9 @@ const TogglePlayBtn = ({ size }: { size: number }) => {
       activeOpacity={0.7}
       onPress={togglePlay}
       hitSlop={10}
+      accessibilityRole="button"
+      accessibilityLabel={t(isPlay ? 'pause' : 'play')}
+      accessibilityState={{ selected: isPlay }}
     >
       <Icon
         name={isPlay ? 'pause' : 'play'}

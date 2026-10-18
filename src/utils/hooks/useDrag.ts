@@ -11,10 +11,13 @@ export const useDrag = (onSetProgress: (progress: number) => void, onDragState: 
   })
 
   const onDragStart = useCallback((offsetX: number, locationX: number) => {
+    // 容器还没布局出宽度时，任何比例计算都会得到 Infinity/NaN，直接忽略这次手势
+    if (!(info.current.progressWidth > 0)) return
     info.current.isDraging = true
     info.current.dragStartX = offsetX
 
     let val = locationX / info.current.progressWidth
+    if (!Number.isFinite(val)) val = 0
     if (val < 0) val = 0
     if (val > 1) val = 1
 
@@ -29,9 +32,11 @@ export const useDrag = (onSetProgress: (progress: number) => void, onDragState: 
   }, [onDragState, onSetProgress])
   const onDrag = useCallback((offsetX: number) => {
     if (!info.current.isDraging) return
+    if (!(info.current.progressWidth > 0)) return
     // dragging.value ||= true
 
     let progress = info.current.dragStartProgress + (offsetX - info.current.dragStartX) / info.current.progressWidth
+    if (!Number.isFinite(progress)) return
     if (progress > 1) progress = 1
     else if (progress < 0) progress = 0
     setDragProgress(info.current.dragProgress = progress)

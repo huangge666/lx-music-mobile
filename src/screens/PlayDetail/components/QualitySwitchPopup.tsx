@@ -199,6 +199,9 @@ const QualitySwitchPopup = forwardRef<QualitySwitchPopupType>((_, ref) => {
                       onPress={() => { handleChange(q) }}
                       activeOpacity={0.75}
                       disabled={disabled}
+                      accessibilityRole="button"
+                      accessibilityLabel={getLabel(q)}
+                      accessibilityState={{ selected: isActive, disabled }}
                     >
                       <Text style={[isActive ? styles.itemActive : styles.itemText, disabled && styles.itemDisabled]}>{getLabel(q)}</Text>
                       {isSwitching

@@ -594,3 +594,75 @@ test('locale keys: playlist shuffle failure message exists in all supported lang
   }
 })
 
+/* ---- Phase 5: 正在播放页封面几何、进度条数值与读屏文案 ---- */
+
+function coverApi() {
+  return loadModule('src/screens/PlayDetail/Vertical/coverSize.ts', {})
+}
+
+test('now playing cover: the design ratio stays the upper bound so the first frame has no jump', () => {
+  const api = coverApi()
+  // 412x915 手机、状态栏 24、页头 56：宽 82% 小于高 42%，取宽
+  const preferred = api.getPreferredCoverSize(412, 915, 24, 56)
+  assert.equal(preferred, Math.round(412 * 0.82 * 1000) / 1000)
+  // 实测空间充裕时仍然沿用设计比例值，不会在转场后突然放大
+  assert.equal(api.fitCoverSize(preferred, 412, 535, 24, 12), Math.round(preferred))
+  // 平板等超大屏有上限
+  assert.ok(api.getPreferredCoverSize(1600, 2400, 24, 56) <= api.COVER_MAX_SIZE)
+})
+
+test('now playing cover: tight space from small screens or large fonts shrinks the artwork', () => {
+  const api = coverApi()
+  const preferred = api.getPreferredCoverSize(412, 915, 24, 56)
+  // 应用大字号把控制区撑高，只剩 240 的可用高度：封面跟真实空间收缩，控制按钮不会被挤出屏幕
+  const fitted = api.fitCoverSize(preferred, 412, 240, 24, 12)
+  assert.equal(fitted, 240 - 12 * 2)
+  assert.ok(fitted < preferred)
+  // 窄屏同理
+  assert.equal(api.fitCoverSize(preferred, 200, 535, 24, 12), 200 - 24 * 2)
+  // 任何输入都不能超过实测可用空间
+  for (const [w, h] of [[320, 200], [411, 480], [900, 300]]) {
+    const size = api.fitCoverSize(preferred, w, h, 24, 12)
+    assert.ok(size <= w - 48 && size <= h - 24, `overflow at ${w}x${h}`)
+  }
+})
+
+test('now playing cover: unmeasured or invalid boxes fall back instead of collapsing to zero', () => {
+  const api = coverApi()
+  const preferred = api.getPreferredCoverSize(360, 720, 24, 56)
+  assert.equal(api.fitCoverSize(preferred, 0, 0, 24, 12), preferred)
+  assert.equal(api.fitCoverSize(preferred, Number.NaN, 500, 24, 12), preferred)
+  // 空间连留白都放不下时返回 0，由调用方画同尺寸占位而不是溢出
+  assert.equal(api.fitCoverSize(preferred, 20, 20, 24, 12), 0)
+  // 圆角随边长等比并封顶
+  assert.equal(api.getCoverRadius(338), 26)
+  assert.equal(api.getCoverRadius(100), 9)
+  assert.equal(api.getCoverRadius(0), 0)
+})
+
+test('progress values: NaN and out-of-range durations never reach the bar or the time text', () => {
+  const api = loadModule('src/utils/playTime.ts', {})
+  assert.equal(api.safeProgressRatio(Number.NaN), 0)
+  assert.equal(api.safeProgressRatio(Number.POSITIVE_INFINITY), 0)
+  assert.equal(api.safeProgressRatio(-0.5), 0)
+  assert.equal(api.safeProgressRatio(1.4), 1)
+  assert.equal(api.safeProgressRatio(0.25), 0.25)
+  assert.equal(api.safePlayTime(Number.NaN), 0)
+  assert.equal(api.safePlayTime(-12), 0)
+  assert.equal(api.safePlayTime(183), 183)
+  // 剩余时长：已播超过总时长时夹到 0，未知时长时也是 0
+  assert.equal(api.getRemainTime(210, 30), 180)
+  assert.equal(api.getRemainTime(210, 300), 0)
+  assert.equal(api.getRemainTime(0, 30), 0)
+  assert.equal(api.getRemainTime(Number.NaN, Number.NaN), 0)
+})
+
+test('locale keys: now playing control labels exist in all supported languages', () => {
+  const languages = ['zh-cn', 'zh-tw', 'en-us'].map(language => JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'src/lang', `${language}.json`), 'utf8')))
+  for (const language of languages) {
+    for (const key of ['play_detail_action_prev', 'play_detail_action_next', 'play_detail_action_download', 'play_detail_action_comment', 'play_detail_action_more']) {
+      assert.ok(typeof language[key] == 'string' && language[key].length, key)
+    }
+  }
+})
+

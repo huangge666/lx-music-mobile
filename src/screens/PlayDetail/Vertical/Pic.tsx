@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { View, TouchableOpacity, Platform } from 'react-native'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { View, TouchableOpacity, Platform, type LayoutChangeEvent } from 'react-native'
 import { createStyle } from '@/utils/tools'
 import { usePlayerMusicInfo } from '@/store/player/hook'
 import { useWindowSize } from '@/utils/hooks'
@@ -7,15 +7,19 @@ import { NAV_SHEAR_NATIVE_IDS } from '@/config/constant'
 import { useNavigationComponentDidAppear } from '@/navigation'
 import { HEADER_HEIGHT } from './components/Header'
 import Image from '@/components/common/Image'
+import { Icon } from '@/components/common/Icon'
+import { useI18n } from '@/lang'
 import { useStatusbarHeight } from '@/store/common/hook'
 import commonState from '@/store/common/state'
-import { MacSpacing } from '../macOS'
+import { Immersive, MacSpacing } from '../macOS'
+import { fitCoverSize, getCoverRadius, getPreferredCoverSize } from './coverSize'
 
 
 /**
  * Apple Music 风格大封面
- * — 屏宽约 82%，大圆角矩形
- * — 深色长投影营造立体悬浮感
+ * — 尺寸由页面实测可用空间决定（设计比例只作上限），小屏/大字号不会挤出控制区
+ * — 大圆角矩形 + 深色长投影营造立体悬浮感
+ * — 无封面或封面加载失败时用同尺寸占位，保持共享元素的落点稳定
  * — 点击切换到歌词页（必填 onPress）
  */
 export default ({ componentId, onPress }: {
@@ -23,64 +27,100 @@ export default ({ componentId, onPress }: {
   /** 点击封面 → 切换歌词页 */
   onPress: () => void
 }) => {
+  const t = useI18n()
   const musicInfo = usePlayerMusicInfo()
   const { width: winWidth, height: winHeight } = useWindowSize()
   const statusBarHeight = useStatusbarHeight()
 
   const [animated, setAnimated] = useState(!!commonState.componentIds.playDetail)
   const [pic, setPic] = useState(musicInfo.pic)
+  // 封面加载失败后不再继续等图，直接落到占位，避免留一块空白
+  const [failed, setFailed] = useState(false)
+  // 封面容器实测尺寸：flex:1 的容器由剩余空间决定，不会反过来被封面撑大
+  const [box, setBox] = useState<{ width: number, height: number } | null>(null)
+
   useEffect(() => {
     if (animated) setPic(musicInfo.pic)
   }, [musicInfo.pic, animated])
+
+  useEffect(() => {
+    setFailed(false)
+  }, [pic])
 
   useNavigationComponentDidAppear(componentId, () => {
     setAnimated(true)
   })
 
-  const { imgStyle, shadowStyle } = useMemo(() => {
-    // 大封面：宽 82%，高度上限 42% 可用区
-    const maxByWidth = winWidth * 0.82
-    const maxByHeight = (winHeight - statusBarHeight - HEADER_HEIGHT) * 0.42
-    const imgWidth = Math.min(maxByWidth, maxByHeight)
-    // 更大圆角 — Apple Music 质感
-    const radius = Math.min(imgWidth * 0.1, 28)
-    return {
-      imgStyle: {
-        width: imgWidth,
-        height: imgWidth,
-        borderRadius: radius,
+  const handleLayout = useCallback(({ nativeEvent }: LayoutChangeEvent) => {
+    const { width, height } = nativeEvent.layout
+    setBox(prev => {
+      if (prev && Math.abs(prev.width - width) < 1 && Math.abs(prev.height - height) < 1) return prev
+      return { width, height }
+    })
+  }, [])
+
+  const preferredSize = useMemo(
+    () => getPreferredCoverSize(winWidth, winHeight, statusBarHeight, HEADER_HEIGHT),
+    [statusBarHeight, winHeight, winWidth],
+  )
+  // 首帧（含共享元素转场捕获）先用设计基准值，实测后再按可用空间收敛
+  const size = box
+    ? fitCoverSize(preferredSize, box.width, box.height, MacSpacing.xxl, MacSpacing.md)
+    : preferredSize
+  const radius = getCoverRadius(size)
+
+  const shadowStyle = useMemo(() => {
+    return Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: Math.round(size * 0.06) },
+        shadowOpacity: 0.45,
+        shadowRadius: Math.max(24, Math.round(size * 0.1)),
       },
-      shadowStyle: Platform.select({
-        ios: {
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 22 },
-          shadowOpacity: 0.45,
-          shadowRadius: 36,
-        },
-        android: {
-          elevation: animated ? 18 : 0,
-          // Android elevation 阴影色
-          shadowColor: '#000',
-        },
-        default: {},
-      }) as object,
-    }
-  }, [animated, statusBarHeight, winHeight, winWidth])
+      android: {
+        elevation: animated && size > 0 ? 18 : 0,
+        // Android elevation 阴影色
+        shadowColor: '#000',
+      },
+      default: {},
+    }) as object
+  }, [animated, size])
+
+  const coverStyle = useMemo(() => ({ width: size, height: size, borderRadius: radius }), [radius, size])
+  const showCover = !failed && !!pic && size > 0
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} onLayout={handleLayout}>
       <TouchableOpacity
         activeOpacity={0.9}
         onPress={onPress}
+        disabled={size <= 0}
         accessibilityRole="button"
-        accessibilityLabel="查看歌词"
-        style={[styles.shadowWrap, shadowStyle]}
+        accessibilityLabel={t('player_show_lyrics')}
+        style={[styles.shadowWrap, { borderRadius: radius }, shadowStyle]}
       >
-        <Image
-          url={pic}
-          nativeID={NAV_SHEAR_NATIVE_IDS.playDetail_pic}
-          style={imgStyle}
-        />
+        {showCover
+          ? (
+              <Image
+                url={pic}
+                nativeID={NAV_SHEAR_NATIVE_IDS.playDetail_pic}
+                style={coverStyle}
+                onError={() => { setFailed(true) }}
+              />
+            )
+          : null}
+        {/* 占位与真实封面同尺寸：无封面/坏图时不改变控制区位置，也不会留下空洞 */}
+        {showCover
+          ? null
+          : (
+              <View style={[styles.placeholder, coverStyle]}>
+                <Icon
+                  name="music"
+                  color={Immersive.textTertiary}
+                  rawSize={Math.max(24, Math.round(size * 0.26))}
+                />
+              </View>
+            )}
       </TouchableOpacity>
     </View>
   )
@@ -88,16 +128,20 @@ export default ({ componentId, onPress }: {
 
 const styles = createStyle({
   container: {
-    flexGrow: 0,
-    flexShrink: 0,
+    flex: 1,
+    width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: MacSpacing.sm,
-    width: '100%',
   },
   shadowWrap: {
+    // iOS 阴影要靠自身背景才有形状；封面本身是贴图，这里只兜一层透明底
     backgroundColor: 'transparent',
-    // iOS 阴影需要背景不透明才能生效；用近黑极透明垫底
-    borderRadius: 28,
+  },
+  placeholder: {
+    backgroundColor: Immersive.glass,
+    borderWidth: 0.5,
+    borderColor: Immersive.glassBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 })

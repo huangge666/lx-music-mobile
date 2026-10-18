@@ -1,13 +1,15 @@
 import { memo, useMemo, useRef } from 'react'
 import { View, TouchableOpacity } from 'react-native'
 
-import Progress from '@/components/player/ProgressBar'
+import Progress, { PROGRESS_HEIGHT } from '@/components/player/ProgressBar'
 import { usePlayerMusicInfo, useProgress, useStatusText } from '@/store/player/hook'
 import { createStyle } from '@/utils/tools'
 import { formatPlayTime2 } from '@/utils'
+import { getRemainTime, safePlayTime } from '@/utils/playTime'
 import Text from '@/components/common/Text'
 import { Icon } from '@/components/common/Icon'
 import { useBufferProgress } from '@/plugins/player'
+import { useSettingValue } from '@/store/setting/hook'
 import { useI18n } from '@/lang'
 import QualitySwitchPopup, { useCurrentQuality, type QualitySwitchPopupType } from '../../../components/QualitySwitchPopup'
 import {
@@ -19,66 +21,48 @@ import {
 
 /**
  * 进度区 — 无卡片背景
- * 左已播 / 中音质纯文字 / 右剩余 -m:ss
+ * 左已播 / 中状态或音质 / 右剩余 -m:ss
  *
- * 加载状态：歌曲未加载成功时（maxPlayTime === 0），
- * 显示当前加载状态文字（statusText），替代进度条
+ * 约定：
+ * — 总时长未知（还没取到 duration）时不画进度条，用状态文字占同一块高度，避免出现 NaN:NaN；
+ * — 设置里关闭「允许拖动进度条」时进度条只展示、不挂手势，也不画拖拽手柄；
+ * — 播放中出现的缓冲/取链/失败状态显示在中间槽位，不挤占进度条，也不改变布局高度。
  */
-const PlayTimeCurrent = ({ timeStr }: { timeStr: string }) => {
+const PlayTime = memo(({ timeStr }: { timeStr: string }) => {
   return (
-    <Text color={Immersive.textSecondary} size={MacFontSize.caption} style={styles.timeText}>
+    <Text
+      color={Immersive.textSecondary}
+      size={MacFontSize.caption}
+      numberOfLines={1}
+      style={styles.timeText}
+    >
       {timeStr}
-    </Text>
-  )
-}
-
-const PlayTimeRemain = memo(({ remainStr }: { remainStr: string }) => {
-  return (
-    <Text color={Immersive.textSecondary} size={MacFontSize.caption} style={styles.timeText}>
-      {remainStr}
     </Text>
   )
 })
 
-/**
- * 加载状态指示器
- * 在歌曲未加载成功时显示当前加载进度文字
- */
-const LoadingStatus = ({ statusText }: { statusText: string }) => {
-  return (
-    <View style={styles.loadingContainer}>
-      <Text
-        color={Immersive.textSecondary}
-        size={MacFontSize.footnote}
-        numberOfLines={1}
-        style={styles.loadingText}
-      >
-        {statusText || '...'}
-      </Text>
-    </View>
-  )
-}
-
 export default () => {
-  const { nowPlayTimeStr, progress, maxPlayTime, nowPlayTime } = useProgress()
+  const { progress, maxPlayTime, nowPlayTime } = useProgress()
   const playerMusicInfo = usePlayerMusicInfo()
   const buffered = useBufferProgress()
   const statusText = useStatusText()
+  const allowSeek = useSettingValue('common.allowProgressBarSeek')
   const t = useI18n()
   // 音质切换弹窗引用
   const qualityPopupRef = useRef<QualitySwitchPopupType>(null)
 
+  const hasTrack = !!playerMusicInfo.id
   // 歌曲是否已加载成功（有总时长说明音频已就绪）
-  const isLoaded = maxPlayTime > 0
+  const duration = safePlayTime(maxPlayTime)
+  const isLoaded = duration > 0
+  const played = Math.min(safePlayTime(nowPlayTime), duration)
 
-  const remainStr = useMemo(() => {
-    const remain = Math.max(0, maxPlayTime - nowPlayTime)
-    return `-${formatPlayTime2(remain)}`
-  }, [maxPlayTime, nowPlayTime])
+  const playedStr = useMemo(() => formatPlayTime2(played), [played])
+  const remainStr = useMemo(() => `-${formatPlayTime2(getRemainTime(duration, played))}`, [duration, played])
 
   const quality = useCurrentQuality()
   const qLabel = useMemo(() => {
-    if (!quality) return ''
+    if (!hasTrack || !quality) return ''
     switch (quality) {
       case 'flac24bit':
         return t('quality_lossless_24bit')
@@ -94,51 +78,78 @@ export default () => {
       default:
         return String(quality)
     }
-  }, [quality, t])
+  }, [hasTrack, quality, t])
+
+  // 没有当前曲目、也没有可展示状态时整块收起，避免留下空进度条
+  if (!hasTrack && !statusText) return null
 
   return (
     <View style={styles.container}>
-      {/* 加载状态只替换进度条，音质入口和弹窗始终保留。 */}
-      {!isLoaded && playerMusicInfo.id
-        ? <LoadingStatus statusText={statusText} />
-        : (
-            <View style={styles.progressRow}>
+      <View style={[styles.trackRow, { height: PROGRESS_HEIGHT }]}>
+        {isLoaded
+          ? (
               <Progress
                 progress={progress}
-                duration={maxPlayTime}
+                duration={duration}
                 buffered={buffered}
+                seekable={allowSeek}
                 playedColor={Immersive.fill}
                 bufferedColor="rgba(255,255,255,0.16)"
                 dotColor={Immersive.fill}
                 trackColor={Immersive.track}
               />
-            </View>
-          )}
+            )
+          : (
+              <View style={styles.loadingContainer}>
+                <Text
+                  color={Immersive.textSecondary}
+                  size={MacFontSize.footnote}
+                  numberOfLines={1}
+                  accessibilityLabel={statusText || t('player__loading')}
+                  style={styles.loadingText}
+                >
+                  {statusText || t('player__loading')}
+                </Text>
+              </View>
+            )}
+      </View>
 
       <View style={styles.info}>
-        <PlayTimeCurrent timeStr={nowPlayTimeStr} />
+        <PlayTime timeStr={playedStr} />
 
         <View style={styles.status}>
-          {qLabel
+          {/* 中间槽位只显示一条信息：已加载时优先显示播放状态（缓冲/取链/失败），否则显示音质入口 */}
+          {isLoaded && statusText
             ? (
-                // 点击音质标签打开音质切换弹窗
-                <TouchableOpacity
-                  style={styles.qualityBtn}
-                  onPress={() => { qualityPopupRef.current?.show() }}
-                  activeOpacity={0.7}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('player_change_quality', { quality: qLabel })}
+                <Text
+                  color={Immersive.textSecondary}
+                  size={MacFontSize.caption}
+                  numberOfLines={1}
+                  accessibilityLabel={statusText}
+                  style={styles.statusText}
                 >
-                  <Text color={Immersive.textSecondary} size={MacFontSize.caption} style={styles.quality}>
-                    {qLabel}
-                  </Text>
-                  <Icon name="chevron-down" size={12} color={Immersive.textSecondary} style={{ marginLeft: 4 }} />
-                </TouchableOpacity>
+                  {statusText}
+                </Text>
               )
-            : null}
+            : qLabel
+              ? (
+                  <TouchableOpacity
+                    style={styles.qualityBtn}
+                    onPress={() => { qualityPopupRef.current?.show() }}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('player_change_quality', { quality: qLabel })}
+                  >
+                    <Text color={Immersive.textSecondary} size={MacFontSize.caption} style={styles.quality}>
+                      {qLabel}
+                    </Text>
+                    <Icon name="chevron-down" size={12} color={Immersive.textSecondary} style={{ marginLeft: 4 }} />
+                  </TouchableOpacity>
+                )
+              : null}
         </View>
 
-        <PlayTimeRemain remainStr={remainStr} />
+        <PlayTime timeStr={remainStr} />
       </View>
 
       <QualitySwitchPopup ref={qualityPopupRef} />
@@ -153,10 +164,10 @@ const styles = createStyle({
     flexDirection: 'column',
     backgroundColor: 'transparent',
   },
-  progressRow: {
+  // 进度条与加载态共用同一高度（高度用实测缩放值内联给出，避免再被 createStyle 缩放一次）
+  trackRow: {
     width: '100%',
-    paddingTop: 0,
-    paddingBottom: 0,
+    justifyContent: 'center',
   },
   info: {
     flexDirection: 'row',
@@ -169,6 +180,10 @@ const styles = createStyle({
     flexShrink: 1,
     paddingHorizontal: MacSpacing.sm,
     alignItems: 'center',
+  },
+  statusText: {
+    letterSpacing: 0.2,
+    opacity: 0.9,
   },
   // 音质点击区域，扩大热区便于触控
   qualityBtn: {
@@ -194,7 +209,6 @@ const styles = createStyle({
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: MacSpacing.sm,
   },
   loadingText: {
     textAlign: 'center',
