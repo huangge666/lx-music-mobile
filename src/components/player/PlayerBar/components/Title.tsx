@@ -24,7 +24,7 @@ const TIME_FONT_SIZE = 10
  * — 标题区只负责"歌名 / 歌手 / 时长"，进度条单独在 PlayInfo 中
  * — 时长跟随播放进度实时更新（仅小播放栏展示）
  */
-export default ({ isHome }: { isHome: boolean }) => {
+export default ({ isHome, componentId }: { isHome: boolean, componentId?: string }) => {
   const musicInfo = usePlayerMusicInfo()
   const downloadFileName = useSettingValue('download.fileName')
   const theme = useTheme()
@@ -37,7 +37,9 @@ export default ({ isHome }: { isHome: boolean }) => {
 
   const handlePress = () => {
     if (!musicInfo.id) return
-    navigations.pushPlayDetailScreen(commonState.componentIds.home!)
+    const targetComponentId = componentId ?? commonState.componentIds.home
+    if (!targetComponentId) return
+    navigations.pushPlayDetailScreen(targetComponentId)
   }
 
   const handleLongPress = () => {

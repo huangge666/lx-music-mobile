@@ -1,9 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { View } from 'react-native'
 import Content from './Content'
 import DrawerNav from './DrawerNav'
-import PlayerBar from '@/components/player/PlayerBar'
-import BottomBar from '../components/BottomBar'
+import HomeDock from '../components/HomeDock'
 import DrawerLayoutFixed, { type DrawerLayoutFixedType } from '@/components/common/DrawerLayoutFixed'
 import { COMPONENT_IDS } from '@/config/constant'
 import { useSettingValue } from '@/store/setting/hook'
@@ -17,8 +15,7 @@ export default () => {
   const navActiveId = useNavActiveId()
   const isDownloadPage = navActiveId == 'nav_download'
   const isSettingPage = navActiveId == 'nav_setting'
-  // 排行榜是浏览的覆盖页：隐藏主标签栏，但保留迷你播放器，列表按实际 Dock 高度避让
-  const isLeaderboardPage = navActiveId == 'nav_top'
+  // 下载和设置是覆盖页，不显示首页 Dock；排行榜保留迷你播放器但隐藏主标签栏。
   const showDock = !isDownloadPage && !isSettingPage
 
   useEffect(() => {
@@ -36,8 +33,7 @@ export default () => {
     }
   }, [])
 
-  // The drawer owns the complete vertical screen so its native panel also covers
-  // the mini player and bottom tab bar instead of stopping at the content boundary.
+  // 抽屉覆盖完整竖屏；Dock 的实测高度同时作为内容列表的底部避让值。
   return (
     <DrawerLayoutFixed
       ref={drawer}
@@ -47,24 +43,10 @@ export default () => {
     >
       <BottomInsetContext.Provider value={showDock ? dockHeight : 0}>
         <Content />
+        {showDock
+          ? <HomeDock onLayout={({ nativeEvent }) => { setDockHeight(nativeEvent.layout.height) }} />
+          : null}
       </BottomInsetContext.Provider>
-      {showDock
-        ? (
-            <View style={styles.dock} pointerEvents="box-none" onLayout={({ nativeEvent }) => { setDockHeight(nativeEvent.layout.height) }}>
-              <PlayerBar isHome floating />
-              {!isLeaderboardPage ? <BottomBar floating /> : null}
-            </View>
-          )
-        : null}
     </DrawerLayoutFixed>
   )
-}
-
-const styles = {
-  dock: {
-    position: 'absolute' as const,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
 }

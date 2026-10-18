@@ -9,33 +9,53 @@ import ControlBtn from './components/ControlBtn'
 import { createStyle } from '@/utils/tools'
 import { useSettingValue } from '@/store/setting/hook'
 import { useNavActiveId } from '@/store/common/hook'
+import commonState from '@/store/common/state'
 import GlassSurface from '@/components/common/GlassSurface'
+
+interface PlayerBarProps {
+  isHome?: boolean
+  floating?: boolean
+  /** 由 HomeDock 绘制外层材质时使用，播放器只保留内容布局。 */
+  embedded?: boolean
+  componentId?: string
+}
 
 /**
  * 迷你播放器。
- * 首页竖屏是悬浮胶囊，其他页面仍贴在内容底部，避免详情页被左右留白截断。
+ * 首页组合 Dock 使用 embedded 模式；独立详情和横屏仍保留自己的表面与布局。
  */
-export default memo(({ isHome = false, floating = false }: { isHome?: boolean, floating?: boolean }) => {
+export default memo(({ isHome = false, floating = false, embedded = false, componentId }: PlayerBarProps) => {
   const { keyboardShown } = useKeyboard()
   const autoHidePlayBar = useSettingValue('common.autoHidePlayBar')
   const navActiveId = useNavActiveId()
+  const targetComponentId = componentId ?? commonState.componentIds.home
 
-  const playerComponent = useMemo(() => (
-    <View style={floating ? styles.floatWrap : null}>
-      <GlassSurface style={floating ? styles.floating : styles.docked}>
+  const playerComponent = useMemo(() => {
+    const content = (
+      <View style={[styles.content, embedded ? styles.embedded : null]}>
         <View style={styles.left}>
-          <Pic isHome={isHome} />
+          <Pic isHome={isHome} componentId={targetComponentId} />
         </View>
         <View style={styles.center}>
-          <Title isHome={isHome} />
+          <Title isHome={isHome} componentId={targetComponentId} />
           <PlayInfo isHome={isHome} />
         </View>
         <View style={styles.right}>
           <ControlBtn />
         </View>
-      </GlassSurface>
-    </View>
-  ), [floating, isHome])
+      </View>
+    )
+
+    if (embedded) return content
+
+    return (
+      <View style={floating ? styles.floatWrap : null}>
+        <GlassSurface style={floating ? styles.floating : styles.docked}>
+          {content}
+        </GlassSurface>
+      </View>
+    )
+  }, [embedded, floating, isHome, targetComponentId])
 
   if (isHome && navActiveId == 'nav_setting') return null
   return autoHidePlayBar && keyboardShown ? null : playerComponent
@@ -69,6 +89,16 @@ const styles = createStyle({
     borderTopWidth: 0.5,
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  content: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  embedded: {
+    minHeight: 64,
+    paddingVertical: 6,
+    paddingHorizontal: 16,
   },
   left: {
     flexGrow: 0,

@@ -21,11 +21,13 @@ const styles = StyleSheet.create({
   },
 })
 
-export default ({ isHome }: { isHome: boolean }) => {
+export default ({ isHome, componentId }: { isHome: boolean, componentId?: string }) => {
   const musicInfo = usePlayerMusicInfo()
   const handlePress = () => {
     if (!musicInfo.id) return
-    navigations.pushPlayDetailScreen(commonState.componentIds.home!)
+    const targetComponentId = componentId ?? commonState.componentIds.home
+    if (!targetComponentId) return
+    navigations.pushPlayDetailScreen(targetComponentId)
   }
 
   const handleLongPress = () => {

@@ -31,27 +31,33 @@ export default () => {
 
   useEffect(() => {
     void getSearchSetting().then(info => {
-      // info.type = 'music'
+      const sourceList = info.type == 'music' ? searchMusicState.sources : searchSonglistState.sources
+      const source = sourceList.includes(info.source)
+        ? info.source
+        : sourceList.includes('all')
+          ? 'all'
+          : sourceList[0] ?? 'all'
       searchInfo.current.temp_source = info.temp_source
-      searchInfo.current.source = info.source
+      searchInfo.current.source = source
       searchInfo.current.searchType = info.type
-      switch (info.type) {
-        case 'music':
-          headerBarRef.current?.setSourceList(searchMusicState.sources, info.source)
-          break
-        case 'songlist':
-          headerBarRef.current?.setSourceList(searchSonglistState.sources, info.source)
-          break
-      }
+      headerBarRef.current?.setSourceList(sourceList, source)
       headerBarRef.current?.setText(searchState.searchText)
       listRef.current?.loadList(searchState.searchText, searchInfo.current.source, searchInfo.current.searchType)
     })
 
     const handleTypeChange = (type: SearchType) => {
       searchTipListRef.current?.hide()
+      const sourceList = type == 'music' ? searchMusicState.sources : searchSonglistState.sources
+      const source = sourceList.includes(searchInfo.current.source)
+        ? searchInfo.current.source
+        : sourceList.includes('all')
+          ? 'all'
+          : sourceList[0] ?? 'all'
+      searchInfo.current.source = source
       searchInfo.current.searchType = type
-      void saveSearchSetting({ type })
-      listRef.current?.loadList(searchState.searchText, searchInfo.current.source, type)
+      headerBarRef.current?.setSourceList(sourceList, source)
+      void saveSearchSetting({ type, source })
+      listRef.current?.loadList(searchState.searchText, source, type)
     }
     global.app_event.on('searchTypeChanged', handleTypeChange)
 

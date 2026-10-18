@@ -32,11 +32,8 @@ export interface HeaderBarType {
 
 
 /**
- * Apple Music 风格搜索栏
- *
- * — 整体浅灰圆角背景容器
- * — 源选择器 + 搜索输入横向排列
- * — 无硬边框，用背景色区分
+ * 搜索头部：输入框独占一行，平台与搜索类型统一放在下方筛选区。
+ * ref 合同保持不变，外部仍可切换来源、回填文本和收起键盘。
  */
 export default forwardRef<HeaderBarType, HeaderBarProps>(({ onSourceChange, onTipSearch, onSearch, onHideTipList, onShowTipList }, ref) => {
   const sourceSelectorRef = useRef<SourceSelectorType>(null)
@@ -59,13 +56,10 @@ export default forwardRef<HeaderBarType, HeaderBarProps>(({ onSourceChange, onTi
   return (
     <View style={styles.wrap}>
       <View style={{
-        ...styles.searchBar,
-        backgroundColor: theme['c-glass-background'],
-        borderColor: theme['c-glass-border'],
+        ...styles.inputRow,
+        backgroundColor: theme['c-primary-input-background'],
+        borderColor: theme['c-border-background'],
       }}>
-        <View style={styles.selector}>
-          <SourceSelector ref={sourceSelectorRef} onSourceChange={onSourceChange} center />
-        </View>
         <SearchInput
           ref={searchInputRef}
           onChangeText={onTipSearch}
@@ -73,6 +67,11 @@ export default forwardRef<HeaderBarType, HeaderBarProps>(({ onSourceChange, onTi
           onBlur={onHideTipList}
           onTouchStart={onShowTipList}
         />
+      </View>
+      <View style={[styles.filterRow, { backgroundColor: theme['c-primary-input-background'], borderColor: theme['c-border-background'] }]}>
+        <View style={styles.selector}>
+          <SourceSelector ref={sourceSelectorRef} onSourceChange={onSourceChange} center />
+        </View>
         <SearchTypeSelector />
       </View>
     </View>
@@ -86,16 +85,26 @@ const styles = createStyle({
     paddingBottom: 10,
     zIndex: 2,
   },
-  searchBar: {
-    flexDirection: 'row',
-    height: 52,
-    borderRadius: 26,
+  inputRow: {
+    height: 48,
+    borderRadius: 14,
     borderWidth: 0.5,
     paddingHorizontal: 6,
     alignItems: 'center',
   },
+  filterRow: {
+    minHeight: 44,
+    marginTop: 8,
+    borderRadius: 14,
+    borderWidth: 0.5,
+    paddingHorizontal: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   selector: {
-    flexGrow: 0,
-    flexShrink: 0,
+    flex: 1,
+    minWidth: 0,
+    height: 42,
+    justifyContent: 'center',
   },
 })

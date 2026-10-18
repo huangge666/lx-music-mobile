@@ -72,10 +72,14 @@ const BarItem = ({ id, icon, floating }: BarItemProps) => {
 }
 
 /**
- * 底部导航。竖屏悬浮成胶囊，横屏仍贴底，避免和窄侧栏抢宽度。
+ * 底部导航。竖屏悬浮成胶囊，横屏仍贴底；组合 Dock 使用 embedded 模式复用内容而不重复绘制材质。
  */
-export default memo(({ floating = false }: { floating?: boolean }) => {
+export default memo(({ floating = false, embedded = false }: { floating?: boolean, embedded?: boolean }) => {
   const items = TAB_BAR_MENUS.map(item => <BarItem key={item.id} id={item.id} icon={item.icon} floating={floating} />)
+
+  if (embedded) {
+    return <View style={styles.container}>{items}</View>
+  }
 
   if (!floating) {
     return (

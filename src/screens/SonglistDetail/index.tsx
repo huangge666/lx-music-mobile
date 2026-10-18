@@ -42,7 +42,7 @@ export default ({ componentId, info }: { componentId: string, info: ListInfoItem
             )
           : null}
 
-        <PlayerBar />
+        <PlayerBar componentId={componentId} />
       </MultipleModeBarHost>
     </PageContent>
   )

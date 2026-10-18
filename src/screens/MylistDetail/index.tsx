@@ -50,7 +50,7 @@ export default ({ componentId }: { componentId: string }) => {
         <DetailNav />
       </View>
       <MusicList />
-      <PlayerBar />
+      <PlayerBar componentId={componentId} />
     </PageContent>
   )
 }

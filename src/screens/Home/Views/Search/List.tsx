@@ -16,7 +16,8 @@ export interface ListType {
 export default forwardRef<ListType, ListProps>(({ onSearch }, ref) => {
   const [listType, setListType] = useState<SearchState['searchType']>('music')
   const [showBlankView, setShowListView] = useState(true)
-  const listRef = useRef<MusicListType>(null)
+  const musicListRef = useRef<MusicListType>(null)
+  const songlistListRef = useRef<MusicListType>(null)
   const blankViewRef = useRef<BlankViewType>(null)
 
   useImperativeHandle(ref, () => ({
@@ -24,9 +25,10 @@ export default forwardRef<ListType, ListProps>(({ onSearch }, ref) => {
       if (text) {
         setShowListView(false)
         setListType(type)
-        // const listDetailInfo = searchMusicState.listDetailInfo
+        // 类型切换会替换列表实例，等新实例挂载后再发起请求，避免旧来源结果写入新页面。
         requestAnimationFrame(() => {
-          listRef.current?.loadList(text, source)
+          if (type == 'songlist') songlistListRef.current?.loadList(text, source)
+          else musicListRef.current?.loadList(text, source)
         })
       } else {
         setShowListView(true)
@@ -41,7 +43,7 @@ export default forwardRef<ListType, ListProps>(({ onSearch }, ref) => {
     showBlankView
       ? <BlankView ref={blankViewRef} onSearch={onSearch} />
       : listType == 'songlist'
-        ? <SonglistList ref={listRef} />
-        : <MusicList ref={listRef} />
+        ? <SonglistList ref={songlistListRef} />
+        : <MusicList ref={musicListRef} />
   )
 })
