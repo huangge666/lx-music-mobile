@@ -1,13 +1,13 @@
 import { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
-import { FlatList, TouchableOpacity, View, type FlatListProps } from 'react-native'
+import { FlatList, View, type FlatListProps } from 'react-native'
 import Popup, { type PopupType } from '@/components/common/Popup'
 import Text from '@/components/common/Text'
-import { Icon } from '@/components/common/Icon'
+import MusicRow, { getMusicRowHeight } from '@/components/common/MusicRow'
 import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
 import { createStyle } from '@/utils/tools'
-import { scaleSizeH, scaleSizeW } from '@/utils/pixelRatio'
-import { LIST_IDS, LIST_ITEM_HEIGHT } from '@/config/constant'
+import { scaleSizeW } from '@/utils/pixelRatio'
+import { LIST_IDS } from '@/config/constant'
 import { getListMusics } from '@/core/list'
 import { playList } from '@/core/player/player'
 import { usePlayInfo, usePlayMusicInfo, usePlayedList, useTempPlayList } from '@/store/player/hook'
@@ -15,8 +15,7 @@ import listState from '@/store/list/state'
 import { BorderRadius } from '@/theme'
 import CheckBox from '@/components/common/CheckBox'
 import { getShuffledRemaining } from '@/core/player/shuffleQueue'
-
-const ITEM_HEIGHT = scaleSizeH(LIST_ITEM_HEIGHT)
+import { useFontSize } from '@/store/common/hook'
 
 export interface PlayQueuePopupType {
   show: () => void
@@ -100,55 +99,36 @@ const insertPlayLaterAfterCurrent = (
   return next
 }
 
-const QueueItem = memo(({ item, index, active, snWidth, onPress }: {
+const QueueItem = memo(({ item, index, active, snWidth, onPress, rowHeight }: {
   item: LX.Music.MusicInfo
   index: number
   active: boolean
   snWidth: number
   onPress: (item: LX.Music.MusicInfo) => void
+  rowHeight: number
 }) => {
-  const theme = useTheme()
   const singer = item.meta.albumName ? `${item.singer} · ${item.meta.albumName}` : item.singer
-
-  return (
-    <TouchableOpacity
-      style={{
-        ...styles.listItem,
-        height: ITEM_HEIGHT,
-        backgroundColor: active ? theme['c-primary-background-hover'] : 'transparent',
-      }}
-      activeOpacity={0.6}
-      onPress={() => { onPress(item) }}
-    >
-      <View style={{ ...styles.sn, width: snWidth }}>
-        {
-          active
-            ? <Icon name="play-outline" size={13} color={theme['c-primary']} />
-            : <Text style={styles.snText} size={12} color={theme['c-font-label']}>{index + 1}</Text>
-        }
-      </View>
-      <View style={styles.itemInfo}>
-        <Text color={active ? theme['c-primary'] : theme['c-font']} numberOfLines={1}>{item.name}</Text>
-        <Text style={styles.singer} size={12} color={active ? theme['c-primary-alpha-300'] : theme['c-font-label']} numberOfLines={1}>
-          {singer}
-        </Text>
-      </View>
-      {
-        item.interval
-          ? (
-              <Text size={12} color={active ? theme['c-primary-alpha-400'] : theme['c-font-label']} numberOfLines={1}>
-                {item.interval}
-              </Text>
-            )
-          : null
-      }
-    </TouchableOpacity>
-  )
+  return <MusicRow
+    title={item.name}
+    subtitle={singer}
+    duration={item.interval}
+    active={active}
+    rank={index + 1}
+    rankWidth={snWidth}
+    height={rowHeight}
+    style={styles.listItem}
+    onPress={() => { onPress(item) }}
+  />
 }, (prevProps, nextProps) => {
-  return prevProps.item === nextProps.item &&
+  return prevProps.item.id === nextProps.item.id &&
+    prevProps.item.name === nextProps.item.name &&
+    prevProps.item.singer === nextProps.item.singer &&
+    prevProps.item.interval === nextProps.item.interval &&
+    prevProps.item.meta.albumName === nextProps.item.meta.albumName &&
     prevProps.index === nextProps.index &&
     prevProps.active === nextProps.active &&
     prevProps.snWidth === nextProps.snWidth &&
+    prevProps.rowHeight === nextProps.rowHeight &&
     prevProps.onPress === nextProps.onPress
 })
 
@@ -167,6 +147,8 @@ export default forwardRef<PlayQueuePopupType>((_, ref) => {
   const playMusicInfo = usePlayMusicInfo()
   const playedList = usePlayedList()
   const tempPlayList = useTempPlayList()
+  useFontSize()
+  const rowHeight = getMusicRowHeight()
   const [list, setList] = useState<LX.Music.MusicInfo[]>([])
   const [listName, setListName] = useState('')
   const [loaded, setLoaded] = useState(false)
@@ -276,22 +258,23 @@ export default forwardRef<PlayQueuePopupType>((_, ref) => {
       active={index === activeIndex}
       snWidth={snWidth}
       onPress={handlePress}
+      rowHeight={rowHeight}
     />
-  ), [activeIndex, handlePress, snWidth])
+  ), [activeIndex, handlePress, rowHeight, snWidth])
 
   const keyExtractor = useCallback<NonNullable<QueueListProps['keyExtractor']>>((item) => item.id, [])
   const getItemLayout = useCallback<NonNullable<QueueListProps['getItemLayout']>>((_data, index) => ({
-    length: ITEM_HEIGHT,
-    offset: ITEM_HEIGHT * index,
+    length: rowHeight,
+    offset: rowHeight * index,
     index,
-  }), [])
+  }), [rowHeight])
 
   const handleScrollToIndexFailed = useCallback<NonNullable<QueueListProps['onScrollToIndexFailed']>>(({ index }) => {
     flatListRef.current?.scrollToOffset({
-      offset: Math.max(0, index * ITEM_HEIGHT),
+      offset: Math.max(0, index * rowHeight),
       animated: false,
     })
-  }, [])
+  }, [rowHeight])
 
   const subtitle = listName
     ? `${listName} · ${t('list_music_count', { num: displayList.length })}`
@@ -365,24 +348,6 @@ const styles = createStyle({
     paddingRight: 16,
     borderRadius: BorderRadius.normal,
     marginHorizontal: 8,
-  },
-  sn: {
-    flexShrink: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  snText: {
-    textAlign: 'center',
-    fontVariant: ['tabular-nums'],
-    includeFontPadding: false,
-  },
-  itemInfo: {
-    flexGrow: 1,
-    flexShrink: 1,
-    paddingRight: 8,
-  },
-  singer: {
-    marginTop: 2,
   },
   empty: {
     minHeight: 220,

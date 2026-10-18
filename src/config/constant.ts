@@ -1,5 +1,6 @@
 export const HEADER_HEIGHT = 42
-export const LIST_ITEM_HEIGHT = 54
+export const LIST_ITEM_HEIGHT = 60
+export const LEGACY_LIST_ITEM_HEIGHT = 54
 export const LIST_SCROLL_POSITION_KEY = '__LIST_SCROLL_POSITION_KEY__'
 
 export const SPLIT_CHAR = {
@@ -48,6 +49,7 @@ export const storageDataPrefix = {
   list: '@list__',
   listMusicCount: '@list_music_count',
   listScrollPosition: '@list_scroll_position',
+  listScrollPositionLayout: '@list_scroll_position_layout',
   listPrevSelectId: '@list_prev_select_id',
 
   lyric: '@lyric__',

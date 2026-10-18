@@ -1,5 +1,6 @@
 import { getData, saveData, getAllKeys, removeDataMultiple, saveDataMultiple, removeData, getDataMultiple } from '@/plugins/storage'
-import { DEFAULT_SETTING, LIST_IDS, storageDataPrefix, type NAV_ID_Type } from '@/config/constant'
+import { DEFAULT_SETTING, LEGACY_LIST_ITEM_HEIGHT, LIST_IDS, storageDataPrefix, type NAV_ID_Type } from '@/config/constant'
+import { scaleSizeH } from '@/utils/pixelRatio'
 import { throttle } from './common'
 // import { gzip, ungzip } from '@/utils/nativeModules/gzip'
 // import { readFile, writeFile, temporaryDirectoryPath, unlink } from '@/utils/fs'
@@ -13,6 +14,7 @@ const playInfoStorageKey = storageDataPrefix.playInfo
 const userListKey = storageDataPrefix.userList
 const viewPrevStateKey = storageDataPrefix.viewPrevState
 const listScrollPositionKey = storageDataPrefix.listScrollPosition
+const listScrollPositionLayoutKey = storageDataPrefix.listScrollPositionLayout
 const listUpdateInfoKey = storageDataPrefix.listUpdateInfo
 const ignoreVersionKey = storageDataPrefix.ignoreVersion
 const ignoreVersionFailTipTimeKey = storageDataPrefix.ignoreVersionFailTipTimeKey
@@ -34,7 +36,18 @@ const selectedManagedFolderPrefix = storageDataPrefix.selectedManagedFolder
 // const defaultListKey = listPrefix + 'default'
 // const loveListKey = listPrefix + 'love'
 
+interface MusicListPositionLayoutInfo {
+  rowHeight: number
+  rowNum: number
+}
+
+interface MusicListPositionLayout {
+  version: 1
+  positions: Record<string, MusicListPositionLayoutInfo>
+}
+
 let listPosition: LX.List.ListPositionInfo
+let musicListPositionLayout: MusicListPositionLayout | undefined
 let listPrevSelectId: string
 let listUpdateInfo: LX.List.ListUpdateInfo
 
@@ -45,6 +58,10 @@ let searchHistoryList: string[]
 
 const saveListPositionThrottle = throttle(() => {
   void saveData(listScrollPositionKey, listPosition)
+}, 1000)
+const saveMusicListPositionLayoutThrottle = throttle(() => {
+  if (!musicListPositionLayout) return
+  void saveData(listScrollPositionLayoutKey, musicListPositionLayout)
 }, 1000)
 const saveSearchSettingThrottle = throttle(() => {
   void saveData(searchSettingKey, searchSetting)
@@ -77,18 +94,80 @@ const initPosition = async() => {
   // eslint-disable-next-line require-atomic-updates
   listPosition ??= await getData(listScrollPositionKey) ?? {}
 }
+
+const initMusicListPositionLayout = async() => {
+  if (musicListPositionLayout !== undefined) return
+  const stored = await getData<MusicListPositionLayout>(listScrollPositionLayoutKey)
+  // eslint-disable-next-line require-atomic-updates
+  musicListPositionLayout = stored?.version == 1 && stored.positions != null
+    ? stored
+    : { version: 1, positions: {} }
+}
+
 export const getListPosition = async(id: string): Promise<number> => {
   await initPosition()
   return listPosition[id] ?? 0
 }
+
+/**
+ * Music-list offsets need layout metadata because the row height and column count are not stable.
+ * Legacy offsets only contain pixels, so they are migrated by the confirmed 54px design baseline.
+ * When a previously recorded column count changes, there is no stable item index to recover; reset
+ * only that music-list view and let the next scroll save the new layout.
+ */
+export const getMusicListPosition = async(id: string, rowHeight: number, rowNum: number): Promise<number> => {
+  await Promise.all([initPosition(), initMusicListPositionLayout()])
+  const currentRowNum = Math.max(1, rowNum)
+  const previous = musicListPositionLayout!.positions[id]
+  const position = listPosition[id] ?? 0
+  let migratedPosition = position
+
+  if (position > 0) {
+    if (previous && previous.rowNum > 0 && previous.rowNum != currentRowNum) {
+      migratedPosition = 0
+    } else {
+      const previousRowHeight = previous && previous.rowHeight > 0
+        ? previous.rowHeight
+        : scaleSizeH(LEGACY_LIST_ITEM_HEIGHT)
+      migratedPosition = position * rowHeight / previousRowHeight
+    }
+  }
+
+  const layout = { rowHeight, rowNum: currentRowNum }
+  if (migratedPosition != position) {
+    listPosition[id] = migratedPosition
+    saveListPositionThrottle()
+  }
+  if (!previous || previous.rowHeight != layout.rowHeight || previous.rowNum != layout.rowNum) {
+    musicListPositionLayout!.positions[id] = layout
+    saveMusicListPositionLayoutThrottle()
+  }
+  return migratedPosition
+}
+
 export const saveListPosition = async(id: string, position?: number) => {
   await initPosition()
   listPosition[id] = position ?? 0
   saveListPositionThrottle()
 }
+
+export const saveMusicListPosition = async(id: string, position: number, rowHeight: number, rowNum: number) => {
+  await Promise.all([initPosition(), initMusicListPositionLayout()])
+  listPosition[id] = position
+  musicListPositionLayout!.positions[id] = {
+    rowHeight,
+    rowNum: Math.max(1, rowNum),
+  }
+  saveListPositionThrottle()
+  saveMusicListPositionLayoutThrottle()
+}
 export const removeListPosition = async(id: string) => {
   await initPosition()
   delete listPosition[id]
+  if (musicListPositionLayout) {
+    delete musicListPositionLayout.positions[id]
+    saveMusicListPositionLayoutThrottle()
+  }
   saveListPositionThrottle()
 }
 export const overwriteListPosition = async(ids: string[]) => {
@@ -99,6 +178,10 @@ export const overwriteListPosition = async(ids: string[]) => {
     removedIds.push(id)
   }
   for (const id of removedIds) delete listPosition[id]
+  if (musicListPositionLayout) {
+    for (const id of removedIds) delete musicListPositionLayout.positions[id]
+    saveMusicListPositionLayoutThrottle()
+  }
   saveListPositionThrottle()
 }
 

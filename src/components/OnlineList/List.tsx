@@ -2,7 +2,8 @@ import { useMemo, useRef, useState, forwardRef, useImperativeHandle } from 'reac
 import { FlatList, type FlatListProps, type NativeScrollEvent, type NativeSyntheticEvent, RefreshControl, View } from 'react-native'
 
 // import { useMusicList } from '@/store/list/hook'
-import ListItem, { ITEM_HEIGHT } from './ListItem'
+import ListItem from './ListItem'
+import { getMusicRowHeight } from '@/components/common/MusicRow'
 import { createStyle, getRowInfo, type RowInfoType } from '@/utils/tools'
 import type { Position } from './ListMenu'
 import type { SelectMode } from './MultipleModeBar'
@@ -15,6 +16,7 @@ import { handlePlay } from './listAction'
 import { useSettingValue } from '@/store/setting/hook'
 import ListState from '@/components/common/ListState'
 import { usePlayMusicInfo } from '@/store/player/hook'
+import { useFontSize } from '@/store/common/hook'
 
 type FlatListType = FlatListProps<LX.Music.MusicInfoOnline>
 
@@ -79,6 +81,8 @@ const List = forwardRef<ListType, ListProps>(({
   const bottomInset = useBottomInset()
   const [status, setStatus] = useState<Status>('idle')
   const rowInfo = useRef(getRowInfo(rowType))
+  useFontSize()
+  const rowHeight = getMusicRowHeight()
   const isShowAlbumName = useSettingValue('list.isShowAlbumName')
   const isShowInterval = useSettingValue('list.isShowInterval')
   // const currentListIdRef = useRef('')
@@ -116,7 +120,7 @@ const List = forwardRef<ListType, ListProps>(({
     },
     scrollToTop() {
       // 距离较远时直接跳回顶部，避免长歌单带动画滚动过慢
-      const animated = scrollOffsetRef.current < ITEM_HEIGHT * 20
+      const animated = scrollOffsetRef.current < rowHeight * 20
       flatListRef.current?.scrollToOffset({ offset: 0, animated })
     },
   }))
@@ -205,11 +209,13 @@ const List = forwardRef<ListType, ListProps>(({
       rowInfo={rowInfo.current}
       isShowAlbumName={isShowAlbumName}
       isShowInterval={isShowInterval}
+      rowHeight={rowHeight}
     />
   )
   const getkey: FlatListType['keyExtractor'] = item => item.id
   const getItemLayout: FlatListType['getItemLayout'] = (data, index) => {
-    return { length: ITEM_HEIGHT, offset: ITEM_HEIGHT * index, index }
+    const rowIndex = Math.floor(index / (rowInfo.current.rowNum ?? 1))
+    return { length: rowHeight, offset: rowHeight * rowIndex, index }
   }
   const refreshControl = useMemo(() => (
     <RefreshControl

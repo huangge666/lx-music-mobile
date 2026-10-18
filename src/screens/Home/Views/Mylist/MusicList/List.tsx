@@ -4,10 +4,11 @@ import { FlatList, type NativeScrollEvent, type NativeSyntheticEvent, type FlatL
 
 import listState from '@/store/list/state'
 import playerState from '@/store/player/state'
-import { getListPosition, getListPrevSelectId, saveListPosition } from '@/utils/data'
+import { getMusicListPosition, getListPrevSelectId, saveMusicListPosition } from '@/utils/data'
 // import { useMusicList } from '@/store/list/hook'
 import { getListMusics, setActiveList } from '@/core/list'
-import ListItem, { ITEM_HEIGHT } from './ListItem'
+import ListItem from './ListItem'
+import { getMusicRowHeight } from '@/components/common/MusicRow'
 import { createStyle, getRowInfo } from '@/utils/tools'
 import { windowSizeTools } from '@/utils/windowSizeTools'
 import { scaleSizeW } from '@/utils/pixelRatio'
@@ -17,6 +18,7 @@ import { type SelectMode } from './MultipleModeBar'
 import { useBottomInset } from '@/components/common/BottomInset'
 import { useActiveListId } from '@/store/list/hook'
 import { useSettingValue } from '@/store/setting/hook'
+import { useFontSize } from '@/store/common/hook'
 
 type FlatListType = FlatListProps<LX.Music.MusicInfo>
 
@@ -72,6 +74,10 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
   const currentListIdRef = useRef('')
   const waitJumpListPositionRef = useRef(false)
   const rowInfo = useRef(getRowInfo())
+  useFontSize()
+  const rowHeight = getMusicRowHeight()
+  const rowHeightRef = useRef(rowHeight)
+  rowHeightRef.current = rowHeight
   const isShowAlbumName = useSettingValue('list.isShowAlbumName')
   const isShowInterval = useSettingValue('list.isShowInterval')
   // console.log('render music list')
@@ -104,8 +110,8 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
     },
     scrollToTop() {
       // 距离较远（约超过 2 屏）时跳过动画直接回到顶部，避免长列表带动画滚动耗时过长
-      // 每屏约 10 行，2 屏 ≈ 20 行 * ITEM_HEIGHT
-      const animated = scrollOffsetRef.current < ITEM_HEIGHT * 20
+      // 每屏约 10 行，2 屏 ≈ 20 行 * rowHeight
+      const animated = scrollOffsetRef.current < rowHeight * 20
       flatListRef.current?.scrollToOffset({
         offset: 0,
         animated,
@@ -120,7 +126,7 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
       isUpdateingList = true
       setList([])
       currentListIdRef.current = id
-      void Promise.all([getListMusics(id), getListPosition(id)]).then(([list, position]) => {
+      void Promise.all([getListMusics(id), getMusicListPosition(id, rowHeightRef.current, rowInfo.current.rowNum ?? 1)]).then(([list, position]) => {
         requestAnimationFrame(() => {
           if (currentListIdRef.current != id) return
           selectedListRef.current = []
@@ -263,7 +269,7 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
       listFirstScrollRef.current = false
       return
     }
-    void saveListPosition(listState.activeListId, nativeEvent.contentOffset.y)
+    void saveMusicListPosition(listState.activeListId, nativeEvent.contentOffset.y, rowHeight, rowInfo.current.rowNum ?? 1)
   }
 
 
@@ -271,8 +277,8 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
   const initialNumToRender = useMemo(() => {
     const height = windowSizeTools.getSize().height
     if (height <= 0) return 12
-    return Math.max(12, Math.ceil(height / ITEM_HEIGHT) + 2)
-  }, [])
+    return Math.max(12, Math.ceil(height / rowHeight) + 2)
+  }, [rowHeight])
 
   const renderItem: FlatListType['renderItem'] = ({ item, index }) => (
     <ListItem
@@ -287,11 +293,13 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
       isShowAlbumName={isShowAlbumName}
       isShowInterval={isShowInterval}
       snWidth={snWidth}
+      rowHeight={rowHeight}
     />
   )
   const getkey: FlatListType['keyExtractor'] = item => item.id
   const getItemLayout: FlatListType['getItemLayout'] = (data, index) => {
-    return { length: ITEM_HEIGHT, offset: ITEM_HEIGHT * index, index }
+    const rowIndex = Math.floor(index / (rowInfo.current.rowNum ?? 1))
+    return { length: rowHeight, offset: rowHeight * rowIndex, index }
   }
 
   return (

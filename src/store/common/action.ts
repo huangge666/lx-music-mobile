@@ -5,6 +5,8 @@ import { isMainNavId, type COMPONENT_IDS } from '@/config/constant'
 export default {
   setFontSize(size: number) {
     state.fontSize = size
+    // Pixel scaling reads the runtime value directly; keep it in sync before rerendering rows.
+    global.lx.fontSize = size
     global.state_event.fontSizeUpdated(size)
   },
   setStatusbarHeight(size: number) {
@@ -40,4 +42,3 @@ export default {
     global.state_event.sourceNamesUpdated(names)
   },
 }
-

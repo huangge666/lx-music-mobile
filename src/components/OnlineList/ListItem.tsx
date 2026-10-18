@@ -1,16 +1,9 @@
-import { memo, useRef } from 'react'
-import { View, TouchableOpacity } from 'react-native'
-import Text from '@/components/common/Text'
-import Badge, { type BadgeType } from '@/components/common/Badge'
-import { Icon } from '@/components/common/Icon'
-import Image from '@/components/common/Image'
-import { useI18n } from '@/lang'
-import { useTheme } from '@/store/theme/hook'
-import { scaleSizeH } from '@/utils/pixelRatio'
-import { LIST_ITEM_HEIGHT } from '@/config/constant'
-import { createStyle, type RowInfo } from '@/utils/tools'
+import { memo } from 'react'
 
-export const ITEM_HEIGHT = scaleSizeH(LIST_ITEM_HEIGHT)
+import Badge, { type BadgeType } from '@/components/common/Badge'
+import MusicRow, { type MusicRowPosition } from '@/components/common/MusicRow'
+import { useI18n } from '@/lang'
+import { type RowInfo } from '@/utils/tools'
 
 const useQualityTag = (musicInfo: LX.Music.MusicInfoOnline) => {
   const t = useI18n()
@@ -29,11 +22,13 @@ const useQualityTag = (musicInfo: LX.Music.MusicInfoOnline) => {
   return info
 }
 
-/**
- * 通栏歌曲行：小封面、歌名、歌手、时长和更多操作。
- * 不给每一行单独套卡片，避免列表被切成一块一块。
- */
-export default memo(({ item, index, active, showSource, onPress, onLongPress, onShowMenu, selectedList, rowInfo, isShowAlbumName, isShowInterval }: {
+const getQualityKey = (item: LX.Music.MusicInfoOnline) => {
+  const qualitys = item.meta._qualitys
+  return `${!!qualitys.flac24bit}|${!!qualitys.flac}|${!!qualitys.ape}|${!!qualitys['320k']}`
+}
+
+/** Online-song adapter: keeps source/menu/selection semantics outside MusicRow. */
+export default memo(({ item, index, active, showSource, onPress, onLongPress, onShowMenu, selectedList, rowInfo, isShowAlbumName, isShowInterval, rowHeight }: {
   item: LX.Music.MusicInfoOnline
   index: number
   active: boolean
@@ -45,126 +40,56 @@ export default memo(({ item, index, active, showSource, onPress, onLongPress, on
   rowInfo: RowInfo
   isShowAlbumName: boolean
   isShowInterval: boolean
+  rowHeight: number
 }) => {
-  const theme = useTheme()
   const t = useI18n()
-
-  const isSelected = selectedList.includes(item)
-
-  const moreButtonRef = useRef<TouchableOpacity>(null)
-  const handleShowMenu = () => {
-    if (moreButtonRef.current?.measure) {
-      moreButtonRef.current.measure((fx, fy, width, height, px, py) => {
-        onShowMenu(item, index, { x: Math.ceil(px), y: Math.ceil(py), w: Math.ceil(width), h: Math.ceil(height) })
-      })
-    }
-  }
   const tagInfo = useQualityTag(item)
-
   const singer = `${item.singer}${isShowAlbumName && item.meta.albumName ? ` · ${item.meta.albumName}` : ''}`
-  const coverUrl = item.meta.picUrl
-
-  return (
-    <View style={{
-      ...styles.listItem,
-      width: rowInfo.rowWidth,
-      height: ITEM_HEIGHT,
-      backgroundColor: isSelected ? theme['c-accent-soft'] : 'transparent',
-    }}>
-      <TouchableOpacity style={styles.listItemLeft} onPress={() => { onPress(item, index) }} onLongPress={() => { onLongPress(item, index) }} activeOpacity={0.6}
-        accessibilityRole="button"
-        accessibilityLabel={`${item.name} · ${item.singer}${active ? ` · ${t('play_detail_queue')}` : ''}`}
-        accessibilityState={{ selected: isSelected }}
-      >
-        <View style={[styles.coverWrap, { backgroundColor: active ? theme['c-accent-soft'] : theme['c-primary-input-background'] }]}>
-          {active
-            ? <Icon name="play-outline" size={22} color={theme['c-accent']} />
-            : coverUrl
-              ? <Image url={coverUrl} style={styles.cover} />
-              : <Icon name="music" size={20} color={theme['c-font-label']} />}
-        </View>
-        <View style={styles.itemInfo}>
-          {/* 歌名 — 主文字色 */}
-          <Text numberOfLines={1} color={active ? theme['c-accent'] : theme['c-font']}>{item.name}</Text>
-          <View style={styles.listItemSingle}>
-            { tagInfo.type ? <Badge type={tagInfo.type}>{tagInfo.text}</Badge> : null }
-            { showSource ? <Badge type="tertiary">{item.source}</Badge> : null }
-            {/* 歌手/专辑 — 次要色较小字体 */}
-            <Text style={styles.listItemSingleText} size={12} color={theme['c-font-label']} numberOfLines={1}>{singer}</Text>
-          </View>
-        </View>
-        {
-          isShowInterval ? (
-            <Text size={12} color={theme['c-font-label']} numberOfLines={1}>{item.interval}</Text>
-          ) : null
-        }
-      </TouchableOpacity>
-     <TouchableOpacity onPress={handleShowMenu} ref={moreButtonRef} style={styles.moreButton} activeOpacity={0.6} accessibilityRole="button" accessibilityLabel={t('list_music_actions', { name: item.name })}>
-        <Icon name="dots-vertical" style={{ color: theme['c-font-label'] }} size={14} />
-      </TouchableOpacity>
-    </View>
+  const metadata = (
+    <>
+      {tagInfo.type ? <Badge type={tagInfo.type}>{tagInfo.text}</Badge> : null}
+      {showSource ? <Badge type="tertiary">{item.source}</Badge> : null}
+    </>
   )
+
+  const handleShowMenu = (position: MusicRowPosition) => {
+    onShowMenu(item, index, position)
+  }
+
+  return <MusicRow
+    title={item.name}
+    subtitle={singer}
+    coverUrl={item.meta.picUrl}
+    duration={isShowInterval ? item.interval : null}
+    active={active}
+    selected={selectedList.includes(item)}
+    metadata={metadata}
+    metadataKey={`${getQualityKey(item)}|${showSource ? item.source : ''}`}
+    width={rowInfo.rowWidth}
+    height={rowHeight}
+    onPress={() => { onPress(item, index) }}
+    onLongPress={() => { onLongPress(item, index) }}
+    onPressMore={handleShowMenu}
+    accessibilityLabel={`${item.name} · ${item.singer}${active ? ` · ${t('play_detail_queue')}` : ''}`}
+    moreAccessibilityLabel={t('list_music_actions', { name: item.name })}
+  />
 }, (prevProps, nextProps) => {
-  return !!(prevProps.item === nextProps.item &&
+  const sameItem = prevProps.item.id === nextProps.item.id &&
+    prevProps.item.name === nextProps.item.name &&
+    prevProps.item.singer === nextProps.item.singer &&
+    prevProps.item.source === nextProps.item.source &&
+    prevProps.item.interval === nextProps.item.interval &&
+    prevProps.item.meta.albumName === nextProps.item.meta.albumName &&
+    prevProps.item.meta.picUrl === nextProps.item.meta.picUrl &&
+    getQualityKey(prevProps.item) === getQualityKey(nextProps.item)
+  return !!(sameItem &&
     prevProps.index === nextProps.index &&
     prevProps.active === nextProps.active &&
     prevProps.showSource === nextProps.showSource &&
     prevProps.rowInfo === nextProps.rowInfo &&
     prevProps.isShowAlbumName === nextProps.isShowAlbumName &&
     prevProps.isShowInterval === nextProps.isShowInterval &&
-    nextProps.selectedList.includes(nextProps.item) == prevProps.selectedList.includes(nextProps.item)
+    prevProps.rowHeight === nextProps.rowHeight &&
+    nextProps.selectedList.includes(nextProps.item) == prevProps.selectedList.includes(prevProps.item)
   )
-})
-
-const styles = createStyle({
-  listItem: {
-    flexDirection: 'row',
-    flexWrap: 'nowrap',
-    paddingLeft: 16,
-    paddingRight: 4,
-    alignItems: 'center',
-  },
-  coverWrap: {
-    width: 40,
-    height: 40,
-    marginRight: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexGrow: 0,
-    flexShrink: 0,
-  },
-  cover: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-  },
-  listItemLeft: {
-    flex: 1,
-    flexGrow: 1,
-    flexShrink: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  itemInfo: {
-    flexGrow: 1,
-    flexShrink: 1,
-    paddingRight: 4,
-  },
-  listItemSingle: {
-    paddingTop: 2,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  listItemSingleText: {
-    flexGrow: 0,
-    flexShrink: 1,
-    fontWeight: '400',
-  },
-  moreButton: {
-    height: '80%',
-    paddingLeft: 12,
-    paddingRight: 12,
-    justifyContent: 'center',
-  },
 })
