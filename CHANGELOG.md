@@ -6,6 +6,16 @@ Project versioning adheres to [Semantic Versioning](http://semver.org/).
 Commit convention is based on [Conventional Commits](http://conventionalcommits.org).
 Change log format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [2.1.9](https://github.com/huangge666/lx-music-mobile/compare/v2.1.8...v2.1.9) - 2026-10-24
+
+### 优化
+
+- 界面视觉整体对齐 Sonify：强调色、次要文字色与分组底色统一，设置与音源管理页改为灰底白卡
+- 浏览页精选推荐改为大封面加深色信息条，歌单封面圆角统一
+- 底部标签栏改为全胶囊，选中态改为跟随当前标签滑动的透镜，滚动列表时标签文字不再收起
+- 迷你播放器改为全胶囊，收紧封面与文字尺寸，右侧只保留播放和下一首
+- 迷你播放器与底部标签栏去掉悬浮阴影，不再在下方内容上压出暗边
+
 ## [2.1.8](https://github.com/huangge666/lx-music-mobile/compare/v2.1.7...v2.1.8) - 2026-10-05
 
 ### 优化
