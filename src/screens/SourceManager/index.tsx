@@ -69,12 +69,12 @@ export default ({ componentId }: { componentId: string }) => {
   }, [componentId])
 
   return (
-    <PageContent>
+    <PageContent backgroundColor={theme['c-grouped-background']}>
       <Header componentId={componentId} transparent={hasDynamicBg} />
       <ScrollView
         keyboardShouldPersistTaps="always"
         showsVerticalScrollIndicator={false}
-        style={[styles.scroll, { backgroundColor: hasDynamicBg ? 'transparent' : theme['c-content-background'] }]}
+        style={[styles.scroll, { backgroundColor: hasDynamicBg ? 'transparent' : theme['c-grouped-background'] }]}
         contentContainerStyle={styles.content}
       >
         <View style={styles.contentInner}>

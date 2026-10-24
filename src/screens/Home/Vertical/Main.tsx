@@ -29,8 +29,9 @@ const hideKeys = [
 ] as Readonly<Array<keyof LX.AppSetting>>
 
 const PAGE_COMPONENTS: Record<MAIN_NAV_ID_Type, ComponentType> = {
-  nav_love: Mylist,
   nav_songlist: SongList,
+  nav_top: Leaderboard,
+  nav_love: Mylist,
   nav_search: Search,
 }
 
@@ -147,14 +148,7 @@ const Main = () => {
           </View>
         ))}
       </PagerView>
-      {/* 排行榜、下载与设置都是覆盖页：盖住分页层，底层分页手势同时在事件里关闭。 */}
-      {navActiveId == 'nav_top'
-        ? (
-            <View key="nav_top" style={[styles.overlay, { backgroundColor: theme['c-content-background'] }]}>
-              <Leaderboard />
-            </View>
-          )
-        : null}
+      {/* 下载与设置是覆盖页：盖住分页层，底层分页手势同时在事件里关闭。 */}
       {navActiveId == 'nav_download'
         ? (
             <View key="nav_download" style={[styles.overlay, { backgroundColor: theme['c-content-background'] }]}>
@@ -164,7 +158,7 @@ const Main = () => {
         : null}
       {navActiveId == 'nav_setting'
         ? (
-            <View key="nav_setting" style={[styles.overlay, { backgroundColor: theme['c-content-background'] }]}>
+            <View key="nav_setting" style={[styles.overlay, { backgroundColor: theme['c-grouped-background'] }]}>
               <Setting />
             </View>
           )

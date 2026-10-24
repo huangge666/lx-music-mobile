@@ -1,7 +1,7 @@
-import { StyleSheet, TouchableOpacity } from 'react-native'
+import { TouchableOpacity } from 'react-native'
 import { navigations } from '@/navigation'
 import { usePlayerMusicInfo } from '@/store/player/hook'
-import { scaleSizeH } from '@/utils/pixelRatio'
+import { useHorizontalMode } from '@/utils/hooks'
 import commonState from '@/store/common/state'
 import playerState from '@/store/player/state'
 import { LIST_IDS, NAV_SHEAR_NATIVE_IDS } from '@/config/constant'
@@ -9,20 +9,17 @@ import Image from '@/components/common/Image'
 import { useCallback } from 'react'
 import { setLoadErrorPicUrl, setMusicInfo } from '@/core/player/playInfo'
 
-// 封面做成圆角方块，贴近主流迷你播放器的封面比例
-const PIC_SIZE = scaleSizeH(48)
-const PIC_RADIUS = 14
+// 手机迷你条封面 26dp、圆角 4，和 43dp 胶囊配套。
+// 横屏条更高，封面放到 40dp。都不能走屏幕缩放，否则会冲出固定槽位。
+const PHONE_PIC_SIZE = 26
+const WIDE_PIC_SIZE = 40
+const PIC_RADIUS = 4
 
-const styles = StyleSheet.create({
-  image: {
-    width: PIC_SIZE,
-    height: PIC_SIZE,
-    borderRadius: PIC_RADIUS,
-  },
-})
-
-export default ({ isHome, componentId }: { isHome: boolean, componentId?: string }) => {
+export default ({ isHome, embedded = false, componentId }: { isHome: boolean, embedded?: boolean, componentId?: string }) => {
   const musicInfo = usePlayerMusicInfo()
+  const wide = useHorizontalMode()
+  const size = wide && !embedded ? WIDE_PIC_SIZE : PHONE_PIC_SIZE
+  const radius = PIC_RADIUS
   const handlePress = () => {
     if (!musicInfo.id) return
     const targetComponentId = componentId ?? commonState.componentIds.home
@@ -46,7 +43,7 @@ export default ({ isHome, componentId }: { isHome: boolean, componentId?: string
 
   return (
     <TouchableOpacity onLongPress={handleLongPress} onPress={handlePress} activeOpacity={0.7}>
-      <Image url={musicInfo.pic} nativeID={NAV_SHEAR_NATIVE_IDS.playDetail_pic} style={styles.image} onError={handleError} />
+      <Image url={musicInfo.pic} nativeID={NAV_SHEAR_NATIVE_IDS.playDetail_pic} style={{ width: size, height: size, borderRadius: radius }} onError={handleError} />
     </TouchableOpacity>
   )
 }

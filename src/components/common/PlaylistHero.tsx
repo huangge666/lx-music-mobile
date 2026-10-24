@@ -100,13 +100,13 @@ const CircleButton = ({
       style={[
         styles.actionCircle,
         {
-          backgroundColor: active ? theme['c-primary-background'] : theme['c-primary-input-background'],
-          borderColor: active ? theme['c-primary-alpha-700'] : theme['c-border-background'],
+          backgroundColor: active ? theme['c-accent-soft'] : theme['c-primary-input-background'],
+          borderColor: active ? theme['c-accent'] : theme['c-border-background'],
           opacity: disabled ? 0.5 : 1,
         },
       ]}
     >
-      <Icon name={icon} size={16} color={active ? theme['c-primary'] : theme['c-font']} />
+      <Icon name={icon} size={16} color={active ? theme['c-accent'] : theme['c-font']} />
     </TouchableOpacity>
   )
 }
@@ -241,7 +241,7 @@ const PlaylistHero = ({
                 >
                   {description}
                   {descOverflow
-                    ? <Text size={12} color={theme['c-primary']}>{'  '}{descExpanded ? collapseText : expandText}</Text>
+                    ? <Text size={12} color={theme['c-accent']}>{'  '}{descExpanded ? collapseText : expandText}</Text>
                     : null}
                 </Text>
               </TouchableOpacity>
@@ -256,7 +256,7 @@ const PlaylistHero = ({
                 activeOpacity={0.7}
                 accessibilityRole={onRetry ? 'button' : undefined}
               >
-                <Text style={styles.statusText} size={12} color={theme['c-primary']} numberOfLines={2}>{statusText}</Text>
+                <Text style={styles.statusText} size={12} color={theme['c-accent']} numberOfLines={2}>{statusText}</Text>
               </TouchableOpacity>
             )
           : null}
@@ -273,13 +273,13 @@ const PlaylistHero = ({
                 accessibilityLabel={playLabel}
                 accessibilityState={{ disabled }}
                 style={[styles.playButton, {
-                  backgroundColor: theme['c-primary'],
+                  backgroundColor: theme['c-accent'],
                   opacity: disabled ? 0.5 : 1,
                 }]}
               >
                 {busy
-                  ? <Loading size={14} color={onPrimaryColor} />
-                  : <Icon name="play" size={14} color={onPrimaryColor} />}
+                  ? <Loading size={16} color={onPrimaryColor} />
+                  : <Icon name="play" size={17} color={onPrimaryColor} />}
                 {playLabel
                   ? <Text style={styles.playLabel} size={13} color={onPrimaryColor} numberOfLines={1}>{playLabel}</Text>
                   : null}
@@ -437,9 +437,9 @@ const styles = createStyle({
     flexGrow: 1,
     flexShrink: 1,
     maxWidth: scaleSizeW(240),
-    minHeight: scaleSizeH(40),
-    paddingHorizontal: 16,
-    borderRadius: 20,
+    minHeight: scaleSizeH(44),
+    paddingHorizontal: 18,
+    borderRadius: 22,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

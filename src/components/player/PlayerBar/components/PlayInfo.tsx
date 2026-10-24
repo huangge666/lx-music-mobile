@@ -20,6 +20,7 @@ const HIT_PADDING = scaleSizeH(6)
  * 小播放栏播放信息区
  *
  * 只负责进度条；时间文字已迁到 Title 区（与歌手名同一行右侧）。
+ * 首页胶囊底边的进度线在 PlayerBar 里绘制，不从这里具名导出。
  *
  * 加载状态：歌曲未加载成功时（maxPlayTime === 0），
  * 显示当前加载状态文字（statusText），替代进度条，
@@ -41,21 +42,30 @@ export default ({ isHome }: { isHome: boolean }) => {
   // 没有歌曲时不渲染进度条
   if (!playerMusicInfo.id) return null
 
-  // 歌曲未加载成功时显示加载状态文字
+  // 歌曲未加载成功：有真实状态文字才显示，否则画一条空轨道。
+  // 迷你条不再出现「...」占位（Phase 7 起），高度保持与有进度时一致。
   const isLoaded = maxPlayTime > 0
   if (!isLoaded) {
     return (
       <View style={styles.container}>
-        <View style={styles.loadingRow}>
-          <Text
-            size={10}
-            color={theme['c-font-label']}
-            numberOfLines={1}
-            style={styles.loadingText}
-          >
-            {statusText || '...'}
-          </Text>
-        </View>
+        {statusText
+          ? (
+              <View style={styles.loadingRow}>
+                <Text
+                  size={10}
+                  color={theme['c-font-label']}
+                  numberOfLines={1}
+                  style={styles.loadingText}
+                >
+                  {statusText}
+                </Text>
+              </View>
+            )
+          : (
+              <View style={styles.progressRow}>
+                <View style={[styles.idleTrack, { backgroundColor: theme['c-border-background'] }]} />
+              </View>
+            )}
       </View>
     )
   }
@@ -86,6 +96,11 @@ const styles = createStyle({
     paddingVertical: HIT_PADDING,
     justifyContent: 'center',
   },
+  idleTrack: {
+    width: '100%',
+    height: TRACK_HEIGHT,
+    borderRadius: TRACK_HEIGHT,
+  },
   // 加载状态行 — 与进度条等高，避免布局跳动
   loadingRow: {
     height: TRACK_HEIGHT + HIT_PADDING * 2,
@@ -95,3 +110,4 @@ const styles = createStyle({
     letterSpacing: 0.2,
   },
 })
+

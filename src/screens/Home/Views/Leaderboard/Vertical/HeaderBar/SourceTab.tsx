@@ -53,19 +53,19 @@ export default forwardRef<SourceTabType, SourceTabProps>(({ style, onSourceChang
             }}
             style={{
               ...styles.tab,
-              backgroundColor: active ? theme['c-primary-background'] : 'transparent',
-              borderColor: active ? theme['c-primary-alpha-700'] : 'transparent',
+              backgroundColor: active ? theme['c-accent-soft'] : 'transparent',
+              borderColor: 'transparent',
             }}
           >
             <Text
               size={13}
               numberOfLines={1}
               ellipsizeMode="tail"
-              style={{ ...styles.tabText, color: active ? theme['c-primary-font'] : theme['c-font-label'] }}
+              style={{ ...styles.tabText, color: active ? theme['c-accent'] : theme['c-font-label'] }}
             >
               {item.label}
             </Text>
-            <View style={{ ...styles.indicator, backgroundColor: active ? theme['c-primary'] : 'transparent' }} />
+            <View style={{ ...styles.indicator, backgroundColor: active ? theme['c-accent'] : 'transparent' }} />
           </TouchableOpacity>
         )
       })}

@@ -81,8 +81,8 @@ export const buildActiveThemeColors = (theme: LX.Theme): LX.ActiveTheme => {
     ...theme.config.extInfo,
     // 主文字色 — 亮色 #1C1C1E / 暗色 #EBEBF0
     'c-font': isDark ? theme.config.themeColors['c-850'] : theme.config.themeColors['c-900'],
-    // 次要文字色 — 亮色 #8E8E93 / 暗色 #98989F
-    'c-font-label': isDark ? theme.config.themeColors['c-450'] : theme.config.themeColors['c-400'],
+    // 次要文字：Sonify headline #88878E / headlineDark #8E8D93
+    'c-font-label': isDark ? 'rgb(142, 141, 147)' : 'rgb(136, 135, 142)',
     // 强调色文字
     'c-primary-font': theme.config.themeColors['c-primary'],
     'c-primary-font-hover': theme.config.themeColors['c-primary-alpha-300'],

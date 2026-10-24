@@ -262,7 +262,7 @@ const state: InitState = {
     'c-badge-tertiary': '#e7aa36',
 
     'c-font': theme['c-850'],
-    'c-font-label': theme['c-450'],
+    'c-font-label': 'rgb(136, 135, 142)',
     'c-primary-font': theme['c-primary'],
     'c-primary-font-hover': theme['c-primary-alpha-300'],
     'c-primary-font-active': theme['c-primary-dark-100-alpha-200'],

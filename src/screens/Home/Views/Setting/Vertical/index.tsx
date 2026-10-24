@@ -3,6 +3,7 @@ import { View } from 'react-native'
 
 import { navigations } from '@/navigation'
 import commonState from '@/store/common/state'
+import { useTheme } from '@/store/theme/hook'
 import { createStyle } from '@/utils/tools'
 import { type SettingScreenIds } from '../Main'
 import NavList from './NavList'
@@ -12,6 +13,7 @@ import NavList from './NavList'
  * 独立页面壳、返回行为和系统返回手势。
  */
 export default () => {
+  const theme = useTheme()
   const openScreen = useCallback((id: SettingScreenIds) => {
     const componentId = commonState.componentIds.home
     if (!componentId) return
@@ -20,7 +22,7 @@ export default () => {
   }, [])
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme['c-grouped-background'] }]}>
       <NavList onChangeId={openScreen} />
     </View>
   )

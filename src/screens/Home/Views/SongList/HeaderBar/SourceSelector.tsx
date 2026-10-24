@@ -49,16 +49,17 @@ export default forwardRef<SourceSelectorType, SourceSelectorProps>(({ style, onS
               setSource(item.action)
               onSourceChange(item.action)
             }}
-            style={{
-              ...styles.tab,
-              backgroundColor: active ? theme['c-accent-soft'] : 'transparent',
-            }}
+            style={styles.tab}
           >
             <Text
-              size={13}
+              size={15}
               numberOfLines={1}
               ellipsizeMode="tail"
-              style={{ ...styles.tabText, color: active ? theme['c-font'] : theme['c-font-label'] }}
+              style={{
+                ...styles.tabText,
+                color: active ? theme['c-accent'] : theme['c-font-label'],
+                fontWeight: active ? '700' : '500',
+              }}
             >
               {item.label}
             </Text>

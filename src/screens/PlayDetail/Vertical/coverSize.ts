@@ -57,8 +57,8 @@ export const fitCoverSize = (
   return Math.round(side)
 }
 
-/** 封面圆角：随边长等比，最大 26，避免小封面出现「药丸」感 */
+/** 封面圆角：随边长等比，最大 18，贴近 iOS 大封面的圆角尺度 */
 export const getCoverRadius = (size: number) => {
   if (!Number.isFinite(size) || size <= 0) return 0
-  return Math.min(Math.round(size * 0.09), 26)
+  return Math.min(Math.round(size * 0.045), 18)
 }

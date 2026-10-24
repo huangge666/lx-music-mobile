@@ -8,7 +8,6 @@ import SourceSelector, {
   type SourceSelectorProps,
 } from './SourceSelector'
 import { type Source } from '@/store/songlist/state'
-import { useTheme } from '@/store/theme/hook'
 import OpenList, { type OpenListType } from './OpenList'
 
 export interface HeaderBarProps {
@@ -24,7 +23,6 @@ export default forwardRef<HeaderBarType, HeaderBarProps>(({ onSortChange, onSour
   const sortTabRef = useRef<SortTabType>(null)
   const openListRef = useRef<OpenListType>(null)
   const sourceSelectorRef = useRef<SourceSelectorType>(null)
-  const theme = useTheme()
 
   useImperativeHandle(ref, () => ({
     setSource(source, sortId) {
@@ -36,7 +34,7 @@ export default forwardRef<HeaderBarType, HeaderBarProps>(({ onSortChange, onSour
 
   return (
     <View style={styles.container}>
-      <View style={{ ...styles.sourceRow, backgroundColor: theme['c-primary-input-background'] }}>
+      <View style={styles.sourceRow}>
         <SourceSelector ref={sourceSelectorRef} onSourceChange={onSourceChange} />
       </View>
       <View style={styles.controlsRow}>

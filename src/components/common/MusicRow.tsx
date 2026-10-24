@@ -109,11 +109,11 @@ const MusicRow = memo(({
             styles.leading,
             { width: leadingWidth, marginRight: hasCover ? styles.leading.marginRight : 0 },
             hasCover && styles.coverWrap,
-            hasCover && { backgroundColor: active ? theme['c-primary-background-hover'] : theme['c-primary-input-background'] },
+            hasCover && { backgroundColor: active ? theme['c-accent-soft'] : theme['c-primary-input-background'] },
           ]}
         >
           {active
-            ? <Icon name="play-outline" size={18} color={theme['c-primary']} />
+            ? <Icon name="play-outline" size={18} color={theme['c-accent']} />
             : rank != null
               ? <Text style={styles.rankText} size={12} color={theme['c-font-label']}>{rank}</Text>
               : coverUrl
@@ -121,16 +121,16 @@ const MusicRow = memo(({
                 : <Icon name="music" size={20} color={theme['c-font-label']} />}
         </View>
         <View style={styles.info}>
-          <Text numberOfLines={1} color={active ? theme['c-primary'] : theme['c-font']}>{title}</Text>
+          <Text style={styles.title} size={16} numberOfLines={1} color={active ? theme['c-accent'] : theme['c-font']}>{title}</Text>
           <View style={styles.subtitleRow}>
             {metadata}
             {subtitle
-              ? <Text style={styles.subtitle} size={12} color={active ? theme['c-primary-alpha-300'] : theme['c-font-label']} numberOfLines={1}>{subtitle}</Text>
+              ? <Text style={styles.subtitle} size={13} color={theme['c-font-label']} numberOfLines={1}>{subtitle}</Text>
               : null}
           </View>
         </View>
         {duration
-          ? <Text style={styles.duration} size={12} color={active ? theme['c-primary-alpha-400'] : theme['c-font-label']} numberOfLines={1}>{duration}</Text>
+          ? <Text style={styles.duration} size={13} color={theme['c-font-label']} numberOfLines={1}>{duration}</Text>
           : null}
       </TouchableOpacity>
       {onPressMore
@@ -223,6 +223,10 @@ const styles = createStyle({
     flexGrow: 0,
     flexShrink: 1,
     fontWeight: '400',
+  },
+  title: {
+    fontWeight: '500',
+    letterSpacing: -0.2,
   },
   duration: {
     flexShrink: 0,

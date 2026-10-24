@@ -83,7 +83,7 @@ export const removeComponentId = (name: string) => {
   commonActions.removeComponentId(name)
 }
 
-// 下载、设置与排行榜都是覆盖在主页分页上的独立页面，不能作为返回落点。
+// 下载与设置是覆盖在主页分页上的独立页面，不能作为返回落点；排行榜自 Phase 7 起是主标签。
 export const setNavActiveId = (id: Parameters<typeof commonActions.setNavActiveId>['0']) => {
   if (id == commonState.navActiveId) return
   commonActions.setNavActiveId(id)
@@ -97,16 +97,12 @@ export const backToHomeTab = () => {
   setNavActiveId(normalizeNavId(commonState.lastNavActiveId))
 }
 
-/**
- * 打开排行榜覆盖页。
- * 排行榜从「浏览」进入，先把父级固定为浏览，保证返回与恢复都落在浏览而不是进入前的主标签。
- */
+/** 打开排行榜主标签 */
 export const openLeaderboard = () => {
-  if (commonState.lastNavActiveId != 'nav_songlist') commonActions.setLastNavActiveId('nav_songlist')
   setNavActiveId('nav_top')
 }
 
-/** 关闭排行榜覆盖页，回到它的父级「浏览」 */
+/** 离开排行榜：回到浏览主标签（保留给旧调用方与测试） */
 export const closeLeaderboard = () => {
   setNavActiveId('nav_songlist')
 }

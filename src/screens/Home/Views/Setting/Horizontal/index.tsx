@@ -3,6 +3,7 @@ import NavList from './NavList'
 import { createStyle } from '@/utils/tools'
 import commonState from '@/store/common/state'
 import { navigations } from '@/navigation'
+import { useTheme } from '@/store/theme/hook'
 
 const styles = createStyle({
   container: {
@@ -15,8 +16,9 @@ const styles = createStyle({
 })
 
 export default () => {
+  const theme = useTheme()
   return (
-    <View style={{ ...styles.container, backgroundColor: 'transparent' }}>
+    <View style={{ ...styles.container, backgroundColor: theme['c-grouped-background'] }}>
       <View style={{ ...styles.nav, backgroundColor: 'transparent' }}>
         <NavList onChangeId={(id) => {
           const componentId = commonState.componentIds.home

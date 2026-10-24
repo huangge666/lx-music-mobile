@@ -2,6 +2,7 @@ import { useRef, useState, useMemo, forwardRef, useImperativeHandle } from 'reac
 import { FlatList, View, RefreshControl, type FlatListProps } from 'react-native'
 
 import ListItem from './ListItem'
+import Featured from './Featured'
 // import { navigations } from '@/navigation'
 import { type ListInfoItem } from '@/store/songlist/state'
 import { useLayout } from '@/utils/hooks'
@@ -12,7 +13,6 @@ import { createStyle } from '@/utils/tools'
 import Text from '@/components/common/Text'
 import ListState from '@/components/common/ListState'
 import { useBottomInset } from '@/components/common/BottomInset'
-
 type FlatListType = FlatListProps<ListInfoItem>
 
 // 与资料库封面网格统一：左右内容间距 16、列间距 12
@@ -41,6 +41,7 @@ export default forwardRef<ListType, ListProps>(({ onRefresh, onLoadMore, onOpenD
   const [status, setStatus] = useState<Status>('idle')
   const { onLayout, width } = useLayout()
   const theme = useTheme()
+  const t = useI18n()
   const bottomInset = useBottomInset()
   // console.log('render songlist')
 
@@ -75,7 +76,7 @@ export default forwardRef<ListType, ListProps>(({ onRefresh, onLoadMore, onOpenD
   // }
   const refreshControl = useMemo(() => (
     <RefreshControl
-      colors={[theme['c-primary']]}
+      colors={[theme['c-accent']]}
       // progressBackgroundColor={theme.primary}
       refreshing={status == 'refreshing'}
       onRefresh={onRefresh} />
@@ -147,6 +148,19 @@ export default forwardRef<ListType, ListProps>(({ onRefresh, onLoadMore, onOpenD
     }
     return list
   }, [currentList, rowInfo])
+
+  // 编辑式精选货架：只取有封面且有真实来源的前几张，不构造假数据
+  const featured = useMemo(() => currentList.filter(item => item.img && item.source).slice(0, 5), [currentList])
+  const headerComponent = useMemo(() => (
+    <View>
+      <Featured items={featured} width={width - CONTENT_PADDING * 2} onOpenDetail={onOpenDetail} />
+      {featured.length
+        ? (
+            <Text style={styles.gridTitle} size={22} color={theme['c-font']}>{t('browse_all_playlists')}</Text>
+          )
+        : null}
+    </View>
+  ), [featured, onOpenDetail, t, theme, width])
   // console.log(listInfo.list.map((item) => item.id))
 
   return (
@@ -176,6 +190,7 @@ export default forwardRef<ListType, ListProps>(({ onRefresh, onLoadMore, onOpenD
                 onEndReachedThreshold={0.6}
                 onEndReached={handleLoadMore}
                 refreshControl={refreshControl}
+                ListHeaderComponent={headerComponent}
                 ListFooterComponent={footerComponent}
                 ListEmptyComponent={<ListState status={status} search={search} onRetry={onRefresh} />}
               />
@@ -219,6 +234,12 @@ const styles = createStyle({
   listContent: {
     paddingTop: 6,
     paddingBottom: 12,
+  },
+  gridTitle: {
+    fontWeight: '700',
+    letterSpacing: -0.4,
+    paddingTop: 18,
+    paddingBottom: 10,
   },
   footer: {
     textAlign: 'center',

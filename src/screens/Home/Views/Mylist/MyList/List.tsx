@@ -23,29 +23,43 @@ import { navigations } from '@/navigation'
 import commonState from '@/store/common/state'
 import { type Position } from './ListMenu'
 import { scaleSizeH, scaleSizeW, setSpText } from '@/utils/pixelRatio'
-import { BorderRadius } from '@/theme'
 import { useI18n } from '@/lang'
 import { useBottomInset } from '@/components/common/BottomInset'
 import { useFontSize } from '@/store/common/hook'
-import { getLibraryGridMetrics } from './gridLayout'
+import { getLibraryRowHeight } from './rowLayout'
 
 type FlatListType = FlatListProps<LX.List.MyListInfo>
 
-// 设计基准值；实际像素在渲染时按当前应用字号换算，字号变化后几何一起更新
+/**
+ * 资料库列表（Phase 7）。
+ *
+ * 由三列小卡网格改为 iOS 资料库的列表形态：
+ * 52dp 圆角封面 + 17/600 标题 + 13 歌曲数 + 从文字处起笔的发丝分隔线。
+ * 行高由同一份计算同时喂给渲染与 `getItemLayout`，大字号变化时一起更新。
+ */
 const DESIGN = {
   contentPadding: 16,
-  columnGap: 12,
-  // 100 在常见手机宽度下得到三列小卡（约屏宽 28%），放大屏/平板继续增列
-  minCardWidth: 100,
-  rowSpacing: 16,
-  titleSize: 13,
-  titleGap: 8,
-  metaSize: 11,
-  lineHeightRatio: 1.35,
-  metaMinHeight: 26,
+  contentTop: 4,
+  coverSize: 52,
+  coverRadius: 8,
+  rowHeight: 64,
+  rowGap: 8,
+  titleSize: 17,
+  metaSize: 13,
+  textGap: 2,
+  separatorInset: 16 + 52 + 12,
 }
 
-const MORE_HIT_SLOP = { top: 12, bottom: 12, left: 12, right: 12 }
+const MORE_HIT_SLOP = { top: 8, bottom: 8, left: 8, right: 8 }
+
+type ListFilter = 'all' | 'mine' | 'system'
+
+/** iOS 分段控件的三个真实视图：全部列表 / 用户歌单 / 系统列表 */
+const FILTER_OPTIONS = [
+  { id: 'all', label: 'library_filter_all' },
+  { id: 'mine', label: 'library_filter_mine' },
+  { id: 'system', label: 'library_filter_system' },
+] as const
 
 const getListIcon = (id: string) => {
   switch (id) {
@@ -58,29 +72,35 @@ const getListIcon = (id: string) => {
   }
 }
 
-interface CardMetrics {
-  cardWidth: number
-  titleGap: number
-  titleBlockHeight: number
+interface RowMetrics {
+  rowHeight: number
+  coverSize: number
+  coverRadius: number
   titleLineHeight: number
-  metaBlockHeight: number
   metaLineHeight: number
+  metaGap: number
+  contentPadding: number
+  contentTop: number
+  separatorInset: number
 }
+
 /**
- * 资料库封面卡片。
+ * 资料库列表行。
  * 系统列表（默认/我喜欢）用固定图标，用户歌单用按稳定 id 派生的色块 + 首字，
  * 不为了封面去加载歌单内的歌曲，也不伪造「最近添加」。
  */
-const CardItem = memo(({
+const ListRow = memo(({
   item,
   index,
+  last,
   metrics,
   onPress,
   onShowMenu,
 }: {
   item: LX.List.MyListInfo
   index: number
-  metrics: CardMetrics
+  last: boolean
+  metrics: RowMetrics
   onPress: (item: LX.List.MyListInfo) => void
   onShowMenu: (item: LX.List.MyListInfo, index: number, position: Position) => void
 }) => {
@@ -109,40 +129,44 @@ const CardItem = memo(({
   }, [index, item, onShowMenu])
 
   return (
-    <View style={{ width: metrics.cardWidth }}>
+    <View style={{ height: metrics.rowHeight }}>
       <TouchableOpacity
+        style={styles.row}
         onPress={handlePress}
-        activeOpacity={0.78}
+        activeOpacity={0.7}
         accessibilityRole="button"
         accessibilityLabel={[item.name, countLabel.trim()].filter(Boolean).join(' · ')}
       >
         <View style={[styles.cover, {
-          width: metrics.cardWidth,
-          height: metrics.cardWidth,
+          width: metrics.coverSize,
+          height: metrics.coverSize,
+          borderRadius: metrics.coverRadius,
           backgroundColor: tint.backgroundColor,
         }]}>
           {fetching
             ? <Loading color={tint.color} size={18} />
             : initial
               ? <Text style={styles.coverInitial} color={tint.color} numberOfLines={1}>{initial}</Text>
-              : <Icon name={getListIcon(item.id)} size={Math.max(Math.round(metrics.cardWidth * 0.22), 16)} color={tint.color} />}
+              : <Icon name={getListIcon(item.id)} size={Math.max(Math.round(metrics.coverSize * 0.4), 16)} color={tint.color} />}
         </View>
-        <View style={{ marginTop: metrics.titleGap, height: metrics.titleLineHeight }}>
+        <View style={styles.textCol}>
           <Text
             style={{ lineHeight: metrics.titleLineHeight }}
             size={DESIGN.titleSize}
             color={theme['c-font']}
             numberOfLines={1}
           >{item.name}</Text>
+          {metrics.metaLineHeight > 0
+            ? (
+                <Text
+                  style={{ lineHeight: metrics.metaLineHeight, marginTop: metrics.metaGap }}
+                  size={DESIGN.metaSize}
+                  color={theme['c-font-label']}
+                  numberOfLines={1}
+                >{countLabel}</Text>
+              )
+            : null}
         </View>
-      </TouchableOpacity>
-      <View style={[styles.metaRow, { height: metrics.metaBlockHeight }]}>
-        <Text
-          style={{ lineHeight: metrics.metaLineHeight, flexShrink: 1 }}
-          size={DESIGN.metaSize}
-          color={theme['c-font-label']}
-          numberOfLines={1}
-        >{countLabel}</Text>
         <TouchableOpacity
           onPress={handleShowMenu}
           ref={moreButtonRef}
@@ -152,18 +176,26 @@ const CardItem = memo(({
           accessibilityRole="button"
           accessibilityLabel={t('list_music_actions')}
         >
-          <Icon name="dots-vertical" color={theme['c-font-label']} size={16} />
+          <Icon name="dots-vertical" color={theme['c-font-label']} size={18} />
         </TouchableOpacity>
-      </View>
+      </TouchableOpacity>
+      {last
+        ? null
+        : (
+            <View style={[styles.separator, {
+              marginLeft: metrics.separatorInset,
+              backgroundColor: theme['c-border-background'],
+            }]} />
+          )}
     </View>
   )
 }, (prevProps, nextProps) => {
   return prevProps.item.id == nextProps.item.id &&
     prevProps.item.name == nextProps.item.name &&
     prevProps.index == nextProps.index &&
-    prevProps.metrics.cardWidth == nextProps.metrics.cardWidth &&
-    prevProps.metrics.titleBlockHeight == nextProps.metrics.titleBlockHeight &&
-    prevProps.metrics.metaBlockHeight == nextProps.metrics.metaBlockHeight
+    prevProps.last == nextProps.last &&
+    prevProps.metrics.rowHeight == nextProps.metrics.rowHeight &&
+    prevProps.metrics.coverSize == nextProps.metrics.coverSize
 })
 
 export default ({ onShowMenu }: {
@@ -171,50 +203,52 @@ export default ({ onShowMenu }: {
 }) => {
   const flatListRef = useRef<FlatList>(null)
   const allList = useMyList()
+  const theme = useTheme()
+  const t = useI18n()
   const bottomInset = useBottomInset()
   const fontScale = useFontSize()
   const [width, setWidth] = useState(0)
+  const [filter, setFilter] = useState<ListFilter>('all')
   const scrollOffsetRef = useRef(0)
   const firstScrollRef = useRef(false)
   const pendingOffsetRef = useRef<number | null>(null)
-  const prevLayoutRef = useRef({ columns: 0, rowHeight: 0 })
   const restoredRef = useRef(false)
 
-  // 测量得到的宽度直接用于列宽，不再交给缩放工具二次换算
+  // 测量得到的宽度用于决定行内文字可用宽度，不再交给缩放工具二次换算
   const handleLayout = useCallback((e: LayoutChangeEvent) => {
     const nextWidth = e.nativeEvent.layout.width
     setWidth(prev => Math.abs(prev - nextWidth) > 0.5 ? nextWidth : prev)
   }, [])
 
   const metrics = useMemo(() => {
-    // 行高与字号一起换算：大字号下标题块变高，getItemLayout 用的是同一个值
-    const titleLineHeight = Math.round(setSpText(DESIGN.titleSize) * DESIGN.lineHeightRatio)
-    const metaLineHeight = Math.round(setSpText(DESIGN.metaSize) * DESIGN.lineHeightRatio)
-    const metaBlockHeight = Math.max(metaLineHeight, Math.round(scaleSizeH(DESIGN.metaMinHeight)))
-    const titleGap = Math.round(scaleSizeH(DESIGN.titleGap))
-    // 标题只占一行（长标题截断），标题块高度含封面到标题的间距，渲染用同一个值
-    const titleBlockHeight = titleGap + titleLineHeight
-    return {
-      ...getLibraryGridMetrics({
-        width,
-        contentPadding: scaleSizeW(DESIGN.contentPadding),
-        columnGap: scaleSizeW(DESIGN.columnGap),
-        minCardWidth: scaleSizeW(DESIGN.minCardWidth),
-        rowSpacing: scaleSizeH(DESIGN.rowSpacing),
-        titleBlockHeight,
-        metaBlockHeight,
-      }),
-      titleGap,
-      titleBlockHeight,
+    const coverSize = Math.round(scaleSizeW(DESIGN.coverSize))
+    const titleLineHeight = Math.round(setSpText(DESIGN.titleSize) * 1.25)
+    const metaLineHeight = Math.round(setSpText(DESIGN.metaSize) * 1.25)
+    const metaGap = Math.round(scaleSizeH(DESIGN.textGap))
+    const verticalPadding = Math.round(scaleSizeH(DESIGN.rowGap))
+    // 行高同时要容纳封面、两行文字和上下留白；大字号下跟随文字块一起变高
+    const rowHeight = getLibraryRowHeight({
+      coverSize,
+      minRowHeight: Math.round(scaleSizeH(DESIGN.rowHeight)),
+      verticalPadding,
       titleLineHeight,
-      metaBlockHeight,
       metaLineHeight,
+      metaGap,
+    })
+    return {
+      rowHeight,
+      coverSize,
+      coverRadius: Math.round(scaleSizeW(DESIGN.coverRadius)),
+      titleLineHeight,
+      metaLineHeight,
+      metaGap,
+      contentPadding: Math.round(scaleSizeW(DESIGN.contentPadding)),
+      contentTop: Math.round(scaleSizeH(DESIGN.contentTop)),
+      separatorInset: Math.round(scaleSizeW(DESIGN.separatorInset)),
     }
   // 应用字号变化时 setSpText 的结果才会变，fontScale 只用于触发重算
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [width, fontScale])
-
-  const { columns, rowHeight, columnGap, rowSpacing, contentPadding } = metrics
 
   const applyPendingOffset = useCallback(() => {
     const offset = pendingOffsetRef.current
@@ -229,29 +263,30 @@ export default ({ onShowMenu }: {
   }, [])
 
   useEffect(() => {
-    if (restoredRef.current || metrics.cardWidth <= 0) return
+    if (restoredRef.current || width <= 0) return
     restoredRef.current = true
-    // 布局记录缺失说明位置来自旧的单列行列表，像素无法换算，只重置资料库这一处
-    void getMusicListPosition(LIST_SCROLL_POSITION_KEY, rowHeight, columns, { resetWhenLayoutUnknown: true }).then(offset => {
+    // 布局记录缺失说明位置来自旧的列布局，像素无法换算，只重置资料库这一处
+    void getMusicListPosition(LIST_SCROLL_POSITION_KEY, metrics.rowHeight, 1, { resetWhenLayoutUnknown: true }).then(offset => {
       if (offset <= 0) return
       pendingOffsetRef.current = offset
       applyPendingOffset()
     })
-  }, [metrics.cardWidth, rowHeight, columns, applyPendingOffset])
+  }, [metrics.rowHeight, width, applyPendingOffset])
 
-  useEffect(() => {
-    const prev = prevLayoutRef.current
-    if (prev.columns == columns && prev.rowHeight == rowHeight) return
-    const firstItemIndex = prev.rowHeight > 0
-      ? Math.floor(scrollOffsetRef.current / prev.rowHeight) * prev.columns
-      : 0
-    prevLayoutRef.current = { columns, rowHeight }
-    // 列数变化会重建列表（FlatList 不支持原地改 numColumns），按真实行列换算回同一个首项
-    if (prev.columns > 0 && prev.columns != columns) {
-      pendingOffsetRef.current = Math.floor(firstItemIndex / columns) * rowHeight
-      applyPendingOffset()
-    }
-  }, [columns, rowHeight, applyPendingOffset])
+  const lists = useMemo(() => {
+    if (filter == 'all') return allList
+    if (filter == 'system') return allList.filter(item => item.id == LIST_IDS.DEFAULT || item.id == LIST_IDS.LOVE)
+    return allList.filter(item => item.id != LIST_IDS.DEFAULT && item.id != LIST_IDS.LOVE)
+  }, [allList, filter])
+
+  const handleFilterChange = useCallback((next: ListFilter) => {
+    if (next == filter) return
+    setFilter(next)
+    pendingOffsetRef.current = null
+    scrollOffsetRef.current = 0
+    firstScrollRef.current = true
+    flatListRef.current?.scrollToOffset({ offset: 0, animated: false })
+  }, [filter])
 
   const handleScroll = useCallback(({ nativeEvent }: NativeSyntheticEvent<NativeScrollEvent>) => {
     const offsetY = nativeEvent.contentOffset.y
@@ -260,8 +295,10 @@ export default ({ onShowMenu }: {
       firstScrollRef.current = false
       return
     }
-    void saveMusicListPosition(LIST_SCROLL_POSITION_KEY, offsetY, rowHeight, columns)
-  }, [rowHeight, columns])
+    // 分段筛选是临时视图，不覆盖「全部」列表保存的位置
+    if (filter != 'all') return
+    void saveMusicListPosition(LIST_SCROLL_POSITION_KEY, offsetY, metrics.rowHeight, 1)
+  }, [metrics.rowHeight, filter])
 
   const handleToggleList = useCallback((item: LX.List.MyListInfo) => {
     setActiveList(item.id)
@@ -274,49 +311,84 @@ export default ({ onShowMenu }: {
   }, [onShowMenu])
 
   const renderItem: FlatListType['renderItem'] = ({ item, index }) => (
-    <CardItem
+    <ListRow
       item={item}
-      index={index}
+      // 菜单里的「在此之后新建列表」用的是完整列表下标，筛选视图不能改写它
+      index={allList.indexOf(item)}
+      last={index == lists.length - 1}
       metrics={metrics}
       onPress={handleToggleList}
       onShowMenu={showMenu}
     />
   )
   const getkey: FlatListType['keyExtractor'] = item => item.id
-  const getItemLayout: FlatListType['getItemLayout'] = (data, index) => {
-    const rowIndex = Math.floor(index / Math.max(columns, 1))
-    return { length: rowHeight, offset: rowHeight * rowIndex, index }
-  }
+  const getItemLayout: FlatListType['getItemLayout'] = (data, index) => ({
+    length: metrics.rowHeight,
+    offset: metrics.rowHeight * index,
+    index,
+  })
 
   return (
     <View style={styles.container} onLayout={handleLayout}>
       {width == 0
         ? null
         : (
-            <FlatList
-              // numColumns 变化必须重建列表，RN 不支持原地修改
-              key={`grid_${columns}`}
-              ref={flatListRef}
-              onScroll={handleScroll}
-              scrollEventThrottle={16}
-              style={styles.container}
-              contentContainerStyle={[styles.content, {
-                paddingHorizontal: contentPadding,
-                paddingBottom: bottomInset + 16,
-              }]}
-              columnWrapperStyle={{ gap: columnGap, marginBottom: rowSpacing }}
-              numColumns={columns}
-              data={allList}
-              maxToRenderPerBatch={9}
-              windowSize={9}
-              removeClippedSubviews={true}
-              initialNumToRender={columns * 4}
-              renderItem={renderItem}
-              keyExtractor={getkey}
-              getItemLayout={getItemLayout}
-              onLayout={applyPendingOffset}
-              onContentSizeChange={applyPendingOffset}
-            />
+            <>
+              {/* iOS 资料库分段控件：全部 / 我的歌单 / 系统列表 */}
+              <View style={[styles.filterTrack, {
+                marginHorizontal: metrics.contentPadding,
+                backgroundColor: theme['c-primary-input-background'],
+              }]}>
+                {FILTER_OPTIONS.map(option => {
+                  const active = filter == option.id
+                  return (
+                    <TouchableOpacity
+                      key={option.id}
+                      style={[styles.filterSegment, active
+                        ? { backgroundColor: theme['c-card-background'], elevation: 2, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 2, shadowOffset: { width: 0, height: 1 } }
+                        : null]}
+                      activeOpacity={0.7}
+                      accessibilityRole="tab"
+                      accessibilityState={{ selected: active }}
+                      onPress={() => { handleFilterChange(option.id) }}
+                    >
+                      <Text
+                        size={13}
+                        numberOfLines={1}
+                        color={active ? theme['c-font'] : theme['c-font-label']}
+                        style={active ? styles.filterTextActive : null}
+                      >{t(option.label)}</Text>
+                    </TouchableOpacity>
+                  )
+                })}
+              </View>
+              <FlatList
+                ref={flatListRef}
+                onScroll={handleScroll}
+                scrollEventThrottle={16}
+                style={styles.container}
+                contentContainerStyle={[styles.content, {
+                  paddingHorizontal: metrics.contentPadding,
+                  paddingTop: metrics.contentTop,
+                  paddingBottom: bottomInset + 24,
+                }]}
+                data={lists}
+                maxToRenderPerBatch={9}
+                windowSize={9}
+                removeClippedSubviews={true}
+                initialNumToRender={12}
+                renderItem={renderItem}
+                keyExtractor={getkey}
+                getItemLayout={getItemLayout}
+                onLayout={applyPendingOffset}
+                onContentSizeChange={applyPendingOffset}
+                ListEmptyComponent={(
+                  <View style={styles.empty}>
+                    <Text size={13} color={theme['c-font-label']}>{t('list_no_content')}</Text>
+                  </View>
+                )}
+              />
+            </>
           )}
     </View>
   )
@@ -328,29 +400,64 @@ const styles = createStyle({
     flex: 1,
   },
   content: {
-    paddingTop: 8,
+    flexGrow: 1,
+  },
+  // iOS 分段控件：浅灰轨道 + 白色选中块
+  filterTrack: {
+    flexDirection: 'row',
+    height: 34,
+    marginTop: 4,
+    marginBottom: 4,
+    padding: 2,
+    borderRadius: 9,
+    alignItems: 'center',
+  },
+  filterSegment: {
+    flex: 1,
+    height: 30,
+    borderRadius: 7,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  filterTextActive: {
+    fontWeight: '600',
+  },
+  empty: {
+    paddingTop: 48,
+    alignItems: 'center',
+  },
+  row: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
   },
   cover: {
-    borderRadius: BorderRadius.large,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
   },
   coverInitial: {
     // createStyle 会对 fontSize 走 setSpText，这里写设计值，避免二次缩放
-    fontSize: 34,
+    fontSize: 22,
     includeFontPadding: false,
     fontWeight: '700',
-    letterSpacing: -1,
+    letterSpacing: -0.5,
   },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  textCol: {
+    flex: 1,
+    paddingLeft: 12,
+    paddingRight: 8,
+    justifyContent: 'center',
   },
   moreButton: {
-    width: 24,
-    height: '100%',
+    width: 32,
+    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  separator: {
+    height: 0.5,
   },
 })

@@ -1,20 +1,18 @@
 import { memo, useMemo } from 'react'
-import { View } from 'react-native'
-import { useKeyboard } from '@/utils/hooks'
+import { StyleSheet, View } from 'react-native'
+import { useHorizontalMode, useKeyboard } from '@/utils/hooks'
 
 import Pic from './components/Pic'
 import Title from './components/Title'
-import PlayInfo from './components/PlayInfo'
 import ControlBtn from './components/ControlBtn'
 import { createStyle } from '@/utils/tools'
 import { useSettingValue } from '@/store/setting/hook'
 import { useNavActiveId } from '@/store/common/hook'
 import commonState from '@/store/common/state'
-import GlassSurface from '@/components/common/GlassSurface'
+import LiquidGlass from '@/components/common/LiquidGlass'
 
 interface PlayerBarProps {
   isHome?: boolean
-  floating?: boolean
   /** 由 HomeDock 绘制外层材质时使用，播放器只保留内容布局。 */
   embedded?: boolean
   componentId?: string
@@ -22,26 +20,29 @@ interface PlayerBarProps {
 
 /**
  * 迷你播放器。
- * 首页组合 Dock 使用 embedded 模式；独立详情和横屏仍保留自己的表面与布局。
+ * 首页组合 Dock 使用 embedded 模式；独立详情和横屏作为页内浮动胶囊。
  */
-export default memo(({ isHome = false, floating = false, embedded = false, componentId }: PlayerBarProps) => {
+export default memo(({ isHome = false, embedded = false, componentId }: PlayerBarProps) => {
   const { keyboardShown } = useKeyboard()
+  const wide = useHorizontalMode()
   const autoHidePlayBar = useSettingValue('common.autoHidePlayBar')
   const navActiveId = useNavActiveId()
   const targetComponentId = componentId ?? commonState.componentIds.home
+  // 手机迷你条 43dp 胶囊；横屏对齐 Sonify 平板条 62dp。
+  const barHeight = wide ? 62 : 43
+  const barRadius = barHeight / 2
 
   const playerComponent = useMemo(() => {
     const content = (
-      <View style={[styles.content, embedded ? styles.embedded : null]}>
+      <View style={embedded ? embeddedLayout.content : styles.content}>
         <View style={styles.left}>
-          <Pic isHome={isHome} componentId={targetComponentId} />
+          <Pic isHome={isHome} embedded={embedded} componentId={targetComponentId} />
         </View>
         <View style={styles.center}>
           <Title isHome={isHome} componentId={targetComponentId} />
-          <PlayInfo isHome={isHome} />
         </View>
         <View style={styles.right}>
-          <ControlBtn />
+          <ControlBtn dense={!wide} />
         </View>
       </View>
     )
@@ -49,13 +50,13 @@ export default memo(({ isHome = false, floating = false, embedded = false, compo
     if (embedded) return content
 
     return (
-      <View style={floating ? styles.floatWrap : null}>
-        <GlassSurface style={floating ? styles.floating : styles.docked}>
+      <View style={styles.detailWrap}>
+        <LiquidGlass radius={barRadius} shadow={false} style={[styles.docked, { minHeight: barHeight, borderRadius: barRadius }]}>
           {content}
-        </GlassSurface>
+        </LiquidGlass>
       </View>
     )
-  }, [embedded, floating, isHome, targetComponentId])
+  }, [barHeight, barRadius, embedded, isHome, targetComponentId, wide])
 
   if (isHome && navActiveId == 'nav_setting') return null
   return autoHidePlayBar && keyboardShown ? null : playerComponent
@@ -63,30 +64,16 @@ export default memo(({ isHome = false, floating = false, embedded = false, compo
 
 
 const styles = createStyle({
-  floatWrap: {
-    paddingHorizontal: 14,
-    paddingBottom: 8,
+  detailWrap: {
+    paddingHorizontal: 12,
+    paddingTop: 6,
+    paddingBottom: 10,
   },
-  floating: {
-    minHeight: 64,
-    paddingVertical: 8,
-    paddingLeft: 8,
-    paddingRight: 10,
-    borderRadius: 22,
-    borderWidth: 0.5,
-    flexDirection: 'row',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.16,
-    shadowRadius: 18,
-    elevation: 8,
-  },
+  // 详情页/横屏的浮动迷你条：内容布局落在这里，圆角与阴影由 LiquidGlass 绘制
   docked: {
-    width: 'auto',
-    paddingVertical: 6,
-    paddingHorizontal: 16,
-    borderTopWidth: 0.5,
+    minHeight: 43,
+    paddingVertical: 0,
+    paddingHorizontal: 12,
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -94,11 +81,6 @@ const styles = createStyle({
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  embedded: {
-    minHeight: 64,
-    paddingVertical: 6,
-    paddingHorizontal: 16,
   },
   left: {
     flexGrow: 0,
@@ -108,8 +90,8 @@ const styles = createStyle({
     flexDirection: 'column',
     flexGrow: 1,
     flexShrink: 1,
-    paddingLeft: 10,
-    paddingRight: 6,
+    paddingLeft: 8,
+    paddingRight: 5,
     justifyContent: 'center',
   },
   right: {
@@ -117,5 +99,17 @@ const styles = createStyle({
     alignItems: 'center',
     flexGrow: 0,
     flexShrink: 0,
+  },
+})
+
+// 首页胶囊高度是固定 dp。这里不能走 createStyle，否则 padding 和封面会被放大到槽位外面。
+const embeddedLayout = StyleSheet.create({
+  content: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingLeft: 12,
+    paddingRight: 8,
+    overflow: 'hidden',
   },
 })

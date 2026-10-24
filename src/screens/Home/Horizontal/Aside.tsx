@@ -7,7 +7,7 @@ import { useI18n } from '@/lang'
 import { confirmDialog, createStyle, exitApp as backHome } from '@/utils/tools'
 import { isMainNavId, MAIN_NAV_MENUS, NAV_MENUS } from '@/config/constant'
 import type { InitState } from '@/store/common/state'
-import { exitApp, openLeaderboard, setNavActiveId } from '@/core/common'
+import { exitApp, setNavActiveId } from '@/core/common'
 import { BorderWidths } from '@/theme'
 import GlassSurface from '@/components/common/GlassSurface'
 import { useSettingValue } from '@/store/setting/hook'
@@ -101,7 +101,7 @@ const MenuItem = ({ id, icon, onPress }: {
       style={[
         styles.menuItem,
         isActive
-          ? { backgroundColor: theme['c-accent-soft'], borderColor: theme['c-border-background'] }
+          ? { backgroundColor: theme['c-glass-highlight'], borderColor: theme['c-border-background'] }
           : null,
       ]}
       onPress={() => { onPress(id) }}
@@ -111,7 +111,7 @@ const MenuItem = ({ id, icon, onPress }: {
       accessibilityState={isTab ? { selected: isActive } : undefined}
     >
       <View style={styles.iconContent}>
-        <Icon name={icon} size={20} color={isActive ? theme['c-accent'] : theme['c-font-label']} />
+        <Icon name={icon} size={22} color={isActive ? theme['c-font'] : theme['c-font-label']} />
       </View>
     </TouchableOpacity>
   )
@@ -139,12 +139,8 @@ export default memo(() => {
     }
 
     global.app_event.changeMenuVisible(false)
-    // 排行榜是浏览的覆盖页，从侧栏进入同样先固定父级
-    if (id == 'nav_top') {
-      openLeaderboard()
-    } else {
-      setNavActiveId(id)
-    }
+    // Phase 7 起排行榜是主标签，不再需要先固定父级
+    setNavActiveId(id)
   }
 
   return (

@@ -1,36 +1,36 @@
-import { memo } from 'react'
-import { TouchableOpacity, View } from 'react-native'
-import { MAIN_NAV_MENUS, type NAV_MENUS } from '@/config/constant'
+import { memo, useEffect, useRef, useState } from 'react'
+import { Animated, StyleSheet, TouchableOpacity, View } from 'react-native'
+import { getMainNavIndex, isMainNavId, MAIN_NAV_MENUS, type NAV_MENUS } from '@/config/constant'
 import { setNavActiveId } from '@/core/common'
 import { useI18n } from '@/lang'
 import { useNavActiveId } from '@/store/common/hook'
 import { useTheme } from '@/store/theme/hook'
 import { Icon } from '@/components/common/Icon'
 import Text from '@/components/common/Text'
-import { createStyle, isAndroid } from '@/utils/tools'
+import { setSpText } from '@/utils/pixelRatio'
 
-/** 底栏内容底边距。iOS 另有系统 Home Indicator；Android 需在栏内留出贴底安全距离。 */
-const TAB_BAR_PADDING_BOTTOM = isAndroid ? 12 : 6
-/** 底栏只呈现三个主标签，顺序与首页分页器、主标签判断共用同一份定义。 */
+/** 标签栏只呈现四个主标签，顺序与首页分页器、主标签判断共用同一份定义。 */
 const TAB_BAR_MENUS = MAIN_NAV_MENUS
 
 interface BarItemProps {
   id: typeof NAV_MENUS[number]['id']
   icon: typeof NAV_MENUS[number]['icon']
+  labelBox: number
 }
 
 /**
- * 底栏页签：选中态用辅色胶囊，未选中只保留图标和文字。
+ * 标签栏页签。
+ *
+ * Sonify 开着液态玻璃时，图标和文字保持黑/白，选中靠背后的透镜，不用品牌红。
+ * 文字常显：滚动列表时不再收起，标签栏高度固定。
  */
-const BarItem = ({ id, icon }: BarItemProps) => {
+const BarItem = ({ id, icon, labelBox }: BarItemProps) => {
   const theme = useTheme()
   const t = useI18n()
   const activeId = useNavActiveId()
   const isActive = activeId == id
+  const color = theme['c-font']
 
-  /**
-   * 切换底部导航页签。
-   */
   const handlePress = () => {
     if (isActive) return
     setNavActiveId(id)
@@ -38,14 +38,7 @@ const BarItem = ({ id, icon }: BarItemProps) => {
 
   return (
     <TouchableOpacity
-      style={[
-        styles.item,
-        isActive
-          ? {
-              backgroundColor: theme['c-accent-soft'],
-            }
-          : null,
-      ]}
+      style={styles.item}
       onPress={handlePress}
       accessibilityRole="tab"
       accessibilityLabel={t(id)}
@@ -54,54 +47,110 @@ const BarItem = ({ id, icon }: BarItemProps) => {
     >
       <Icon
         name={icon}
-        size={22}
-        color={isActive ? theme['c-accent'] : theme['c-font-label']}
+        rawSize={26}
+        strokeWidth={2}
+        color={color}
       />
-      <Text
-        style={styles.label}
-        size={10}
-        color={isActive ? theme['c-accent'] : theme['c-font-label']}
-        numberOfLines={1}
-      >
-        {t(id)}
-      </Text>
+      {/*
+        高度按真实字号留出，不用固定 13dp：
+        setSpText 会放大字号，Android 默认字体内边距再叠一层，固定高度会把默认态的文字裁掉。
+      */}
+      <View style={{ alignSelf: 'stretch', overflow: 'hidden' }}>
+        <Text
+          style={{
+            height: labelBox,
+            lineHeight: labelBox,
+            textAlign: 'center',
+            fontWeight: '500',
+            includeFontPadding: false,
+          }}
+          size={12}
+          color={color}
+          numberOfLines={1}
+        >
+          {t(id)}
+        </Text>
+      </View>
     </TouchableOpacity>
   )
 }
 
 /**
- * 底部标签栏内容。
- *
- * Phase 6B 起横屏改用侧栏承载主导航，这里只作为竖屏 HomeDock 的内容层：
- * 材质与真实占用高度由 HomeDock 统一管理，本组件不再自己画表面。
+ * 底部标签栏内容。竖屏时铺在 HomeDock 的玻璃胶囊里。
+ * 选中态是一枚跟着当前标签走的玻璃透镜，图标保持内容色。
  */
 export default memo(() => {
+  const theme = useTheme()
+  const activeId = useNavActiveId()
+  const [barWidth, setBarWidth] = useState(0)
+  const activeIndex = isMainNavId(activeId) ? getMainNavIndex(activeId) : 0
+  const slide = useRef(new Animated.Value(activeIndex)).current
+  // 12px 标签的实际占位。+2 给字形下降部留一点，避免展开态被裁切。
+  const labelBox = Math.max(16, Math.ceil(setSpText(12)) + 2)
+  const tabWidth = barWidth / TAB_BAR_MENUS.length
+  const lensInset = 4
+
+  useEffect(() => {
+    Animated.spring(slide, {
+      toValue: activeIndex,
+      useNativeDriver: true,
+      friction: 9,
+      tension: 80,
+    }).start()
+  }, [activeIndex, slide])
+
   return (
-    <View style={styles.container}>
-      {TAB_BAR_MENUS.map(item => <BarItem key={item.id} id={item.id} icon={item.icon} />)}
+    <View
+      style={styles.container}
+      onLayout={({ nativeEvent }) => {
+        const next = nativeEvent.layout.width
+        setBarWidth(prev => (prev == next ? prev : next))
+      }}
+    >
+      {tabWidth > 0
+        ? (
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.lens,
+                {
+                  width: tabWidth - lensInset * 2,
+                  // Sonify 选中胶囊：浅色黑 10%，深色白 10%
+                  backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.10)' : 'rgba(0, 0, 0, 0.10)',
+                  transform: [{
+                    translateX: slide.interpolate({
+                      inputRange: TAB_BAR_MENUS.map((_, index) => index),
+                      outputRange: TAB_BAR_MENUS.map((_, index) => index * tabWidth + lensInset),
+                    }),
+                  }],
+                },
+              ]}
+            />
+          )
+        : null}
+      {TAB_BAR_MENUS.map(item => (
+        <BarItem key={item.id} id={item.id} icon={item.icon} labelBox={labelBox} />
+      ))}
     </View>
   )
 })
 
-const styles = createStyle({
+const styles = StyleSheet.create({
   container: {
+    flex: 1,
     flexDirection: 'row',
-    paddingHorizontal: 4,
-    paddingTop: 6,
-    paddingBottom: TAB_BAR_PADDING_BOTTOM,
-    justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  lens: {
+    position: 'absolute',
+    top: 4,
+    bottom: 4,
+    left: 0,
+    borderRadius: 25,
   },
   item: {
     flex: 1,
-    minHeight: 48,
-    marginHorizontal: 2,
-    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  label: {
-    marginTop: 2,
-    fontWeight: '600',
   },
 })

@@ -108,7 +108,8 @@ export const NAV_MENUS = [
   { id: 'nav_search', icon: 'search-2' },
   { id: 'nav_songlist', icon: 'album' },
   { id: 'nav_top', icon: 'leaderboard' },
-  { id: 'nav_love', icon: 'love' },
+  // 资料库：与 iOS 的「音乐列表」图标对应，heart 只保留给「我喜欢」列表
+  { id: 'nav_love', icon: 'playlist' },
   { id: 'nav_download', icon: 'download-2' },
   { id: 'nav_setting', icon: 'setting' },
 ] as const
@@ -118,22 +119,23 @@ export type NAV_ID_Type = typeof NAV_MENUS[number]['id']
 export type NAV_MENU_Type = typeof NAV_MENUS[number]
 
 /**
- * 首页三个主标签的唯一顺序（资料库 / 浏览 / 搜索）。
+ * 首页四个主标签的唯一顺序（浏览 / 排行榜 / 资料库 / 搜索）。
  * 底部标签栏、首页分页器与主标签判断共用这一份定义；
- * 排行榜、下载、设置是覆盖页，仍保留在 NAV_MENUS 的完整 id 集合里。
+ * 下载、设置仍是覆盖页，保留在 NAV_MENUS 的完整 id 集合里。
  * icon 必须与 NAV_MENUS 中同 id 的图标一致（有回归测试覆盖）。
  */
 export const MAIN_NAV_MENUS = [
-  { id: 'nav_love', icon: 'love' },
   { id: 'nav_songlist', icon: 'album' },
+  { id: 'nav_top', icon: 'leaderboard' },
+  { id: 'nav_love', icon: 'playlist' },
   { id: 'nav_search', icon: 'search-2' },
 ] as const
 export type MAIN_NAV_ID_Type = typeof MAIN_NAV_MENUS[number]['id']
 
 export const MAIN_NAV_IDS: readonly MAIN_NAV_ID_Type[] = MAIN_NAV_MENUS.map(menu => menu.id)
 
-/** 新安装、缺失值与未知值统一回到的默认主标签 */
-export const DEFAULT_MAIN_NAV_ID: MAIN_NAV_ID_Type = 'nav_love'
+/** 新安装、缺失值与未知值统一回到的默认主标签（对齐 Apple Music 首页优先） */
+export const DEFAULT_MAIN_NAV_ID: MAIN_NAV_ID_Type = 'nav_songlist'
 
 /** 首页辅助抽屉承载的覆盖页入口，主标签不在这里重复出现 */
 export const DRAWER_NAV_MENUS: readonly NAV_MENU_Type[] = (['nav_download', 'nav_setting'] as const)
@@ -149,13 +151,12 @@ export const getMainNavIdAt = (index: number): MAIN_NAV_ID_Type | undefined => M
 
 /**
  * 冷启动恢复时归一化历史导航值：
- * - 三个主标签原样恢复
- * - 旧版本的排行榜是主页面，恢复到它的父级「浏览」，不直接打开排行榜
- * - 下载/设置等覆盖页、缺失或未知值统一回到资料库
+ * - 四个主标签原样恢复（排行榜自 Phase 7 起是主标签）
+ * - 下载/设置等覆盖页、缺失或未知值统一回到默认主标签
  */
 export const normalizeNavId = (id: string | null | undefined): MAIN_NAV_ID_Type => {
   if (isMainNavId(id)) return id
-  return id == 'nav_top' ? 'nav_songlist' : DEFAULT_MAIN_NAV_ID
+  return DEFAULT_MAIN_NAV_ID
 }
 
 export const LXM_FILE_EXT_RXP = ['json', 'lxmc', 'bin']

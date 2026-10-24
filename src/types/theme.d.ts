@@ -278,6 +278,7 @@ declare global {
       'c-button-background-active': string
       'c-list-header-border-bottom': string
       'c-content-background': string
+      'c-grouped-background': string
       'c-border-background': string
       'c-card-background': string
       'c-accent': string
