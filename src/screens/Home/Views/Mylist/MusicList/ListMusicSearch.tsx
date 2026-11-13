@@ -22,27 +22,26 @@ export interface ListMusicSearchType {
   hide: () => void
 }
 
-export const debounceSearchList = debounce((text: string, list: LX.List.ListMusics, callback: (list: LX.List.ListMusics) => void) => {
-  // console.log(reslutList)
-  callback(searchListMusic(list, text))
-}, 200)
-
-
 export default forwardRef<ListMusicSearchType, ListMusicSearchProps>(({ onScrollToInfo }, ref) => {
   const searchTipListRef = useRef<SearchTipListType<LX.Music.MusicInfo>>(null)
   const [visible, setVisible] = useState(false)
-  const currentListIdRef = useRef('')
   const currentKeywordRef = useRef('')
+  const requestRef = useRef(0)
+  const debounceSearchList = useRef(debounce((text: string, list: LX.List.ListMusics, callback: (list: LX.List.ListMusics) => void) => {
+    callback(searchListMusic(list, text))
+  }, 200)).current
   const theme = useTheme()
 
-  const handleShowList = (keyword: string, height: number) => {
+  const handleShowList = (keyword: string, height: number, request: number) => {
+    if (request != requestRef.current) return
     searchTipListRef.current?.setHeight(height)
     currentKeywordRef.current = keyword
-    const id = currentListIdRef.current = listState.activeListId
+    const id = listState.activeListId
     if (keyword) {
       void getListMusics(id).then(list => {
+        if (request != requestRef.current) return
         debounceSearchList(keyword, list, (list) => {
-          if (currentListIdRef.current != id) return
+          if (request != requestRef.current) return
           searchTipListRef.current?.setList(list)
         })
       })
@@ -53,28 +52,30 @@ export default forwardRef<ListMusicSearchType, ListMusicSearchProps>(({ onScroll
 
   useImperativeHandle(ref, () => ({
     search(keyword, height) {
-      if (visible) handleShowList(keyword, height)
+      const request = ++requestRef.current
+      if (visible) handleShowList(keyword, height, request)
       else {
         setVisible(true)
         requestAnimationFrame(() => {
-          handleShowList(keyword, height)
+          handleShowList(keyword, height, request)
         })
       }
     },
     hide() {
+      requestRef.current++
       currentKeywordRef.current = ''
-      currentListIdRef.current = ''
       searchTipListRef.current?.setList([])
     },
   }))
 
   useEffect(() => {
     const updateList = (id: string) => {
-      currentListIdRef.current = id
+      const request = ++requestRef.current
       if (!currentKeywordRef.current) return
       void getListMusics(listState.activeListId).then(list => {
+        if (request != requestRef.current) return
         debounceSearchList(currentKeywordRef.current, list, (list) => {
-          if (currentListIdRef.current != id) return
+          if (request != requestRef.current) return
           searchTipListRef.current?.setList(list)
         })
       })
@@ -88,10 +89,13 @@ export default forwardRef<ListMusicSearchType, ListMusicSearchProps>(({ onScroll
     global.app_event.on('myListMusicUpdate', handleChange)
 
     return () => {
+      // 请求序号失效，禁止卸载或关闭后的慢回包重新弹出搜索面板。
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      requestRef.current++
       global.state_event.off('mylistToggled', updateList)
       global.app_event.off('myListMusicUpdate', handleChange)
     }
-  }, [])
+  }, [debounceSearchList])
 
   const renderItem = ({ item, index }: { item: LX.Music.MusicInfo, index: number }) => {
     return (
@@ -114,7 +118,11 @@ export default forwardRef<ListMusicSearchType, ListMusicSearchProps>(({ onScroll
       ? <SearchTipList
           ref={searchTipListRef}
           renderItem={renderItem}
-          onPressBg={() => searchTipListRef.current?.setList([])}
+          onPressBg={() => {
+            requestRef.current++
+            currentKeywordRef.current = ''
+            searchTipListRef.current?.setList([])
+          }}
           keyExtractor={getkey}
           getItemLayout={getItemLayout}
         />

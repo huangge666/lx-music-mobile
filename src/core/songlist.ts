@@ -2,6 +2,7 @@ import songlistState, { type TagInfo, type ListDetailInfo, type ListInfo } from 
 import songlistActions from '@/store/songlist/action'
 import { deduplicationList, toNewMusicInfo } from '@/utils'
 import musicSdk from '@/utils/musicSdk'
+import { arrPush } from '@/utils/common'
 
 
 interface DetailPageCache { data: ListDetailInfo, sourcePage: number }
@@ -122,25 +123,22 @@ const getListDetailLimit = async(source: LX.OnlineSource, id: string, page: numb
     if (prevPageData) sourcePage = prevPageData.sourcePage
   }
 
-  return musicSdk[source]?.songList.getListDetail(id, sourcePage + 1).then((result: ListDetailInfo) => {
+  return musicSdk[source]?.songList.getListDetail(id, sourcePage + 1).then(async(result: ListDetailInfo) => {
     if (listCache !== cache.get(listKey)) return
     result.list = deduplicationList(result.list.map(m => toNewMusicInfo(m)) as LX.Music.MusicInfoOnline[])
     let p = page
     const tempList = listCache.get(tempListKey) as ListDetailInfo['list']
-    if (tempList) {
-      listCache.delete(tempListKey)
-      listCache.set(`sdetail__${source}__${id}__${p}`, {
-        data: {
-          ...result,
-          list: [...tempList, ...result.list.splice(0, LIST_LOAD_LIMIT - tempList.length)],
-          page: p,
-          limit: LIST_LOAD_LIMIT,
-        },
-        sourcePage,
-      })
-      p++
-    }
+    if (tempList) result.list = [...tempList, ...result.list]
     sourcePage++
+    // 上游页可能少于本地 30 首，必须补齐当前页后再返回，不能读取尚未创建的缓存页。
+    while (result.list.length < LIST_LOAD_LIMIT && sourcePage < Math.ceil(result.total / result.limit)) {
+      const next = await musicSdk[source].songList.getListDetail(id, sourcePage + 1) as ListDetailInfo
+      if (listCache !== cache.get(listKey)) return
+      const list = [...result.list, ...next.list.map(m => toNewMusicInfo(m)) as LX.Music.MusicInfoOnline[]]
+      result = { ...next, list: deduplicationList(list) }
+      sourcePage++
+    }
+    listCache.delete(tempListKey)
     do {
       if (result.list.length < LIST_LOAD_LIMIT && sourcePage < Math.ceil(result.total / result.limit)) {
         listCache.set(tempListKey, result.list.splice(0, LIST_LOAD_LIMIT))
@@ -228,16 +226,10 @@ export const getListDetailAll = async(source: LX.OnlineSource, id: string, isRef
     if (pageCache) return pageCache.data
     return getListDetailLimit(source, id, page)
   }
-  return loadData(1).then(async result => {
-    if (result.total <= result.limit) return result.list
-
-    let maxPage = Math.ceil(result.total / result.limit)
-    const loadDetail = async(loadPage = 2): Promise<LX.Music.MusicInfoOnline[]> => {
-      return loadPage == maxPage
-        ? loadData(loadPage).then(result => result.list)
-        // eslint-disable-next-line @typescript-eslint/promise-function-async
-        : loadData(loadPage).then(result1 => loadDetail(++loadPage).then(result2 => [...result1.list, ...result2]))
-    }
-    return loadDetail().then(result2 => [...result.list, ...result2])
-  }).then(list => deduplicationList(list))
+  const result = await loadData(1)
+  const list = [...result.list]
+  const maxPage = Math.ceil(result.total / result.limit)
+  // 逐页追加一次，避免递归回溯反复复制整张歌单（大列表时是平方级成本）。
+  for (let page = 2; page <= maxPage; page++) arrPush(list, (await loadData(page)).list)
+  return deduplicationList(list)
 }

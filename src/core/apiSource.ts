@@ -51,7 +51,7 @@ export const hasPlayableApiSource = () => {
 }
 
 /**
- * Native 层一次只能装载一个脚本，故所有用户源必须串行初始化。
+ * 用户源按启用顺序串行初始化；Native 层按 apiId 保留独立脚本环境。
  * 每个源都拥有独立 Promise，初始化回调据此准确归属到对应的源。
  */
 let userApiInitQueue = Promise.resolve()

@@ -387,7 +387,7 @@ https://support.apple.com/guide/iphone/play-music-iph0138fb328/18.0/ios/18.0
 
 ### 8.1 可执行检查
 
-- 先确认仓库现有工具可用。优先用已有 ESLint 对改动的 JS/TS 文件进行定向检查；本次 `package.json` 有 `lint`，没有 `test` 或 `typecheck` 脚本，不得编造已跑 `npm test`。
+- 先确认仓库现有工具可用。优先用已有 ESLint 对改动的 JS/TS 文件进行定向检查；`package.json` 提供 `lint`、`test` 和 `typecheck`，只记录实际执行的检查结果。
 - TypeScript 需要时调用已有编译器做 noEmit 检查，先记录基线问题，区分本次新增错误；不临时安装测试框架。
 - 导航恢复、列表定位、随机动作等行为可用现有测试能力做针对性回归；纯圆角/文案不为覆盖率写无意义测试。
 - 原生 bundle/构建仅使用现有依赖和环境。用户没有要求时不启服务常驻、不装大型工具链；无法运行则记录准确命令/阻塞，不能写成通过。

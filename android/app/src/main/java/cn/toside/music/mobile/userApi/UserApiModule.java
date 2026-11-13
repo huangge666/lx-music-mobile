@@ -62,16 +62,14 @@ public class UserApiModule extends ReactContextBaseJavaModule {
 
     JavaScriptThread javaScriptThread = new JavaScriptThread(this.reactContext, info);
     this.javaScriptThreads.put(apiId, javaScriptThread);
-    javaScriptThread.prepareHandler(new JsHandler(this.reactContext.getMainLooper(), this.utilsEvent, apiId));
-    javaScriptThread.getHandler().sendEmptyMessage(HandlerWhat.INIT);
+    JsHandler eventHandler = new JsHandler(this.reactContext.getMainLooper(), this.utilsEvent, apiId);
+    javaScriptThread.prepareHandler(eventHandler);
     javaScriptThread.setUncaughtExceptionHandler((thread, ex) -> {
-      Handler jsHandler = javaScriptThread.getHandler();
-      Message message = jsHandler.obtainMessage();
-      message.what = HandlerWhat.LOG;
-      message.obj = new Object[]{"error", "Uncaught exception in JavaScriptThread: " + ex.getMessage()};
-      jsHandler.sendMessage(message);
+      // 故障线程不能处理自己的消息；通过主线程回报失败，解除 JS 侧初始化等待。
+      eventHandler.sendMessage(eventHandler.obtainMessage(HandlerWhat.INIT_FAILED, "Uncaught exception in JavaScriptThread: " + ex.getMessage()));
       Log.e("JavaScriptThread", "Uncaught exception in JavaScriptThread: " + ex.getMessage());
     });
+    javaScriptThread.getHandler().sendEmptyMessage(HandlerWhat.INIT);
     Log.d("UserApi", "Module Thread id: " + Thread.currentThread().getId() + ", apiId: " + apiId);
   }
 

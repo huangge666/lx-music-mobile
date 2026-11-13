@@ -4,7 +4,7 @@ import settingState from '@/store/setting/state'
 import BackgroundTimer from 'react-native-background-timer'
 import { fetchData } from './request'
 import { getUserApiList } from '@/utils/data'
-import { openUrl, tipDialog } from '@/utils/tools'
+import { tipDialog } from '@/utils/tools'
 
 
 export default async(setting: LX.AppSetting) => {
@@ -78,7 +78,7 @@ export default async(setting: LX.AppSetting) => {
     if (!info) return
     setUserApiStatus(info.id, status, errorMessage)
 
-    // 多选源初始化是串行的：native 端只保留当前脚本，因此回调必须按 apiId
+    // native 端按 apiId 保留脚本环境；初始化回调也必须按 apiId
     // 写入独立的 handler / quality 快照，并唤醒该 apiId 对应的队列 Promise。
     const initState = global.lx.userApiInitPromises[info.id]
     if (status && info.sources) {

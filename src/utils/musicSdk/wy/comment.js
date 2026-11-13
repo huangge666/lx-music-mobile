@@ -129,7 +129,7 @@ export default {
       headers: {
         'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36',
         origin: 'https://music.163.com',
-        Refere: 'http://music.163.com/',
+        Referer: 'http://music.163.com/',
       },
       form: weapi({
         cursor: cursorInfo.cursor,
@@ -141,6 +141,7 @@ export default {
         threadId: id,
       }),
     })
+    this._requestObj = _requestObj
     const { body, statusCode } = await _requestObj.promise
     // console.log(body)
     if (statusCode != 200 || body.code !== 200) throw new Error('获取评论失败')
@@ -157,7 +158,7 @@ export default {
       headers: {
         'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36',
         origin: 'https://music.163.com',
-        Refere: 'http://music.163.com/',
+        Referer: 'http://music.163.com/',
       },
       form: weapi({
         rid: id,
@@ -166,6 +167,7 @@ export default {
         beforeTime: Date.now().toString(),
       }),
     })
+    this._requestObj2 = _requestObj2
     const { body, statusCode } = await _requestObj2.promise
     if (statusCode != 200 || body.code !== 200) throw new Error('获取热门评论失败')
     const total = body.total ?? 0

@@ -63,10 +63,10 @@ export const FontSizes = {
 }
 
 export const BorderWidths = {
-  hairline: 0.5,   // 极细分隔线/微高光晶体边框（物理像素级）
-  normal: 0.5,     // 兼容旧引用
+  hairline: 0.5, // 极细分隔线/微高光晶体边框（物理像素级）
+  normal: 0.5, // 兼容旧引用
   thin: 1,
-  crystal: 1,      // 先锋冰晶棱镜边框
+  crystal: 1, // 先锋冰晶棱镜边框
   medium: 1.5,
   thick: 2,
 }

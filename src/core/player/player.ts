@@ -640,9 +640,8 @@ export const getNextPlayMusicInfo = async(): Promise<LX.Player.PlayMusicInfo | n
     return playMusicInfo
   }
 
-  if (playerState.playMusicInfo.musicInfo == null) return null
-
   const playMusicInfo = playerState.playMusicInfo
+  if (playMusicInfo.musicInfo == null) return null
   const playInfo = playerState.playInfo
   // console.log(playInfo.playerListId)
   const currentListId = playInfo.playerListId

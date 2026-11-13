@@ -24,9 +24,10 @@ export default async(targetListInfo: LX.List.UserListInfo) => {
   if (!targetListInfo.source || !targetListInfo.sourceListId) return
   const list = await fetchList(targetListInfo.id, targetListInfo.source, targetListInfo.sourceListId)
   // console.log(list)
-  void overwriteListMusics(targetListInfo.id, list)
+  // 同步成功包含落盘；保存失败不能提前提示成功或推进最后更新时间。
+  await overwriteListMusics(targetListInfo.id, list)
   const now = Date.now()
-  void setListUpdateTime(targetListInfo.id, now)
+  await setListUpdateTime(targetListInfo.id, now)
   // TODO
   // setUpdateTime(targetListInfo.id, dateFormat(now))
 }

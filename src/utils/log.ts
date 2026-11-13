@@ -7,7 +7,8 @@ const logTools = {
   tempLog: [] as Array<{ time: string, type: 'LOG' | 'WARN' | 'ERROR', text: string }> | null,
   writeLog(msg: string) {
     console.log(msg)
-    void appendFile(logPath, '\n----lx log----\n' + msg)
+    // 磁盘写入失败不能再次调用 log.error，否则日志故障会递归触发全局异常处理。
+    void appendFile(logPath, '\n----lx log----\n' + msg).catch(err => { console.warn('write log failed', err) })
   },
   async initLogFile() {
     try {

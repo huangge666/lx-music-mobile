@@ -23,8 +23,7 @@ export const handleImportSonglist = async(id: string, source: Source) => {
       confirmButtonText: global.i18n.t('confirm_button_text'),
     })
     if (!confirm) return
-    void syncSourceList(targetList)
-    return
+    return syncSourceList(targetList)
   }
 
   const detail = await getListDetail(id, source, 1)

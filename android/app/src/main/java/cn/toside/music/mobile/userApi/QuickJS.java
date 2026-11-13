@@ -214,7 +214,9 @@ public class QuickJS {
   }
 
   public void destroy () {
-    this.jsContext.destroy();
+    // 延迟回调保留了脚本环境，销毁时必须同时撤销，避免向已释放的 QuickJS 发起调用。
+    this.timeoutHandler.removeCallbacksAndMessages(null);
+    if (this.jsContext != null) this.jsContext.destroy();
     this.jsContext = null;
   }
 }

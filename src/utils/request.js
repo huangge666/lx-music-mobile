@@ -96,9 +96,10 @@ const mapFetchError = (err) => {
 export const httpFetch = (url, options = { method: 'get' }) => {
   const urls = getGithubFetchUrls(url)
   let index = 0
+  let cancelled = false
   let requestObj = fetchData(urls[index], options)
   const run = () => requestObj.request.catch(err => {
-    if (index < urls.length - 1) {
+    if (!cancelled && index < urls.length - 1) {
       index += 1
       requestObj = fetchData(urls[index], options)
       return run()
@@ -108,6 +109,7 @@ export const httpFetch = (url, options = { method: 'get' }) => {
   return {
     promise: run(),
     cancelHttp() {
+      cancelled = true
       requestObj.abort()
     },
   }
@@ -194,13 +196,7 @@ const handleRequestData = async(url, {
       options.body = formBody.join('&')
       delete options.form
     } else if (options.formData) {
-      headers['Content-Type'] = 'multipart/form-data'
-      const formBody = []
-      for (let [key, value] of Object.entries(options.form)) {
-        let encodedKey = encodeURIComponent(key)
-        let encodedValue = encodeURIComponent(value)
-        formBody.push(`${encodedKey}=${encodedValue}`)
-      }
+      // FormData 的 multipart boundary 由 fetch 生成，不能手写 Content-Type。
       options.body = options.formData
       delete options.formData
     } else {
@@ -290,10 +286,9 @@ const fetchData = (url, { timeout = 15000, ...options }) => {
       }).catch(err => {
         // console.log(err, err.code, err.message)
         return Promise.reject(err)
-      }).finally(() => {
-        if (id == null) return
-        BackgroundTimer.clearTimeout(id)
       })
+    }).finally(() => {
+      if (id != null) BackgroundTimer.clearTimeout(id)
     }),
     abort() {
       controller.abort()

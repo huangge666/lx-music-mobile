@@ -22,6 +22,7 @@ public class JsHandler extends Handler {
   private void sendInitFailedEvent(String errorMessage) {
     WritableMap params = Arguments.createMap();
     params.putString("action", "init");
+    params.putString("apiId", apiId);
     params.putString("errorMessage", errorMessage);
     params.putString("data", "{ \"info\": { \"id\": \"" + apiId + "\" }, \"status\": false, \"errorMessage\": \"Create JavaScript Env Failed\" }");
     this.utilsEvent.sendEvent(utilsEvent.API_ACTION, params);

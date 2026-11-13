@@ -171,7 +171,11 @@ export const downloadNewVersion = async(version, onDownload = noop) => {
       },
     })
     downloadJobId = jobId
-    return promise.catch(err => {
+    return promise.then(result => {
+      // RNFS 对 HTTP 404/500 也会 resolve，不能把错误页交给系统安装器。
+      if (result.statusCode < 200 || result.statusCode >= 300) throw new Error(`download failed: ${result.statusCode}`)
+      return result
+    }).catch(err => {
       // 当前地址失败（超时/不可达），切换到下一个下载地址重试
       if (urlIndex + 1 >= urls.length) throw err
       return tryDownload(urlIndex + 1)
@@ -181,6 +185,8 @@ export const downloadNewVersion = async(version, onDownload = noop) => {
   return tryDownload().then(() => {
     apkSavePath = savePath
     return updateApp()
+  }).finally(() => {
+    downloadJobId = null
   })
 }
 

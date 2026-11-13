@@ -8,6 +8,14 @@ const partKeyArrPrefixRxp = /^@___PART_A___/
 const keySplit = ','
 const limit = 500000
 
+// NextStorage 会并发执行原生调用；分片的读取、写入和回收必须作为一组串行完成。
+let storageTask: Promise<unknown> = Promise.resolve()
+const withStorageLock = async<T>(run: () => Promise<T>): Promise<T> => {
+  const task = storageTask.then(run)
+  storageTask = task.catch(() => {})
+  return task
+}
+
 const isPartMarker = (value: string | null): value is string => {
   return !!value && (partKeyPrefixRxp.test(value) || partKeyArrPrefixRxp.test(value))
 }
@@ -20,7 +28,7 @@ const buildData = (key: string, value: any, datas: Array<[string, string]>) => {
   }
 
   const partKeys = []
-  for (let i = 0, len = Math.floor(valueStr.length / limit); i <= len; i++) {
+  for (let i = 0; i * limit < valueStr.length; i++) {
     let partKey = `${partKeyArrPrefix}${key}${i}`
     partKeys.push(partKey)
     datas.push([partKey, valueStr.substring(i * limit, (i + 1) * limit)])
@@ -28,18 +36,27 @@ const buildData = (key: string, value: any, datas: Array<[string, string]>) => {
   datas.push([key, partKeyArrPrefix + JSON.stringify(partKeys)])
 }
 
-// 小对象直接覆盖主键。只有新值超阈值，或旧值仍是分片标记时，才读旧值并清掉旧分片，
-// 避免播放进度这类高频小写入每次都先 getItem 再 removeItem。
-const cleanupBeforeSave = async(entries: Array<[string, string]>) => {
-  const keys = [...new Set(entries.map(([key]) => key))]
-  const mustCleanup = entries.some(([, value]) => value.length > limit || isPartMarker(value))
-  if (!mustCleanup) return
+const getPartKeys = (value: string | null): string[] => {
+  if (!isPartMarker(value)) return []
+  return partKeyPrefixRxp.test(value)
+    ? value.replace(partKeyPrefixRxp, '').split(keySplit)
+    : JSON.parse(value.replace(partKeyArrPrefixRxp, '')) as string[]
+}
 
+const saveEntries = async(keys: string[], entries: Array<[string, string]>) => {
+  if (!entries.length) return
   const stored = await AsyncStorage.multiGet(keys)
-  const chunkedKeys = stored
-    .filter(([, value]) => isPartMarker(value))
-    .map(([key]) => key)
-  if (chunkedKeys.length) await removeDataMultiple(chunkedKeys)
+  const oldPartKeys = stored.flatMap(([, value]) => getPartKeys(value))
+  // Android multiSet 是事务：先提交主键和新分片，失败时旧歌单仍然完整。
+  await AsyncStorage.multiSet(entries)
+  const retainedKeys = new Set(entries.map(([key]) => key))
+  const obsoleteKeys = oldPartKeys.filter(key => !retainedKeys.has(key))
+  if (obsoleteKeys.length) {
+    // 数据已经提交；回收失败只留下无引用分片，不应把成功保存报告成失败。
+    await AsyncStorage.multiRemove(obsoleteKeys).catch((e: Error) => {
+      log.warn('storage chunk cleanup:', e.message)
+    })
+  }
 }
 
 // 1.4.0 之前的数据分片存储方式，存在key的内容与分隔符冲突的问题
@@ -66,8 +83,7 @@ export const saveData = async(key: string, value: any) => {
   buildData(key, value, datas)
 
   try {
-    await cleanupBeforeSave(datas)
-    await AsyncStorage.multiSet(datas)
+    await withStorageLock(async() => saveEntries([key], datas))
   } catch (e: any) {
     // saving error
     log.error('storage error[saveData]:', key, e.message)
@@ -75,7 +91,7 @@ export const saveData = async(key: string, value: any) => {
   }
 }
 
-export const getData = async<T = unknown>(key: string): Promise<T | null> => {
+export const getData = async<T = unknown>(key: string): Promise<T | null> => withStorageLock(async() => {
   let value: string | null
   try {
     value = await AsyncStorage.getItem(key)
@@ -88,9 +104,9 @@ export const getData = async<T = unknown>(key: string): Promise<T | null> => {
     return handleGetData<T>(value)
   } else if (value == null) return value
   return JSON.parse(value)
-}
+})
 
-export const removeData = async(key: string) => {
+export const removeData = async(key: string) => withStorageLock(async() => {
   let value: string | null
   try {
     value = await AsyncStorage.getItem(key)
@@ -132,9 +148,9 @@ export const removeData = async(key: string) => {
     log.error('storage error[removeData]:', key, e.message)
     throw e
   }
-}
+})
 
-export const getAllKeys = async() => {
+export const getAllKeys = async() => withStorageLock(async() => {
   let keys
   try {
     keys = await AsyncStorage.getAllKeys()
@@ -145,10 +161,10 @@ export const getAllKeys = async() => {
   }
 
   return keys
-}
+})
 
 
-export const getDataMultiple = async<T extends readonly string[]>(keys: T) => {
+export const getDataMultiple = async<T extends readonly string[]>(keys: T) => withStorageLock(async() => {
   type RawData = { [K in keyof T]: [T[K], string | null] }
   let datas: RawData
   try {
@@ -170,7 +186,7 @@ export const getDataMultiple = async<T extends readonly string[]>(keys: T) => {
   return Promise.all(promises).then(values => {
     return datas.map(([key], index) => ([key, values[index]])) as { [K in keyof T]: [T[K], unknown] }
   })
-}
+})
 
 export const saveDataMultiple = async(datas: Array<[string, any]>) => {
   const allData: Array<[string, string]> = []
@@ -178,8 +194,7 @@ export const saveDataMultiple = async(datas: Array<[string, any]>) => {
     buildData(key, value, allData)
   }
   try {
-    await cleanupBeforeSave(allData)
-    await AsyncStorage.multiSet(allData)
+    await withStorageLock(async() => saveEntries([...new Set(datas.map(([key]) => key))], allData))
   } catch (e: any) {
     // save error
     log.error('storage error[saveDataMultiple]:', e.message)
@@ -188,7 +203,7 @@ export const saveDataMultiple = async(datas: Array<[string, any]>) => {
 }
 
 
-export const removeDataMultiple = async(keys: string[]) => {
+export const removeDataMultiple = async(keys: string[]) => withStorageLock(async() => {
   if (!keys.length) return
   const datas = await AsyncStorage.multiGet(keys)
   let allKeys = []
@@ -209,9 +224,9 @@ export const removeDataMultiple = async(keys: string[]) => {
     log.error('storage error[removeDataMultiple]:', e.message)
     throw e
   }
-}
+})
 
-export const clearAll = async() => {
+export const clearAll = async() => withStorageLock(async() => {
   try {
     await AsyncStorage.clear()
   } catch (e: any) {
@@ -219,6 +234,6 @@ export const clearAll = async() => {
     log.error('storage error[clearAll]:', e.message)
     throw e
   }
-}
+})
 
 export { useAsyncStorage } from '@react-native-async-storage/async-storage'

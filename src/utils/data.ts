@@ -399,6 +399,7 @@ export const getListMusics = async(listId: string): Promise<LX.Music.MusicInfo[]
  * @param listData 列表数据
  */
 export const saveListMusics = async(listData: Array<{ id: string, musics: LX.Music.MusicInfo[] }>) => {
+  if (!listData.length) return
   if (listData.length > 1) {
     await saveDataMultiple(listData.map(list => ([listPrefix + list.id, list.musics])))
   } else {
@@ -696,7 +697,6 @@ export const removeUserApi = async(ids: string[]) => {
     if (ids.includes(userApis[index].id)) {
       _ids.push(`${userApiPrefix}${userApis[index].id}`)
       userApis.splice(index, 1)
-      ids.splice(index, 1)
     }
   }
   await saveData(userApiPrefix, userApis)

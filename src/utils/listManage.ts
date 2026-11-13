@@ -108,24 +108,24 @@ export const listDataOverwrite = ({ defaultList, loveList, userList, tempList }:
   const updatedListIds: string[] = []
   const newUserIds: string[] = []
   const newUserListInfos = userList.map(({ list, ...listInfo }) => {
-    if (allMusicList.has(listInfo.id)) updatedListIds.push(listInfo.id)
+    updatedListIds.push(listInfo.id)
     newUserIds.push(listInfo.id)
     setMusicList(listInfo.id, list)
     return listInfo
   })
   for (const list of userLists) {
-    if (!allMusicList.has(list.id) || newUserIds.includes(list.id)) continue
+    if (newUserIds.includes(list.id)) continue
     removeMusicList(list.id)
     updatedListIds.push(list.id)
   }
   overwriteUserList(newUserListInfos)
 
-  if (allMusicList.has(LIST_IDS.DEFAULT)) updatedListIds.push(LIST_IDS.DEFAULT)
+  updatedListIds.push(LIST_IDS.DEFAULT)
   setMusicList(LIST_IDS.DEFAULT, defaultList)
   setMusicList(LIST_IDS.LOVE, loveList)
   updatedListIds.push(LIST_IDS.LOVE)
 
-  if (tempList && allMusicList.has(LIST_IDS.TEMP)) {
+  if (tempList) {
     setMusicList(LIST_IDS.TEMP, tempList)
     updatedListIds.push(LIST_IDS.TEMP)
   }
@@ -159,7 +159,6 @@ export const userListsRemove = (ids: string[]) => {
   const changedIds = []
   for (const id of ids) {
     removeUserList(id)
-    if (!allMusicList.has(id)) continue
     removeMusicList(id)
     void removeListPosition(id)
     void removeListUpdateInfo(id)
@@ -256,6 +255,9 @@ export const listMusicRemove = async(listId: string, ids: string[]): Promise<str
 }
 
 export const listMusicMove = async(fromId: string, toId: string, musicInfos: LX.Music.MusicInfo[], addMusicLocationType: LX.AddMusicLocationType): Promise<string[]> => {
+  if (fromId == toId) return []
+  // 先加载目标列表；读取失败不能先把源列表中的歌曲移除。
+  await getListMusics(toId)
   return [
     ...await listMusicRemove(fromId, musicInfos.map(musicInfo => musicInfo.id)),
     ...await listMusicAdd(toId, musicInfos, addMusicLocationType),

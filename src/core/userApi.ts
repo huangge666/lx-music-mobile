@@ -2,10 +2,12 @@ import { action, state } from '@/store/userApi'
 import { addUserApi, getUserApiScript, removeUserApi as removeUserApiFromStore, setUserApiAllowShowUpdateAlert as setUserApiAllowShowUpdateAlertFromStore } from '@/utils/data'
 import { destroy, loadScript } from '@/utils/nativeModules/userApi'
 import { log as writeLog } from '@/utils/log'
+import settingState from '@/store/setting/state'
 
 
 export const setUserApi = async(apiId: string) => {
-  global.lx.qualityList = {}
+  // 备用源初始化不能清空当前主源的音质能力；主源回调才会替换全局快照。
+  if (apiId == settingState.setting['common.apiSource']) global.lx.qualityList = {}
   setUserApiStatus(apiId, false, 'initing')
 
   const target = state.list.find(api => api.id === apiId)

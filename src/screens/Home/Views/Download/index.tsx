@@ -113,7 +113,7 @@ const DownloadRow = memo(({
       <View style={styles.rowActions}>
         {isCompleted ? <IconAction name="play-outline" accessibilityLabel={t('play')} onPress={() => { void onPlay(item) }} /> : null}
         {isError ? <IconAction name="retry" accessibilityLabel={t('download_retry')} onPress={() => { onRetry(item) }} /> : null}
-        {item.path
+        {item.path || item.taskId
           ? <IconAction
               name="remove"
               danger
@@ -329,7 +329,9 @@ export default () => {
         global.app_event.downloadListUpdate()
       }
       await refresh(false)
-    })()
+    })().catch((err: Error) => {
+      toast(err.message, 'long')
+    })
   }
 
   return (

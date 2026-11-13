@@ -45,10 +45,12 @@ export interface DownloadTaskItem {
 
 interface DownloadTaskState extends DownloadTaskItem {
   jobId: number | null
+  controller: AbortController
 }
 
 const downloadingTasks = new Map<string, Promise<string>>()
 const downloadTaskStates = new Map<string, DownloadTaskState>()
+const reservedPaths = new Set<string>()
 
 /** 同时进行的下载任务上限：多选/连点下载时排队执行，避免同时起一堆 downloadFile 抢占带宽与 IO */
 const MAX_CONCURRENT_DOWNLOADS = 2
@@ -80,6 +82,7 @@ const createTaskState = (musicInfo: LX.Music.MusicInfoOnline): DownloadTaskState
   speed: '',
   errorMessage: '',
   jobId: null,
+  controller: new AbortController(),
 })
 
 /**
@@ -95,7 +98,7 @@ const updateTaskState = (taskId: string, state: Partial<DownloadTaskState>, noti
 }
 
 export const getDownloadTasks = (): DownloadTaskItem[] => {
-  return Array.from(downloadTaskStates.values()).map(({ jobId, ...item }) => ({ ...item }))
+  return Array.from(downloadTaskStates.values()).map(({ jobId, controller, ...item }) => ({ ...item }))
 }
 
 export const isMusicDownloading = (musicInfo: LX.Music.MusicInfoOnline) => {
@@ -106,11 +109,18 @@ export const removeDownloadTask = async(taskId: string, removeFile = false) => {
   const task = downloadTaskStates.get(taskId)
   if (!task) return
   downloadTaskStates.delete(taskId)
-  if (task.jobId && task.status !== 'completed') {
+  task.controller.abort()
+  if (task.jobId != null && task.status !== 'completed') {
     stopDownload(task.jobId)
   }
+  const queuedIndex = downloadQueue.findIndex(item => getDownloadTaskKey(item.musicInfo) === taskId)
+  if (queuedIndex >= 0) {
+    downloadQueue.splice(queuedIndex, 1)[0].reject(new Error(global.i18n.t('download_cancelled')))
+  }
+  // 等原生写入和标签写入退出后再删文件，避免删除后后台又创建同一路径。
+  await downloadingTasks.get(taskId)?.catch(() => {})
   if (removeFile && task.filePath) {
-    await removeMusicDownloadTarget(task.filePath).catch(() => {})
+    await removeMusicDownloadTarget(task.filePath)
   }
   // 移除排队中的任务时立即调度，让对应的等待 Promise 尽快以「已取消」结束
   pumpDownloadQueue()
@@ -239,13 +249,17 @@ const ensureAndroidStorageForPublicDownload = async() => {
   throw new Error(global.i18n.t('download_permission_blocked_message'))
 }
 
-const runDownloadMusicToLocal = async(musicInfo: LX.Music.MusicInfoOnline) => {
-  await ensureAndroidStorageForPublicDownload()
-
+const runDownloadMusicToLocal = async(musicInfo: LX.Music.MusicInfoOnline, controller: AbortController) => {
   const taskId = getDownloadTaskKey(musicInfo)
+  const checkCancelled = () => {
+    if (controller.signal.aborted) throw new Error(global.i18n.t('download_cancelled'))
+  }
+  await ensureAndroidStorageForPublicDownload()
+  checkCancelled()
   const downloadDir = await ensureMusicDownloadDirectory()
   const quality = getPlayQuality(settingState.setting['download.quality'], musicInfo)
-  const url = await getMusicUrl({ musicInfo, isRefresh: false, quality })
+  const url = await getMusicUrl({ musicInfo, isRefresh: false, quality, isAborted: () => controller.signal.aborted })
+  checkCancelled()
   const ext = parseExtByUrl(url)
   const baseName = createBaseFileName(musicInfo)
   let index = 0
@@ -253,83 +267,96 @@ const runDownloadMusicToLocal = async(musicInfo: LX.Music.MusicInfoOnline) => {
   while (true) {
     const suffix = index === 0 ? '' : ` (${index})`
     savePath = `${downloadDir}/${baseName}${suffix}.${ext}`.replace(/\/+/g, '/')
-    if (!(await existsMusicDownloadTarget(savePath))) break
+    const exists = await existsMusicDownloadTarget(savePath)
+    checkCancelled()
+    // 两个任务可能同时通过 exists 检查；占用表必须在 await 之后同步检查并登记。
+    if (!exists && !reservedPaths.has(savePath)) break
     index++
   }
+  reservedPaths.add(savePath)
 
-  updateTaskState(taskId, {
-    filePath: savePath,
-    fileName: savePath.split(/\/|\\/).at(-1) ?? '',
-    quality,
-    ext,
-    status: 'waiting',
-    statusText: global.i18n.t('download_start', { name: musicInfo.name }),
-  })
+  try {
+    updateTaskState(taskId, {
+      filePath: savePath,
+      fileName: savePath.split(/\/|\\/).at(-1) ?? '',
+      quality,
+      ext,
+      status: 'waiting',
+      statusText: global.i18n.t('download_start', { name: musicInfo.name }),
+    })
 
-  let lastProgressTime = Date.now()
-  let lastWritten = 0
-  // 进度通知节流：UI 刷新（downloadListUpdate）至少间隔 1s，或进度增量 >= 2% 才通知，
-  // 状态本身每次都更新（notify=false 静默），保证节流窗口结束后首个事件能刷出最新进度
-  let lastNotifyTime = Date.now()
-  let lastNotifyProgress = 0
+    let lastProgressTime = Date.now()
+    let lastWritten = 0
+    // 进度通知节流：UI 刷新（downloadListUpdate）至少间隔 1s，或进度增量 >= 2% 才通知，
+    // 状态本身每次都更新（notify=false 静默），保证节流窗口结束后首个事件能刷出最新进度
+    let lastNotifyTime = Date.now()
+    let lastNotifyProgress = 0
 
-  const result = await downloadFile(url, savePath, {
-    background: true,
-    headers: buildMusicDownloadHeaders(url, musicInfo),
-    progressInterval: 500,
-    begin: ({ jobId, contentLength }) => {
-      updateTaskState(taskId, {
-        jobId,
-        status: 'run',
-        total: contentLength,
-        statusText: global.i18n.t('download_start', { name: musicInfo.name }),
-      })
-    },
-    progress: ({ bytesWritten, contentLength }) => {
-      const now = Date.now()
-      const timeDiff = Math.max(now - lastProgressTime, 1)
-      const byteDiff = Math.max(bytesWritten - lastWritten, 0)
-      lastProgressTime = now
-      lastWritten = bytesWritten
-      const speed = byteDiff > 0 ? `${sizeFormate(byteDiff * 1000 / timeDiff)}/s` : ''
-      const progress = contentLength > 0 ? bytesWritten / contentLength : 0
-      updateTaskState(taskId, {
-        status: 'run',
-        downloaded: bytesWritten,
-        total: contentLength,
-        progress,
-        speed,
-        statusText: speed ? global.i18n.t('download_running_with_speed', { speed }) : global.i18n.t('download_running'),
-      }, false)
-      if (now - lastNotifyTime >= 1000 || progress - lastNotifyProgress >= 0.02) {
-        lastNotifyTime = now
-        lastNotifyProgress = progress
-        notifyDownloadListUpdate()
-      }
-    },
-  }).promise
-  if (result.statusCode < 200 || result.statusCode >= 300) {
-    throw new Error(`download failed: ${result.statusCode}`)
+    const download = downloadFile(url, savePath, {
+      background: true,
+      headers: buildMusicDownloadHeaders(url, musicInfo),
+      progressInterval: 500,
+      begin: ({ jobId, contentLength }) => {
+        updateTaskState(taskId, {
+          jobId,
+          status: 'run',
+          total: contentLength,
+          statusText: global.i18n.t('download_start', { name: musicInfo.name }),
+        })
+      },
+      progress: ({ bytesWritten, contentLength }) => {
+        const now = Date.now()
+        const timeDiff = Math.max(now - lastProgressTime, 1)
+        const byteDiff = Math.max(bytesWritten - lastWritten, 0)
+        lastProgressTime = now
+        lastWritten = bytesWritten
+        const speed = byteDiff > 0 ? `${sizeFormate(byteDiff * 1000 / timeDiff)}/s` : ''
+        const progress = contentLength > 0 ? bytesWritten / contentLength : 0
+        updateTaskState(taskId, {
+          status: 'run',
+          downloaded: bytesWritten,
+          total: contentLength,
+          progress,
+          speed,
+          statusText: speed ? global.i18n.t('download_running_with_speed', { speed }) : global.i18n.t('download_running'),
+        }, false)
+        if (now - lastNotifyTime >= 1000 || progress - lastNotifyProgress >= 0.02) {
+          lastNotifyTime = now
+          lastNotifyProgress = progress
+          notifyDownloadListUpdate()
+        }
+      },
+    })
+    // jobId 在请求创建时就可用，不必等 HTTP 响应的 begin 回调才能取消。
+    updateTaskState(taskId, { jobId: download.jobId }, false)
+    const result = await download.promise
+    checkCancelled()
+    if (result.statusCode < 200 || result.statusCode >= 300) {
+      throw new Error(`download failed: ${result.statusCode}`)
+    }
+
+    await writeDownloadMetadata(savePath, musicInfo)
+    checkCancelled()
+
+    if (Platform.OS === 'android') {
+      await scanMusicDownloadFile(savePath)
+    }
+
+    updateTaskState(taskId, {
+      status: 'completed',
+      statusText: global.i18n.t('download_success', { path: savePath }),
+      progress: 1,
+      downloaded: result.bytesWritten ?? downloadTaskStates.get(taskId)?.downloaded ?? 0,
+      total: result.bytesWritten ?? downloadTaskStates.get(taskId)?.total ?? 0,
+      speed: '',
+      errorMessage: '',
+      jobId: null,
+    })
+
+    return savePath
+  } finally {
+    reservedPaths.delete(savePath)
   }
-
-  await writeDownloadMetadata(savePath, musicInfo)
-
-  if (Platform.OS === 'android') {
-    await scanMusicDownloadFile(savePath)
-  }
-
-  updateTaskState(taskId, {
-    status: 'completed',
-    statusText: global.i18n.t('download_success', { path: savePath }),
-    progress: 1,
-    downloaded: result.bytesWritten ?? downloadTaskStates.get(taskId)?.downloaded ?? 0,
-    total: result.bytesWritten ?? downloadTaskStates.get(taskId)?.total ?? 0,
-    speed: '',
-    errorMessage: '',
-    jobId: null,
-  })
-
-  return savePath
 }
 
 /**
@@ -345,7 +372,7 @@ const pumpDownloadQueue = () => {
       continue
     }
     activeDownloadCount++
-    void runDownloadMusicToLocal(musicInfo).then(resolve, (err: any) => {
+    void runDownloadMusicToLocal(musicInfo, downloadTaskStates.get(taskKey)!.controller).then(resolve, (err: any) => {
       updateTaskState(taskKey, {
         status: 'error',
         statusText: err?.message || global.i18n.t('download_failed'),

@@ -21,7 +21,7 @@ const parseChangelog = async(text) => {
         })
       }
       currentVersion = versionMatch[1]
-      currentDate = versionMatch[3]
+      currentDate = versionMatch[2]
       currentDesc = ''
     } else {
       currentDesc += `${line}\n`

@@ -41,8 +41,7 @@ export const handleCollect = async(id: string, name: string, source: LX.OnlineSo
       confirmButtonText: global.i18n.t('confirm_button_text'),
     })
     if (!confirm) return
-    void syncSourceList(targetList)
-    return
+    return syncSourceList(targetList)
   }
 
   const list = await getListDetailAll(id)

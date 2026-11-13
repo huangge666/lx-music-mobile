@@ -34,7 +34,7 @@
 | 底部导航 | 横屏与竖屏首页接入 `BottomBar`，并增加下载页签。 |
 | 下载能力 | 在线列表、我的歌单列表支持下载，核心逻辑位于 `src/core/music/downloader.ts`。 |
 | 下载路径与权限 | Android 使用 `Download/lxmusic`，写入前申请存储权限；拒绝权限时提供系统设置引导。 |
-| 取链与音质 | 下载音质跟随“设置 → 播放音质”，请求会携带常见 `Referer` 以减少高码率直链失败。 |
+| 取链与音质 | 下载音质使用“设置 → 下载设置 → 下载音质”，与播放音质分别保存；请求会携带常见 `Referer` 以减少高码率直链失败。 |
 | 播放体验 | 增加下一首歌曲 URL 预取、有限延迟重试和稳定随机播放队列，降低切歌等待与重复播放。 |
 | 界面体验 | 设置页、播放详情页、歌单页、排行榜页、侧边栏及底部操作栏持续进行沉浸式交互优化。 |
 
@@ -79,6 +79,8 @@ npm run dev
 ```bash
 npm run lint                 # ESLint 检查
 npm run lint:fix             # 自动修复可修复的 ESLint 问题
+npm run typecheck            # TypeScript 类型检查
+npm test                     # 存储、下载、网络请求与发布回归测试
 npm run build:theme          # 重新生成主题文件
 npm run clear                # 清理 Android 构建缓存
 npm run sc                   # 清理 Metro 缓存后启动
@@ -110,7 +112,7 @@ Release 构建会按 ABI 输出 `arm64-v8a`、`armeabi-v7a`、`x86`、`x86_64` �
 
 ## GitHub Actions 发布
 
-仓库包含两个工作流：
+主线发布与上游同步使用以下两个工作流；仓库另外保留 PR 检查、Beta、小米后屏版和版本信息通知工作流：
 
 - `.github/workflows/sync-upstream.yml`：每天 UTC 18:00（北京时间次日 02:00）同步 `lyswhut/lx-music-mobile` 的 `master` 分支，也支持手动触发。
 - `.github/workflows/release.yml`：在 `master` 推送或手动触发时构建多 ABI Android APK，并创建 GitHub Release。Tag 使用 `package.json` 的版本号并添加 `v` 前缀。

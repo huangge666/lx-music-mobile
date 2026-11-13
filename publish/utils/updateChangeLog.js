@@ -9,22 +9,24 @@ const version_bak = JSON.stringify(version, null, 2)
 const changelogPath = jp('../../CHANGELOG.md')
 const { parseChangelog } = require('./parseChangelog')
 
-const getPrevVer = () => parseChangelog(fs.readFileSync(changelogPath, 'utf-8').toString()).then(versions => {
+const getPrevVer = (changeLog) => parseChangelog(changeLog).then(versions => {
   if (!versions.length) throw new Error('CHANGELOG 无法解析到版本号')
   return versions[0].version
 })
 
 const updateChangeLog = async(newVerNum, newChangeLog) => {
   let changeLog = fs.readFileSync(changelogPath, 'utf-8')
-  const prevVer = await getPrevVer()
+  const prevVer = await getPrevVer(changeLog)
   const log = `## [${newVerNum}](${pkg.repository.url.replace(/^git\+(http.+)\.git$/, '$1')}/compare/v${prevVer}...v${newVerNum}) - ${formatTime()}\n\n${newChangeLog}`
-  fs.writeFileSync(changelogPath, changeLog.replace(/(## [?0.1.1]?)/, log + '\n$1'), 'utf-8')
+  return changeLog.replace(/^## /m, log.trimEnd() + '\n\n## ')
 }
 
 
 module.exports = async newVerNum => {
   if (!newVerNum) newVerNum = pkg.version
   const newMDChangeLog = fs.readFileSync(jp('../changeLog.md'), 'utf-8')
+  // 解析失败先退出，不能已经改了版本文件才发现 CHANGELOG 无法更新。
+  const newChangeLog = await updateChangeLog(newVerNum, newMDChangeLog)
   version.history.unshift({
     version: version.version,
     desc: version.desc,
@@ -40,7 +42,7 @@ module.exports = async newVerNum => {
 
   fs.writeFileSync(jp(pkgDir), JSON.stringify(pkg, null, 2) + '\n', 'utf-8')
 
-  await updateChangeLog(newVerNum, newMDChangeLog)
+  fs.writeFileSync(changelogPath, newChangeLog, 'utf-8')
 
   return {
     pkg_bak,

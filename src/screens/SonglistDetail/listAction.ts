@@ -42,8 +42,7 @@ export const handleCollect = async(id: string, source: Source, name: string) => 
       confirmButtonText: global.i18n.t('confirm_button_text'),
     })
     if (!confirm) return
-    void syncSourceList(targetList)
-    return
+    return syncSourceList(targetList)
   }
 
   const list = await getListDetailAll(source, id)

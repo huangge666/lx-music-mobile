@@ -8,8 +8,8 @@ const baseRule = {
   eqeqeq: 'off',
   'require-atomic-updates': ['error', { allowProperties: true }],
   'no-multiple-empty-lines': [1, { max: 2 }],
-  // 'as-needed' 会让含连字符的图标映射表 key 必须去引号混合排版，统一用 'consistent' 保持引号一致
-  'quote-props': ['error', 'consistent'],
+  // 保留图标映射的统一引号，同时允许旧 SDK 中不影响语义的混合 key 写法。
+  'quote-props': ['error', 'as-needed', { unnecessary: false }],
   'comma-dangle': [2, 'always-multiline'],
   'standard/no-callback-literal': 'off',
   'prefer-const': 'off',
