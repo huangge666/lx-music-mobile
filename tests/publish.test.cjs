@@ -55,3 +55,21 @@ test('invalid changelog aborts publish before changing version files', async() =
   assert.equal(writes.length, 0)
   assert.equal(pkg.versionCode, 114)
 })
+
+test('release verifies the existing production certificate for every APK before tagging or uploading', () => {
+  const { parse } = require('yaml')
+  const workflow = parse(fs.readFileSync(path.resolve(__dirname, '../.github/workflows/release.yml'), 'utf8'))
+  const steps = workflow.jobs.Android.steps
+  const signingIndex = steps.findIndex(step => step.name == 'Verify release signing')
+  assert(signingIndex > steps.findIndex(step => step.name == 'Build Packages'))
+  assert(signingIndex < steps.findIndex(step => step.name == 'Create git tag'))
+  assert(signingIndex < steps.findIndex(step => step.name == 'Upload Artifact'))
+  const signing = steps[signingIndex]
+  assert.equal(signing.env.EXPECTED_CERT_SHA256, 'a2753d801a597b670393d7f008e4b78dd830c3fff75d68946525398b796e94c2')
+  assert.match(signing.run, /for ABI in arm64-v8a armeabi-v7a x86 x86_64 universal/)
+  assert.match(signing.run, /verify --print-certs/)
+  assert.match(signing.run, /if \[ "\$CERT" != "\$EXPECTED_CERT_SHA256" \]; then[\s\S]+exit 1/)
+  const build = steps.find(step => step.name == 'Build Packages')
+  assert.match(build.run, /set -euo pipefail/)
+  assert.match(build.run, /if \[ -z "\$\{!name\}" \]; then[\s\S]+exit 1/)
+})

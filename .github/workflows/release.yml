@@ -33,11 +33,37 @@ jobs:
           KEYSTORE_KEY_PASSWORD: ${{ secrets.MASTER_KEYSTORE_KEY_PASSWORD || secrets.KEYSTORE_KEY_PASSWORD }}
         shell: bash
         run: |
+          set -euo pipefail
+          for name in KEYSTORE_STORE_FILE_BASE64 KEYSTORE_STORE_FILE KEYSTORE_KEY_ALIAS KEYSTORE_PASSWORD KEYSTORE_KEY_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "::error::缺少正式签名配置：$name"
+              exit 1
+            fi
+          done
           cd android
           # 密码与 alias 中的空格可能是有效字符，只归一化 base64 编码的换行。
-          echo "$KEYSTORE_STORE_FILE_BASE64" | tr -d '[:space:]' | base64 --decode > "app/$KEYSTORE_STORE_FILE"
+          printf '%s' "$KEYSTORE_STORE_FILE_BASE64" | tr -d '[:space:]' | base64 --decode > "app/$KEYSTORE_STORE_FILE"
           ./gradlew assembleRelease -PMYAPP_UPLOAD_STORE_FILE="$KEYSTORE_STORE_FILE" -PMYAPP_UPLOAD_KEY_ALIAS="$KEYSTORE_KEY_ALIAS" -PMYAPP_UPLOAD_STORE_PASSWORD="$KEYSTORE_PASSWORD" -PMYAPP_UPLOAD_KEY_PASSWORD="$KEYSTORE_KEY_PASSWORD"
           rm -f "app/$KEYSTORE_STORE_FILE"
+
+      # 沿用 v2.1.9 正式证书，签名不兼容的产物不能进入打标签和发布步骤。
+      - name: Verify release signing
+        env:
+          EXPECTED_CERT_SHA256: a2753d801a597b670393d7f008e4b78dd830c3fff75d68946525398b796e94c2
+        shell: bash
+        run: |
+          set -euo pipefail
+          APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          VERSION=$(node -p "require('./package.json').version")
+          for ABI in arm64-v8a armeabi-v7a x86 x86_64 universal; do
+            APK="android/app/build/outputs/apk/release/lx-music-mobile-v$VERSION-$ABI.apk"
+            CERT=$("$APKSIGNER" verify --print-certs "$APK" | sed -n 's/^Signer #[0-9][0-9]* certificate SHA-256 digest: //p')
+            if [ "$CERT" != "$EXPECTED_CERT_SHA256" ]; then
+              echo "::error::$ABI APK 的签名与既有正式版不兼容"
+              exit 1
+            fi
+            echo "已验证正式签名：$ABI"
+          done
 
       # Push tag to GitHub if package.json version's tag is not tagged
       - name: Get package version

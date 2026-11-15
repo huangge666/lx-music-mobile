@@ -15,7 +15,7 @@
 
 本仓库是 [lyswhut/lx-music-mobile](https://github.com/lyswhut/lx-music-mobile) 的衍生仓库，在上游项目基础上合并了功能与体验改动。当前仓库的 Release、Issue 与自动化构建结果以本仓库为准。
 
-当前版本：`2.1.9`（版本号来源于 `package.json`，并与 `publish/version.json` 保持同步）。当前工作区已按核心功能范围精简，GitHub 上的既有 Release 不代表本次本地候选。完整变更记录请查看 [CHANGELOG.md](CHANGELOG.md)，现行范围见 [核心版说明](docs/core-refactor.md)。
+当前版本：`2.1.10`（版本号来源于 `package.json`，并与 `publish/version.json` 保持同步）。核心版专注歌单、导入、音源、听歌、搜索和下载。完整变更记录请查看 [CHANGELOG.md](CHANGELOG.md)，现行范围见 [核心版说明](docs/core-refactor.md)。
 
 ### 主要功能
 
@@ -44,6 +44,7 @@
 ## 下载与支持平台
 
 - 下载地址：[GitHub Releases](https://github.com/huangge666/lx-music-mobile/releases)
+- 从旧正式版升级时，先导出重要歌单，下载同 ABI 的安装包覆盖安装；不要卸载或清除数据。应用内更新已移除，后续版本从 Releases 手动下载。
 - 当前核心版常见问题：[FAQ.md](FAQ.md)。[上游在线文档](https://lyswhut.github.io/lx-music-doc/mobile/faq) 的功能范围可能不同。
 - 目前官方发布流程以 Android APK 为主，最低支持 Android 5（API 21）。
 - 仓库保留 iOS 工程与脚本，但当前 CI 和官方 Release 未提供 iOS 安装包。
@@ -128,7 +129,7 @@ Release 构建会按 ABI 输出 `arm64-v8a`、`armeabi-v7a`、`x86`、`x86_64` �
 主线发布与上游同步使用以下两个工作流；仓库另外保留 PR 检查、Beta、小米后屏版和版本信息通知工作流：
 
 - `.github/workflows/sync-upstream.yml`：每天 UTC 18:00（北京时间次日 02:00）同步 `lyswhut/lx-music-mobile` 的 `master` 分支，也支持手动触发。
-- `.github/workflows/release.yml`：在 `master` 推送或手动触发时构建多 ABI Android APK，并创建 GitHub Release。Tag 使用 `package.json` 的版本号并添加 `v` 前缀。
+- `.github/workflows/release.yml`：在 `master` 推送或手动触发时构建多 ABI Android APK，校验全部产物沿用既有正式证书后再创建 Tag 与 GitHub Release。Tag 使用 `package.json` 的版本号并添加 `v` 前缀；缺少正式签名配置或证书不兼容时停止发布。
 
 ### Release 所需 Secrets
 
