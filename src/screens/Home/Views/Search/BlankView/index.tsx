@@ -7,6 +7,8 @@ import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
 import { ScrollView, View } from 'react-native'
 import HistorySearch, { type HistorySearchType } from './HistorySearch'
 import HotSearch, { type HotSearchType } from './HotSearch'
+import { useBottomInset } from '@/components/common/BottomInset'
+import RecordArtwork from '@/components/common/RecordArtwork'
 
 interface BlankViewProps {
   onSearch: (keyword: string) => void
@@ -26,6 +28,7 @@ export default forwardRef<BlankViewType, BlankViewProps>(({ onSearch }, ref) => 
   const isShowHistorySearch = useSettingValue('search.isShowHistorySearch')
   const t = useI18n()
   const theme = useTheme()
+  const bottomInset = useBottomInset()
 
   const handleShow = (source: Source) => {
     hotSearchRef.current?.show(source)
@@ -48,7 +51,7 @@ export default forwardRef<BlankViewType, BlankViewProps>(({ onSearch }, ref) => 
     visible
       ? isShowHotSearch || isShowHistorySearch
         ? (
-            <ScrollView>
+            <ScrollView contentContainerStyle={{ paddingBottom: bottomInset + 24 }} showsVerticalScrollIndicator={false}>
               <View style={styles.content}>
                 { isShowHotSearch ? <HotSearch ref={hotSearchRef} onSearch={onSearch} /> : null }
                 { isShowHistorySearch ? <HistorySearch ref={historySearchRef} onSearch={onSearch} /> : null }
@@ -56,7 +59,8 @@ export default forwardRef<BlankViewType, BlankViewProps>(({ onSearch }, ref) => 
             </ScrollView>
           )
         : (
-            <View style={styles.welcome}>
+            <View style={[styles.welcome, { paddingBottom: bottomInset + 24 }]}>
+              <RecordArtwork seed="lx-search" style={styles.welcomeArtwork} />
               <Text size={28} color={theme['c-font']} style={styles.welcomeTitle}>{t('search__welcome')}</Text>
               <Text size={14} color={theme['c-font-label']}>{t('search_input_placeholder')}</Text>
             </View>
@@ -71,15 +75,16 @@ const styles = createStyle({
   content: {
     // paddingTop: 15,
     paddingBottom: 15,
-    paddingLeft: 15,
-    paddingRight: 15,
+    paddingLeft: 24,
+    paddingRight: 24,
   },
   welcome: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingBottom: 120,
+    paddingHorizontal: 24,
   },
+  welcomeArtwork: { width: 160, height: 160, borderRadius: 20, marginBottom: 24 },
   welcomeTitle: {
     fontWeight: '700',
     marginBottom: 8,

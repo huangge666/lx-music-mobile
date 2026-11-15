@@ -12,14 +12,22 @@ type CacheValue = LimitDetailCache | ListInfo
 const cache = new Map<string, CacheValue>()
 const LIST_LOAD_LIMIT = 30
 const DETAIL_CACHE_LIMIT = 12
+const invalidated = new WeakSet<LimitDetailCache>()
 
-// 淘汰最旧的歌单详情。正在写入的这份不能删，否则分页的 sourcePage 会断掉
-const setDetailCache = (key: string, value: CacheValue, pinned?: CacheValue) => {
+const assertActive = (listCache: LimitDetailCache) => {
+  if (!invalidated.has(listCache)) return
+  const error = new Error('Playlist refreshed')
+  error.name = 'AbortError'
+  throw error
+}
+
+// 缓存只限制保留数量；进行中的请求仍持有自己的分页状态，不依赖缓存成员身份。
+const setDetailCache = (key: string, value: CacheValue) => {
   cache.delete(key)
   cache.set(key, value)
   while (cache.size > DETAIL_CACHE_LIMIT) {
     const oldest = cache.keys().next().value
-    if (oldest == null || cache.get(oldest) === pinned) break
+    if (oldest == null) break
     cache.delete(oldest)
   }
 }
@@ -110,13 +118,11 @@ export const getList = async(source: LX.OnlineSource, tabId: string, sortId: str
  * @param page 页数
  * @returns
  */
-const getListDetailLimit = async(source: LX.OnlineSource, id: string, page: number): Promise<ListDetailInfo> => {
-  const listKey = `sdetail__${source}__${id}`
+const getListDetailLimit = async(source: LX.OnlineSource, id: string, page: number, listCache: LimitDetailCache): Promise<ListDetailInfo> => {
   const prevPageKey = `sdetail__${source}__${id}__${page - 1}`
   const tempListKey = `sdetail__${source}__${id}__temp`
 
-  let listCache = cache.get(listKey) as LimitDetailCache
-  if (!listCache) setDetailCache(listKey, listCache = new Map(), listCache)
+  assertActive(listCache)
   let sourcePage = 0
   {
     const prevPageData = listCache.get(prevPageKey) as DetailPageCache
@@ -124,7 +130,7 @@ const getListDetailLimit = async(source: LX.OnlineSource, id: string, page: numb
   }
 
   return musicSdk[source]?.songList.getListDetail(id, sourcePage + 1).then(async(result: ListDetailInfo) => {
-    if (listCache !== cache.get(listKey)) return
+    assertActive(listCache)
     result.list = deduplicationList(result.list.map(m => toNewMusicInfo(m)) as LX.Music.MusicInfoOnline[])
     let p = page
     const tempList = listCache.get(tempListKey) as ListDetailInfo['list']
@@ -133,7 +139,7 @@ const getListDetailLimit = async(source: LX.OnlineSource, id: string, page: numb
     // 上游页可能少于本地 30 首，必须补齐当前页后再返回，不能读取尚未创建的缓存页。
     while (result.list.length < LIST_LOAD_LIMIT && sourcePage < Math.ceil(result.total / result.limit)) {
       const next = await musicSdk[source].songList.getListDetail(id, sourcePage + 1) as ListDetailInfo
-      if (listCache !== cache.get(listKey)) return
+      assertActive(listCache)
       const list = [...result.list, ...next.list.map(m => toNewMusicInfo(m)) as LX.Music.MusicInfoOnline[]]
       result = { ...next, list: deduplicationList(list) }
       sourcePage++
@@ -190,7 +196,8 @@ export const getListDetail = async(id: string, source: LX.OnlineSource, page: nu
 
   let listCache = cache.get(listKey) as LimitDetailCache
   if (!listCache || isRefresh) {
-    setDetailCache(listKey, listCache = new Map(), listCache)
+    if (listCache) invalidated.add(listCache)
+    setDetailCache(listKey, listCache = new Map())
   } else {
     cache.delete(listKey)
     cache.set(listKey, listCache)
@@ -199,7 +206,7 @@ export const getListDetail = async(id: string, source: LX.OnlineSource, page: nu
   let pageCache = listCache.get(pageKey) as DetailPageCache
   if (pageCache) return pageCache.data
 
-  return getListDetailLimit(source, id, page)
+  return getListDetailLimit(source, id, page, listCache)
 }
 
 /**
@@ -214,17 +221,19 @@ export const getListDetailAll = async(source: LX.OnlineSource, id: string, isRef
   const listKey = `sdetail__${source}__${id}`
   let listCache = cache.get(listKey) as LimitDetailCache
   if (!listCache || isRefresh) {
-    setDetailCache(listKey, listCache = new Map(), listCache)
+    if (listCache) invalidated.add(listCache)
+    setDetailCache(listKey, listCache = new Map())
   } else {
     cache.delete(listKey)
     cache.set(listKey, listCache)
   }
 
   const loadData = async(page: number): Promise<ListDetailInfo> => {
+    assertActive(listCache)
     const pageKey = `sdetail__${source}__${id}__${page}`
     let pageCache = listCache.get(pageKey) as DetailPageCache
     if (pageCache) return pageCache.data
-    return getListDetailLimit(source, id, page)
+    return getListDetailLimit(source, id, page, listCache)
   }
   const result = await loadData(1)
   const list = [...result.list]

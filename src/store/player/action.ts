@@ -107,7 +107,4 @@ export default {
   setLoadErrorPicUrl(url: string) {
     state.loadErrorPicUrl = url
   },
-  setLastLyric(lrc?: string) {
-    state.lastLyric = lrc
-  },
 }

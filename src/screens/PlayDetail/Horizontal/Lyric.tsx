@@ -4,14 +4,16 @@ import { View, FlatList, type FlatListProps, type NativeSyntheticEvent, type Nat
 import { type Line, useLrcPlay, useLrcSet } from '@/plugins/lyric'
 import { createStyle } from '@/utils/tools'
 // import { useComponentIds } from '@/store/common/hook'
-import { useTheme } from '@/store/theme/hook'
 import { useSettingValue } from '@/store/setting/hook'
-import { AnimatedColorText } from '@/components/common/Text'
+import Text, { AnimatedColorText } from '@/components/common/Text'
 import { setSpText } from '@/utils/pixelRatio'
 import playerState from '@/store/player/state'
 import { scrollTo } from '@/utils/scroll'
 import PlayLine, { type PlayLineType } from '../components/PlayLine'
-import { MacRadius, MacSpacing } from '../macOS'
+import { MacSpacing, Immersive } from '../macOS'
+import { useI18n } from '@/lang'
+import { useReduceMotion } from '@/utils/hooks/useReduceMotion'
+import { Icon } from '@/components/common/Icon'
 // import { screenkeepAwake } from '@/utils/nativeModules/utils'
 // import { log } from '@/utils/log'
 // import { toast } from '@/utils/tools'
@@ -25,7 +27,6 @@ interface LineProps {
   onLayout: (lineNum: number, height: number, width: number) => void
 }
 const LrcLine = memo(({ line, lineNum, activeLine, onLayout }: LineProps) => {
-  const theme = useTheme()
   const lrcFontSize = useSettingValue('playDetail.horizontal.style.lrcFontSize')
   const textAlign = useSettingValue('playDetail.style.align')
   const size = lrcFontSize / 10
@@ -34,15 +35,15 @@ const LrcLine = memo(({ line, lineNum, activeLine, onLayout }: LineProps) => {
   const colors = useMemo(() => {
     const active = activeLine == lineNum
     return active ? [
-      theme['c-primary'],
-      theme['c-primary-alpha-200'],
+      Immersive.text,
+      Immersive.textSecondary,
       1,
     ] as const : [
-      theme['c-350'],
-      theme['c-300'],
-      0.6,
+      Immersive.textSecondary,
+      Immersive.textSecondary,
+      0.85,
     ] as const
-  }, [activeLine, lineNum, theme])
+  }, [activeLine, lineNum])
 
   const handleLayout = ({ nativeEvent }: LayoutChangeEvent) => {
     onLayout(lineNum, nativeEvent.layout.height, nativeEvent.layout.width)
@@ -56,6 +57,7 @@ const LrcLine = memo(({ line, lineNum, activeLine, onLayout }: LineProps) => {
         ...styles.lineText,
         textAlign,
         lineHeight,
+        fontWeight: activeLine == lineNum ? '700' : '400',
       }} textBreakStrategy="simple" color={colors[0]} opacity={colors[2]} size={size}>{line.text}</AnimatedColorText>
       {
         line.extendedLyrics.map((lrc, index) => {
@@ -70,13 +72,16 @@ const LrcLine = memo(({ line, lineNum, activeLine, onLayout }: LineProps) => {
   )
 }, (prevProps, nextProps) => {
   return prevProps.line === nextProps.line &&
+    prevProps.lineNum === nextProps.lineNum &&
+    prevProps.onLayout === nextProps.onLayout &&
     prevProps.activeLine != nextProps.lineNum &&
     nextProps.activeLine != nextProps.lineNum
 })
 const wait = async() => new Promise(resolve => setTimeout(resolve, 100))
 
 export default () => {
-  const theme = useTheme()
+  const t = useI18n()
+  const reduceMotion = useReduceMotion()
   const lyricLines = useLrcSet()
   const { line } = useLrcPlay()
   const flatListRef = useRef<FlatList>(null)
@@ -107,7 +112,7 @@ export default () => {
     if (index < 0) return
     if (flatListRef.current) {
       // console.log('handleScrollToActive', index)
-      if (scrollInfoRef.current && lineRef.current.line - lineRef.current.prevLine == 1) {
+      if (!reduceMotion && scrollInfoRef.current && lineRef.current.line - lineRef.current.prevLine == 1) {
         let offset = listLayoutInfoRef.current.spaceHeight
         for (let line = 0; line < index; line++) {
           offset += listLayoutInfoRef.current.lineHeights[line]
@@ -126,7 +131,7 @@ export default () => {
         try {
           flatListRef.current.scrollToIndex({
             index,
-            animated: true,
+            animated: !reduceMotion,
             viewPosition: 0.42,
           })
         } catch {}
@@ -180,6 +185,7 @@ export default () => {
         clearTimeout(scrollTimoutRef.current)
         scrollTimoutRef.current = null
       }
+      scrollCancelRef.current?.()
     }
   }, [])
 
@@ -198,7 +204,8 @@ export default () => {
     requestAnimationFrame(() => {
       if (isFirstSetLrc.current) {
         isFirstSetLrc.current = false
-        setTimeout(() => {
+        delayScrollTimeout.current = setTimeout(() => {
+          delayScrollTimeout.current = null
           isPauseScrollRef.current = false
           handleScrollToActive()
         }, 100)
@@ -223,12 +230,13 @@ export default () => {
       return
     }
 
+    if (delayScrollTimeout.current) clearTimeout(delayScrollTimeout.current)
     delayScrollTimeout.current = setTimeout(() => {
       delayScrollTimeout.current = null
       handleScrollToActive()
-    }, 600)
+    }, reduceMotion ? 0 : 600)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [line])
+  }, [line, reduceMotion])
 
   useEffect(() => {
     requestAnimationFrame(() => {
@@ -270,13 +278,8 @@ export default () => {
     <View style={styles.space} onLayout={handleSpaceLayout}></View>
   ), [handleSpaceLayout])
 
-  const cardStyle = useMemo(() => ({
-    backgroundColor: theme['c-card-background'],
-    borderColor: theme['c-border-background'],
-  }), [theme])
-
   return (
-    <View style={[styles.lyricCard, cardStyle]}>
+    <View style={styles.lyricCard}>
       <FlatList
         data={lyricLines}
         renderItem={renderItem}
@@ -285,8 +288,14 @@ export default () => {
         contentContainerStyle={styles.contentContainer}
         ref={flatListRef}
         showsVerticalScrollIndicator={false}
-        ListHeaderComponent={spaceComponent}
-        ListFooterComponent={spaceComponent}
+        ListHeaderComponent={lyricLines.length ? spaceComponent : null}
+        ListFooterComponent={lyricLines.length ? spaceComponent : null}
+        ListEmptyComponent={(
+          <View style={styles.empty}>
+            <Icon name="lyric-off" rawSize={32} color={Immersive.textSecondary} />
+            <Text color={Immersive.textSecondary} size={15}>{t('player_no_lyrics')}</Text>
+          </View>
+        )}
         onScrollBeginDrag={handleScrollBeginDrag}
         onScrollEndDrag={onScrollEndDrag}
         fadingEdgeLength={100}
@@ -300,17 +309,14 @@ export default () => {
 }
 
 const styles = createStyle({
-  // macOS 风格 — 歌词区毛玻璃卡片（横屏左侧较大区域）
+  // 与左侧封面共享同一氛围底，歌词不再装进独立实色卡片。
   lyricCard: {
     flex: 1,
     margin: MacSpacing.md,
     paddingTop: MacSpacing.md,
     paddingBottom: MacSpacing.md,
     paddingHorizontal: MacSpacing.lg,
-    borderRadius: MacRadius.md,
-    borderWidth: 0.5,
     overflow: 'hidden',
-    // 背景与边框由 JSX 中根据主题动态注入
   },
   container: {
     flex: 1,
@@ -318,8 +324,10 @@ const styles = createStyle({
     paddingRight: 0,
   },
   contentContainer: {
+    flexGrow: 1,
     paddingHorizontal: MacSpacing.md,
   },
+  empty: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },
   space: {
     paddingTop: '100%',
   },

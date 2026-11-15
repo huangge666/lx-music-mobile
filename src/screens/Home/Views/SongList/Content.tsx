@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { StyleSheet, View } from 'react-native'
-import { scaleSizeH } from '@/utils/pixelRatio'
+import { useBottomInset } from '@/components/common/BottomInset'
 
 import HeaderBar, { type HeaderBarProps, type HeaderBarType } from './HeaderBar'
 import Tag, { type TagProps, type TagType } from './HeaderBar/Tag'
@@ -15,6 +15,7 @@ interface SonglistInfo {
 }
 
 export default () => {
+  const bottomInset = useBottomInset()
   const headerBarRef = useRef<HeaderBarType>(null)
   const tagRef = useRef<TagType>(null)
   const listRef = useRef<ListType>(null)
@@ -62,7 +63,7 @@ export default () => {
       />
       <View style={styles.listArea}>
         <List ref={listRef} />
-        <View style={styles.fabWrap} pointerEvents="box-none">
+        <View style={[styles.fabWrap, { bottom: bottomInset + 16 }]} pointerEvents="box-none">
           <Tag ref={tagRef} onTagChange={handleTagChange} />
         </View>
       </View>
@@ -82,7 +83,6 @@ const styles = StyleSheet.create({
   fabWrap: {
     position: 'absolute',
     right: 18,
-    bottom: scaleSizeH(168),
     zIndex: 8,
   },
 })

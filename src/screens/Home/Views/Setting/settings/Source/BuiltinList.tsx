@@ -10,9 +10,9 @@ import { useTheme } from '@/store/theme/hook'
 import { useUserApiList, state as userApiState } from '@/store/userApi'
 import { tipDialog, toast, createStyle } from '@/utils/tools'
 import { BorderRadius, BorderWidths } from '@/theme'
+import { USER_API_IMPORT_LIMIT } from '@/config/constant'
 import {
   BUILTIN_USER_APIS,
-  USER_API_IMPORT_LIMIT,
   findImportedBuiltinUserApi,
   importBuiltinUserApi,
   type BuiltinUserApiId,

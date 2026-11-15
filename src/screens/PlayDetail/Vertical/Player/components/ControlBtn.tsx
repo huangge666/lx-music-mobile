@@ -1,11 +1,11 @@
-import { TouchableOpacity, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 import { Icon } from '@/components/common/Icon'
 import { playNext, playPrev, togglePlay } from '@/core/player/player'
-import { useIsPlay } from '@/store/player/hook'
+import { useIsPlay, usePlayerMusicInfo } from '@/store/player/hook'
 import { useI18n } from '@/lang'
 import { createStyle } from '@/utils/tools'
 import { useWindowSize } from '@/utils/hooks'
-import { Immersive, MacSpacing } from '../../../macOS'
+import { Immersive } from '../../../macOS'
 
 
 /**
@@ -15,65 +15,72 @@ import { Immersive, MacSpacing } from '../../../macOS'
  */
 const PrevBtn = ({ size }: { size: number }) => {
   const t = useI18n()
+  const hasTrack = !!usePlayerMusicInfo().id
   const handlePlayPrev = () => {
     void playPrev()
   }
   return (
-    <TouchableOpacity
+    <Pressable
       style={{ ...styles.cotrolBtn, width: size, height: size }}
-      activeOpacity={0.55}
       onPress={handlePlayPrev}
-      hitSlop={10}
+      disabled={!hasTrack}
+      accessibilityState={{ disabled: !hasTrack }}
       accessibilityRole="button"
       accessibilityLabel={t('play_detail_action_prev')}
     >
       <Icon name="prevMusic" color={Immersive.text} rawSize={size * 0.5} />
-    </TouchableOpacity>
+    </Pressable>
   )
 }
 
 const NextBtn = ({ size }: { size: number }) => {
   const t = useI18n()
+  const hasTrack = !!usePlayerMusicInfo().id
   const handlePlayNext = () => {
     void playNext()
   }
   return (
-    <TouchableOpacity
+    <Pressable
       style={{ ...styles.cotrolBtn, width: size, height: size }}
-      activeOpacity={0.55}
       onPress={handlePlayNext}
-      hitSlop={10}
+      disabled={!hasTrack}
+      accessibilityState={{ disabled: !hasTrack }}
       accessibilityRole="button"
       accessibilityLabel={t('play_detail_action_next')}
     >
       <Icon name="nextMusic" color={Immersive.text} rawSize={size * 0.5} />
-    </TouchableOpacity>
+    </Pressable>
   )
 }
 
 const TogglePlayBtn = ({ size }: { size: number }) => {
   const isPlay = useIsPlay()
   const t = useI18n()
+  const hasTrack = !!usePlayerMusicInfo().id
   return (
-    <TouchableOpacity
-      style={{
+    <Pressable
+      style={({ pressed }) => [{
         ...styles.toggleBtn,
         width: size,
         height: size,
-      }}
-      activeOpacity={0.7}
+        borderRadius: size / 2,
+        backgroundColor: Immersive.accent,
+        opacity: !hasTrack ? 0.45 : pressed ? 0.8 : 1,
+        transform: [{ scale: pressed ? 0.94 : 1 }],
+      }]}
       onPress={togglePlay}
-      hitSlop={10}
+      disabled={!hasTrack}
       accessibilityRole="button"
       accessibilityLabel={t(isPlay ? 'pause' : 'play')}
-      accessibilityState={{ selected: isPlay }}
+      accessibilityState={{ selected: isPlay, disabled: !hasTrack }}
     >
       <Icon
         name={isPlay ? 'pause' : 'play'}
-        color={Immersive.text}
-        rawSize={size * 0.56}
+        color="#152310"
+        rawSize={size * 0.48}
+        fill="#152310"
       />
-    </TouchableOpacity>
+    </Pressable>
   )
 }
 
@@ -83,7 +90,7 @@ const MIN_SIZE = 58
 export default () => {
   const winSize = useWindowSize()
   const size = Math.max(Math.min(winSize.width * 0.16, MAX_SIZE), MIN_SIZE)
-  const subSize = Math.max(size * 0.7, MIN_SIZE * 0.7)
+  const subSize = Math.max(size * 0.7, 48)
 
   return (
     <View style={styles.conatiner}>
@@ -98,13 +105,13 @@ export default () => {
 const styles = createStyle({
   conatiner: {
     flexDirection: 'row',
-    justifyContent: 'space-evenly',
+    justifyContent: 'space-around',
     alignItems: 'center',
     flexGrow: 1,
     flexShrink: 1,
-    paddingHorizontal: MacSpacing.xxxl,
+    paddingHorizontal: 24,
     // 与进度条、功能栏贴紧
-    paddingVertical: MacSpacing.xs,
+    paddingVertical: 10,
     backgroundColor: 'transparent',
   },
   cotrolBtn: {

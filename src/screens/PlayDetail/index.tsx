@@ -4,7 +4,6 @@ import { useHorizontalMode } from '@/utils/hooks'
 
 import Vertical from './Vertical'
 import Horizontal from './Horizontal'
-import StatusBar from '@/components/common/StatusBar'
 import SizeView from '@/components/SizeView'
 import { setComponentId } from '@/core/common'
 import { COMPONENT_IDS } from '@/config/constant'
@@ -26,7 +25,6 @@ export default ({ componentId }: { componentId: string }) => {
   return (
     <View style={styles.root}>
       <SizeView />
-      <StatusBar />
       {
         isHorizontalMode
           ? <Horizontal componentId={componentId} />

@@ -21,13 +21,11 @@ const styles = createStyle({
 /**
  * 横屏首页。
  *
- * 三个主标签与辅助入口（排行榜/下载/设置）统一由左侧栏承载，
- * 不再同时显示底部标签栏 — 否则同一层级会出现两套主导航。
- * 迷你播放器仍贴底显示，设置页保持原有「隐藏播放器」规则。
+ * 四个主标签与设置由左侧栏承载，迷你播放器在核心页面贴底显示。
  */
 export default () => {
   const navActiveId = useNavActiveId()
-  const isSettingPage = navActiveId == 'nav_setting'
+  const isStandalonePage = navActiveId == 'nav_setting'
 
   return (
     <>
@@ -37,7 +35,7 @@ export default () => {
         <View style={styles.content}>
           <Header />
           <Main />
-          {!isSettingPage ? <PlayerBar isHome /> : null}
+          {!isStandalonePage ? <PlayerBar isHome /> : null}
         </View>
       </View>
     </>

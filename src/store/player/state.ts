@@ -35,7 +35,6 @@ export interface InitState {
     maxPlayTimeStr: string
   }
 
-  lastLyric: string | undefined
 }
 
 const state: InitState = {
@@ -81,7 +80,6 @@ const state: InitState = {
     maxPlayTimeStr: '00:00',
   },
 
-  lastLyric: undefined,
 }
 
 

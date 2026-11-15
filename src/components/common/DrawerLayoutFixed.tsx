@@ -125,7 +125,8 @@ const DrawerLayoutFixed = forwardRef<DrawerLayoutFixedType, Props>(({
         keyboardDismissMode="on-drag"
         drawerWidth={drawerWidth}
         drawerPosition={drawerPosition}
-        drawerBackgroundColor={drawerBackgroundColor ?? theme['c-glass-background']}
+        // 原生抽屉底不能先铺色，否则背景模糊采样到的是自己的底板。
+        drawerBackgroundColor={drawerBackgroundColor ?? 'transparent'}
         renderNavigationView={renderNavigation}
         {...props}
         style={{ flex: 1, width: '100%' }}

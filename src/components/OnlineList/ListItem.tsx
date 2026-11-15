@@ -90,6 +90,9 @@ export default memo(({ item, index, active, showSource, onPress, onLongPress, on
     prevProps.isShowAlbumName === nextProps.isShowAlbumName &&
     prevProps.isShowInterval === nextProps.isShowInterval &&
     prevProps.rowHeight === nextProps.rowHeight &&
+    prevProps.onPress === nextProps.onPress &&
+    prevProps.onLongPress === nextProps.onLongPress &&
+    prevProps.onShowMenu === nextProps.onShowMenu &&
     nextProps.selectedList.includes(nextProps.item) == prevProps.selectedList.includes(prevProps.item)
   )
 })

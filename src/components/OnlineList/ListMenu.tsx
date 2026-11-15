@@ -1,6 +1,5 @@
 import { useRef, useImperativeHandle, forwardRef, useCallback } from 'react'
 import { useI18n } from '@/lang'
-import { hasDislike } from '@/core/dislikeList'
 import ActionSheet, { type ActionSheetItem, type ActionSheetType } from '@/components/common/ActionSheet'
 
 export interface SelectInfo {
@@ -26,7 +25,6 @@ export interface ListMenuProps {
   onAdd: (selectInfo: SelectInfo) => void
   onCopyName: (selectInfo: SelectInfo) => void
   onMusicSourceDetail: (selectInfo: SelectInfo) => void
-  onDislikeMusic: (selectInfo: SelectInfo) => void
 }
 
 export interface ListMenuType {
@@ -45,7 +43,7 @@ export default forwardRef<ListMenuType, ListMenuProps>((props, ref) => {
   const actionSheetRef = useRef<ActionSheetType>(null)
   const selectInfoRef = useRef<SelectInfo>(initSelectInfo as SelectInfo)
 
-  const buildMenuItems = useCallback((musicInfo: LX.Music.MusicInfoOnline): ActionSheetItem[] => {
+  const buildMenuItems = useCallback((): ActionSheetItem[] => {
     return [
       { action: 'play', label: t('play'), icon: 'play' },
       { action: 'playLater', label: t('play_later'), icon: 'nextMusic' },
@@ -53,7 +51,6 @@ export default forwardRef<ListMenuType, ListMenuProps>((props, ref) => {
       { action: 'add', label: t('add_to'), icon: 'add-music' },
       { action: 'copyName', label: t('copy_name'), icon: 'share' },
       { action: 'musicSourceDetail', label: t('music_source_detail'), icon: 'album' },
-      { action: 'dislike', label: t('dislike'), disabled: hasDislike(musicInfo), icon: 'eraser' },
     ]
   }, [t])
 
@@ -66,7 +63,7 @@ export default forwardRef<ListMenuType, ListMenuProps>((props, ref) => {
           subtitle: getMusicSubtitle(selectInfo.musicInfo),
           icon: 'play-outline',
         },
-        items: buildMenuItems(selectInfo.musicInfo),
+        items: buildMenuItems(),
       })
     },
   }), [buildMenuItems])
@@ -91,9 +88,6 @@ export default forwardRef<ListMenuType, ListMenuProps>((props, ref) => {
         break
       case 'musicSourceDetail':
         props.onMusicSourceDetail(selectInfo)
-        break
-      case 'dislike':
-        props.onDislikeMusic(selectInfo)
         break
       default:
         break

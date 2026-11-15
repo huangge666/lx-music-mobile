@@ -58,6 +58,9 @@ export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPres
     prevProps.isShowAlbumName === nextProps.isShowAlbumName &&
     prevProps.isShowInterval === nextProps.isShowInterval &&
     prevProps.rowHeight === nextProps.rowHeight &&
+    prevProps.onPress === nextProps.onPress &&
+    prevProps.onLongPress === nextProps.onLongPress &&
+    prevProps.onShowMenu === nextProps.onShowMenu &&
     prevActive === nextActive &&
     nextProps.selectedIdSet.has(nextProps.item.id) == prevProps.selectedIdSet.has(prevProps.item.id)
   )

@@ -13,13 +13,15 @@ import {
 import Image from './Image'
 import Loading from './Loading'
 import Text from './Text'
+import RecordArtwork from './RecordArtwork'
 import { Icon } from './Icon'
 import { getPlaylistCoverTint, getPlaylistInitial } from './playlistCover'
 import { useTheme } from '@/store/theme/hook'
 import { getOnAccentColor } from '@/theme/themes/palette'
 import { BorderRadius } from '@/theme'
-import { scaleSizeH, scaleSizeW } from '@/utils/pixelRatio'
+import { scaleSizeW } from '@/utils/pixelRatio'
 import { createStyle } from '@/utils/tools'
+import { useHorizontalMode } from '@/utils/hooks'
 
 export type PlaylistHeroStatus = 'idle' | 'loading' | 'error'
 
@@ -64,14 +66,12 @@ export interface PlaylistHeroProps {
   style?: StyleProp<ViewStyle>
 }
 
-const COVER_RATIO = 0.33
-const COVER_MIN = scaleSizeW(96)
-const COVER_MAX = scaleSizeW(150)
-const ACTION_SIZE = scaleSizeW(40)
-const ACTION_HIT_SLOP = { top: 8, bottom: 8, left: 8, right: 8 }
+const COVER_RATIO = 0.56
+const COVER_MIN = 128
+const COVER_MAX = 210
 const coverImageStyle = StyleSheet.absoluteFillObject
 
-/** 圆形次要操作按钮：40 的可视热区配 8 的 hitSlop，达到 48dp 点按面积且不与相邻按钮重叠 */
+/** 次要操作使用独立的 48dp 热区，避免相邻按钮的点按区域重叠。 */
 const CircleButton = ({
   icon,
   label,
@@ -92,7 +92,6 @@ const CircleButton = ({
     <TouchableOpacity
       onPress={onPress}
       disabled={disabled}
-      hitSlop={ACTION_HIT_SLOP}
       activeOpacity={0.72}
       accessibilityRole="button"
       accessibilityLabel={label}
@@ -101,12 +100,11 @@ const CircleButton = ({
         styles.actionCircle,
         {
           backgroundColor: active ? theme['c-accent-soft'] : theme['c-primary-input-background'],
-          borderColor: active ? theme['c-accent'] : theme['c-border-background'],
           opacity: disabled ? 0.5 : 1,
         },
       ]}
     >
-      <Icon name={icon} size={16} color={active ? theme['c-accent'] : theme['c-font']} />
+      <Icon name={icon} size={20} color={active ? theme['c-accent'] : theme['c-font']} />
     </TouchableOpacity>
   )
 }
@@ -150,6 +148,7 @@ const PlaylistHero = ({
 }: PlaylistHeroProps) => {
   const theme = useTheme()
   const [width, setWidth] = useState(0)
+  const landscape = useHorizontalMode()
   const [descExpanded, setDescExpanded] = useState(false)
   const [descOverflow, setDescOverflow] = useState(false)
 
@@ -159,43 +158,42 @@ const PlaylistHero = ({
   }, [])
 
   // onLayout 得到的是实际尺寸，不能再交给 scaleSizeW/H 二次缩放
+  // 横屏以有限的高度为预算，首屏必须同时露出歌曲，而不只是放大封面。
   const coverSize = width > 0
-    ? Math.round(Math.min(Math.max(width * COVER_RATIO, COVER_MIN), COVER_MAX))
+    ? landscape ? 104 : Math.round(Math.min(Math.max(width * COVER_RATIO, COVER_MIN), COVER_MAX))
     : 0
 
   const tint = useMemo(() => getPlaylistCoverTint(placeholderSeed ?? title), [placeholderSeed, title])
   const initial = placeholderText ?? getPlaylistInitial(title)
-  // c-primary 是「反色实底」（浅色主题近黑、深色主题近白），
-  // c-primary-font 与它同值，不能当作实底上的文字色，这里与 ButtonPrimary 一样取反色
+  // 强调色上的文字与内容区分开取色，保证浅色和深色按钮都有足够对比度。
   const onPrimaryColor = getOnAccentColor(theme.isDark)
   const disabled = busy || disabledProp || status === 'loading'
   const showLoading = status === 'loading'
   const showError = status === 'error'
 
   const handleDescOverflow = useCallback((e: NativeSyntheticEvent<TextLayoutEventData>) => {
-    if (descExpanded) return
-    if (e.nativeEvent.lines.length > 2) setDescOverflow(true)
-  }, [descExpanded])
+    setDescOverflow(e.nativeEvent.lines.length > 2)
+  }, [])
 
   return (
-    <View style={[styles.container, style]} onLayout={handleLayout}>
+    <View style={[styles.container, landscape ? compactStyles.container : null, style]} onLayout={handleLayout}>
       <View style={styles.ambient} pointerEvents="none">
-        <View style={{ ...styles.ambientPrimary, backgroundColor: theme['c-primary-alpha-800'] }} />
-        <View style={{ ...styles.ambientSecondary, backgroundColor: theme['c-primary-alpha-900'] }} />
+        <RecordArtwork seed={placeholderSeed ?? title} style={styles.ambientRecord} />
       </View>
-
-      <View
+      <View style={landscape || width > 580 ? styles.wide : null}>
+        <View
         style={[
           styles.coverFrame,
           { width: coverSize, height: coverSize, borderColor: theme['c-glass-border'] },
         ]}
       >
         <View style={[styles.cover, { backgroundColor: tint.backgroundColor }]}>
+          <RecordArtwork seed={placeholderSeed ?? title} style={StyleSheet.absoluteFill} />
           {placeholderIcon != null
-            ? <Icon name={placeholderIcon} size={Math.max(coverSize * 0.22, 18)} color={tint.color} />
+            ? <Icon name={placeholderIcon} rawSize={Math.max(coverSize * 0.22, 18)} color={tint.color} />
             : initial
               ? <Text style={styles.coverInitial} color={tint.color} numberOfLines={1}>{initial}</Text>
-              : <Icon name="music" size={Math.max(coverSize * 0.22, 18)} color={tint.color} />}
+              : <Icon name="music" rawSize={Math.max(coverSize * 0.22, 18)} color={tint.color} />}
           {coverUrl
             ? <Image url={coverUrl} nativeID={coverNativeID} style={coverImageStyle} />
             : null}
@@ -210,41 +208,49 @@ const PlaylistHero = ({
             ? <View style={styles.coverBadge} pointerEvents="none">{coverBadge}</View>
             : null}
         </View>
-      </View>
+        </View>
 
-      <View style={styles.info}>
+        <View style={[styles.info, landscape || width > 580 ? styles.wideInfo : null]}>
         <Text
           nativeID={titleNativeID}
           style={styles.title}
-          size={22}
+          size={landscape ? 23 : 28}
+          accessibilityRole="header"
           color={theme['c-font']}
           numberOfLines={2}
         >{title}</Text>
         {meta
-          ? <Text style={styles.meta} size={12} color={theme['c-font-label']} numberOfLines={1}>{meta}</Text>
+          ? <Text style={styles.meta} size={13} color={theme['c-font-label']} numberOfLines={2}>{meta}</Text>
           : null}
         {description
           ? (
-              <TouchableOpacity
-                activeOpacity={descOverflow ? 0.7 : 1}
-                disabled={!descOverflow}
-                onPress={() => { setDescExpanded(expanded => !expanded) }}
-                accessibilityRole={descOverflow ? 'button' : undefined}
-                accessibilityState={{ expanded: descExpanded }}
-              >
+              <View style={styles.descriptionWrap}>
+                {/* Android 的截断文本只回报两行；独立测量全文才知道是否需要展开入口。 */}
+                <Text style={styles.descriptionMeasure} size={14} accessible={false} importantForAccessibility="no-hide-descendants"
+                  onTextLayout={handleDescOverflow}>{description}</Text>
                 <Text
                   style={styles.description}
-                  size={12}
+                  size={14}
                   color={theme['c-font-label']}
                   numberOfLines={descExpanded ? undefined : 2}
-                  onTextLayout={handleDescOverflow}
                 >
                   {description}
-                  {descOverflow
-                    ? <Text size={12} color={theme['c-accent']}>{'  '}{descExpanded ? collapseText : expandText}</Text>
-                    : null}
                 </Text>
-              </TouchableOpacity>
+                {descOverflow
+                  ? (
+                      <TouchableOpacity
+                        style={styles.descriptionToggle}
+                        activeOpacity={0.7}
+                        onPress={() => { setDescExpanded(expanded => !expanded) }}
+                        accessibilityRole="button"
+                        accessibilityState={{ expanded: descExpanded }}
+                      >
+                        <Text size={14} color={theme['c-accent']}>{descExpanded ? collapseText : expandText}</Text>
+                        <Icon name={descExpanded ? 'chevron-up' : 'chevron-down'} size={16} color={theme['c-accent']} />
+                      </TouchableOpacity>
+                    )
+                  : null}
+              </View>
             )
           : null}
         {showError && statusText
@@ -252,17 +258,17 @@ const PlaylistHero = ({
               <TouchableOpacity
                 onPress={onRetry}
                 disabled={!onRetry}
-                hitSlop={ACTION_HIT_SLOP}
                 activeOpacity={0.7}
                 accessibilityRole={onRetry ? 'button' : undefined}
               >
-                <Text style={styles.statusText} size={12} color={theme['c-accent']} numberOfLines={2}>{statusText}</Text>
+                <Text style={styles.statusText} size={13} color={theme['c-danger']} numberOfLines={2}>{statusText}</Text>
               </TouchableOpacity>
             )
           : null}
+        </View>
       </View>
 
-      <View style={styles.actions}>
+      <View style={[styles.actions, landscape ? compactStyles.actions : null]}>
         {onPlay
           ? (
               <TouchableOpacity
@@ -281,7 +287,7 @@ const PlaylistHero = ({
                   ? <Loading size={16} color={onPrimaryColor} />
                   : <Icon name="play" size={17} color={onPrimaryColor} />}
                 {playLabel
-                  ? <Text style={styles.playLabel} size={13} color={onPrimaryColor} numberOfLines={1}>{playLabel}</Text>
+                  ? <Text style={styles.playLabel} size={15} color={onPrimaryColor} numberOfLines={1}>{playLabel}</Text>
                   : null}
               </TouchableOpacity>
             )
@@ -331,9 +337,9 @@ const styles = createStyle({
   container: {
     position: 'relative',
     width: '100%',
-    paddingHorizontal: 16,
-    paddingTop: 6,
-    paddingBottom: 16,
+    paddingHorizontal: 24,
+    paddingTop: 12,
+    paddingBottom: 28,
     overflow: 'hidden',
   },
   ambient: {
@@ -341,32 +347,22 @@ const styles = createStyle({
     left: 0,
     right: 0,
     top: 0,
-    height: 220,
+    height: 320,
     overflow: 'hidden',
   },
-  ambientPrimary: {
+  ambientRecord: {
     position: 'absolute',
-    width: 250,
-    height: 250,
-    borderRadius: 125,
-    top: -150,
-    right: -80,
-    opacity: 0.65,
-  },
-  ambientSecondary: {
-    position: 'absolute',
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    top: 30,
-    left: -110,
-    opacity: 0.5,
+    width: 320,
+    height: 320,
+    top: -20,
+    right: -150,
+    opacity: 0.08,
   },
   coverFrame: {
-    alignSelf: 'center',
+    alignSelf: 'flex-start',
     borderRadius: BorderRadius.large,
     borderWidth: 0.5,
-    elevation: 10,
+    elevation: 6,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.24,
@@ -381,7 +377,7 @@ const styles = createStyle({
   },
   coverInitial: {
     // createStyle 会对 fontSize 走 setSpText，这里写设计值，避免二次缩放
-    fontSize: 46,
+    fontSize: 42,
     fontWeight: '700',
     letterSpacing: -1,
     includeFontPadding: false,
@@ -400,46 +396,51 @@ const styles = createStyle({
     alignItems: 'center',
   },
   info: {
-    width: '100%',
-    paddingTop: 14,
-    alignItems: 'center',
+    paddingTop: 20,
+    alignItems: 'flex-start',
   },
+  wide: { flexDirection: 'row', alignItems: 'center', gap: 28 },
+  wideInfo: { flex: 1, paddingTop: 0 },
   title: {
-    lineHeight: 28,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-    textAlign: 'center',
+    fontWeight: '800',
+    letterSpacing: -0.9,
   },
   meta: {
     marginTop: 5,
-    fontWeight: '600',
-    textAlign: 'center',
+    fontWeight: '500',
   },
+  descriptionWrap: { width: '100%' },
+  descriptionMeasure: { position: 'absolute', left: 0, right: 0, opacity: 0, lineHeight: 21 },
   description: {
-    lineHeight: 18,
-    marginTop: 6,
-    textAlign: 'center',
+    lineHeight: 21,
+    marginTop: 10,
+  },
+  descriptionToggle: {
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 6,
   },
   statusText: {
     marginTop: 8,
     fontWeight: '600',
-    textAlign: 'center',
   },
   actions: {
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     gap: 10,
-    paddingTop: scaleSizeH(16),
+    paddingTop: 20,
   },
   playButton: {
     flexGrow: 1,
     flexShrink: 1,
-    maxWidth: scaleSizeW(240),
-    minHeight: scaleSizeH(44),
+    maxWidth: scaleSizeW(300),
+    minHeight: 48,
     paddingHorizontal: 18,
-    borderRadius: 22,
+    borderRadius: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -449,11 +450,16 @@ const styles = createStyle({
     fontWeight: '700',
   },
   actionCircle: {
-    width: ACTION_SIZE,
-    height: ACTION_SIZE,
-    borderRadius: ACTION_SIZE / 2,
-    borderWidth: 0.5,
+    width: 48,
+    height: 48,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
+})
+
+// 原生 onLayout 的尺寸是 dp；横屏紧凑布局不再按屏幕宽度放大。
+const compactStyles = StyleSheet.create({
+  container: { paddingTop: 8, paddingBottom: 16 },
+  actions: { paddingTop: 12 },
 })

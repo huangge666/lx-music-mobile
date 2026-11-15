@@ -14,9 +14,7 @@ import { useI18n } from '@/lang'
 import ConfirmAlert, { type ConfirmAlertType } from '@/components/common/ConfirmAlert'
 import CheckBox from '@/components/common/CheckBox'
 import ListState from '@/components/common/ListState'
-import { useBackHandler } from '@/utils/hooks/useBackHandler'
-import commonState from '@/store/common/state'
-import { backToHomeTab } from '@/core/common'
+import { useBottomInset } from '@/components/common/BottomInset'
 
 interface DownloadListItem {
   key: string
@@ -107,7 +105,7 @@ const DownloadRow = memo(({
       <Icon name="album" size={16} color={iconColor} />
       <View style={styles.rowCenter}>
         <Text numberOfLines={1}>{item.name}</Text>
-        <Text size={11} color={isError ? theme['c-danger'] : theme['c-font-label']} numberOfLines={1}>{subtitle}</Text>
+        <Text size={13} color={isError ? theme['c-danger'] : theme['c-font-label']} numberOfLines={2}>{subtitle}</Text>
         {isRunning ? <ProgressBar progress={item.progress || 0} /> : null}
       </View>
       <View style={styles.rowActions}>
@@ -194,18 +192,11 @@ export default () => {
   const t = useI18n()
   const theme = useTheme()
   const navActiveId = useNavActiveId()
+  const bottomInset = useBottomInset()
   const removeConfirmRef = useRef<RemoveConfirmType>(null)
   const [isLoading, setLoading] = useState(false)
   const [files, setFiles] = useState<MusicDownloadDirItem[]>([])
   const [tasks, setTasks] = useState<DownloadTaskItem[]>([])
-
-  useBackHandler(useCallback(() => {
-    if (Object.keys(commonState.componentIds).length == 1 && commonState.navActiveId == 'nav_download') {
-      backToHomeTab()
-      return true
-    }
-    return false
-  }, []))
 
   const refresh = useCallback(async(showLoading = false) => {
     if (showLoading) setLoading(true)
@@ -375,7 +366,7 @@ export default () => {
             ? (
               <FlatList
                 data={mergedList}
-                contentContainerStyle={styles.list}
+                contentContainerStyle={[styles.list, { paddingBottom: bottomInset + 24 }]}
                 keyExtractor={item => item.key}
                 renderItem={({ item }) => (
                   <DownloadRow
@@ -428,8 +419,8 @@ const styles = createStyle({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
-    minHeight: 32,
-    borderRadius: 16,
+    minHeight: 48,
+    borderRadius: 14,
   },
   refreshText: {
     marginLeft: 5,
@@ -459,9 +450,9 @@ const styles = createStyle({
     marginLeft: 8,
   },
   iconBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 48,
+    height: 48,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 6,

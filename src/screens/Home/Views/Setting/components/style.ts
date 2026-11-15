@@ -38,7 +38,7 @@ export const settingLayout = createStyle({
   iconBubble: {
     width: 38,
     height: 38,
-    borderRadius: 19,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -60,11 +60,10 @@ export const settingLayout = createStyle({
     paddingRight: 12,
   },
   rowTitle: {
-    fontWeight: '500',
+    fontWeight: '600',
   },
   rowSubtitle: {
     marginTop: 3,
-    lineHeight: 16,
   },
   inset: {
     borderRadius: BorderRadius.normal,

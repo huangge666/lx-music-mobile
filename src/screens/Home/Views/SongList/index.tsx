@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react'
-import settingState from '@/store/setting/state'
 import Content from './Content'
 import TagList from './TagList'
 import DrawerLayoutFixed, { type DrawerLayoutFixedType } from '@/components/common/DrawerLayoutFixed'
@@ -39,7 +38,7 @@ export default () => {
     <DrawerLayoutFixed
       ref={drawer}
       visibleNavNames={[COMPONENT_IDS.home]}
-      drawerPosition={settingState.setting['common.drawerLayoutPosition']}
+      drawerPosition="left"
       renderNavigationView={navigationView}
     >
       <Content />

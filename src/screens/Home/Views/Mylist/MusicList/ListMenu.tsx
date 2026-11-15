@@ -1,6 +1,5 @@
 import { useRef, useImperativeHandle, forwardRef, useCallback } from 'react'
 import { useI18n } from '@/lang'
-import { hasDislike } from '@/core/dislikeList'
 import { existsFile } from '@/utils/fs'
 import ActionSheet, { type ActionSheetItem, type ActionSheetType } from '@/components/common/ActionSheet'
 
@@ -32,7 +31,6 @@ export interface ListMenuProps {
   onChangePosition: (selectInfo: SelectInfo) => void
   onToggleSource: (selectInfo: SelectInfo) => void
   onMusicSourceDetail: (selectInfo: SelectInfo) => void
-  onDislikeMusic: (selectInfo: SelectInfo) => void
   onRemove: (selectInfo: SelectInfo) => void
 }
 
@@ -68,7 +66,6 @@ export default forwardRef<ListMenuType, ListMenuProps>((props, ref) => {
       { action: 'toggleSource', label: t('toggle_source'), icon: 'available_updates' },
       { action: 'copyName', label: t('copy_name'), icon: 'share' },
       { action: 'musicSourceDetail', disabled: musicInfo.source == 'local', label: t('music_source_detail'), icon: 'album' },
-      { action: 'dislike', disabled: hasDislike(musicInfo), label: t('dislike'), icon: 'eraser' },
       { action: 'remove', label: t('delete'), icon: 'remove', danger: true },
     ]
     if (musicInfo.source == 'local') {
@@ -132,9 +129,6 @@ export default forwardRef<ListMenuType, ListMenuProps>((props, ref) => {
         break
       case 'musicSourceDetail':
         props.onMusicSourceDetail(selectInfo)
-        break
-      case 'dislike':
-        props.onDislikeMusic(selectInfo)
         break
       case 'remove':
         props.onRemove(selectInfo)

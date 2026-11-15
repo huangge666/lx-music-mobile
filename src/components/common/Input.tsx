@@ -5,6 +5,7 @@ import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import { setSpText } from '@/utils/pixelRatio'
 import { BorderRadius } from '@/theme'
+import { useI18n } from '@/lang'
 
 /**
  * Apple Music 风格 Input 组件
@@ -26,7 +27,7 @@ const styles = createStyle({
     borderRadius: BorderRadius.small,
     paddingTop: 0,
     paddingBottom: 0,
-    height: 36,
+    minHeight: 44,
     paddingLeft: 12,
     paddingRight: 4,
     flexGrow: 1,
@@ -42,10 +43,9 @@ const styles = createStyle({
    * — 圆形背景 + × 图标
    */
   clearBtn: {
-    width: 20,
-    height: 20,
-    marginRight: 8,
-    borderRadius: 10,
+    width: 48,
+    height: 48,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -69,6 +69,7 @@ export interface InputType {
 export default forwardRef<InputType, InputProps>(({ onChangeText, onClearText, clearBtn, style, size = 15, ...props }, ref) => {
   const inputRef = useRef<TextInput>(null)
   const theme = useTheme()
+  const t = useI18n()
 
   useImperativeHandle(ref, () => ({
     blur() {
@@ -112,8 +113,9 @@ export default forwardRef<InputType, InputProps>(({ onChangeText, onClearText, c
         ref={inputRef} {...props} />
       {clearBtn
         ? <View style={styles.clearBtnContent}>
-            <TouchableOpacity style={{ ...styles.clearBtn, backgroundColor: theme['c-font-label'] }} onPress={clearText} activeOpacity={0.6}>
-              <Icon name="remove" color={theme.isDark ? '#000' : '#fff'} size={10} />
+            <TouchableOpacity style={styles.clearBtn} onPress={clearText} activeOpacity={0.6}
+              accessibilityRole="button" accessibilityLabel={t('input_clear')}>
+              <Icon name="close" color={theme['c-font-label']} rawSize={17} />
             </TouchableOpacity>
           </View>
         : null

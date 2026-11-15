@@ -9,6 +9,7 @@ import { tipDialog, createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import { getOnAccentColor } from '@/theme/themes/palette'
 import { BorderRadius, BorderWidths } from '@/theme'
+import { USER_API_IMPORT_LIMIT } from '@/config/constant'
 import ScriptImportExport, { type ScriptImportExportType } from '../Basic/UserApiEditModal/ScriptImportExport'
 import ScriptImportOnline, { type ScriptImportOnlineType } from '../Basic/UserApiEditModal/ScriptImportOnline'
 
@@ -22,7 +23,7 @@ export default () => {
   const scriptImportOnlineRef = useRef<ScriptImportOnlineType>(null)
 
   const canImport = () => {
-    if (state.list.length > 20) {
+    if (state.list.length >= USER_API_IMPORT_LIMIT) {
       void tipDialog({
         message: t('user_api_max_tip'),
         btnText: t('ok'),

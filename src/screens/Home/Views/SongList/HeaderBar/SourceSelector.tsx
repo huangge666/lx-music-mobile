@@ -49,7 +49,7 @@ export default forwardRef<SourceSelectorType, SourceSelectorProps>(({ style, onS
               setSource(item.action)
               onSourceChange(item.action)
             }}
-            style={styles.tab}
+            style={[styles.tab, active ? { backgroundColor: theme['c-accent-soft'] } : null]}
           >
             <Text
               size={15}
@@ -73,7 +73,7 @@ export default forwardRef<SourceSelectorType, SourceSelectorProps>(({ style, onS
 const styles = createStyle({
   container: {
     width: '100%',
-    height: '100%',
+    minHeight: 48,
     paddingHorizontal: 8,
     flexDirection: 'row',
     alignItems: 'stretch',
@@ -82,10 +82,10 @@ const styles = createStyle({
   tab: {
     flex: 1,
     minWidth: 0,
-    height: 32,
-    marginVertical: 6,
+    minHeight: 48,
+    paddingVertical: 8,
     paddingHorizontal: 4,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },

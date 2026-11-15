@@ -78,7 +78,7 @@ const Component = <S extends Sources>({ fontSize = 15, center, onSourceChange }:
 
   return (
     <>
-      <Button onPress={handleShowSheet}>
+      <Button onPress={handleShowSheet} accessibilityRole="button" accessibilityLabel={t('source_select')}>
         <View style={styles.sourceMenu}>
           <Text style={{ textAlign: center ? 'center' : 'left' }} numberOfLines={1} size={fontSize}>
             {t(`source_${sourceNameType}_${source}`)}
@@ -96,7 +96,7 @@ export default forwardRef(Component) as <S extends Sources>(p: SourceSelectorPro
 
 const styles = createStyle({
   sourceMenu: {
-    height: '100%',
+    minHeight: 48,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

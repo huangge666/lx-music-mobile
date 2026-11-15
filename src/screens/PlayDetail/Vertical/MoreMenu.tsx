@@ -6,12 +6,8 @@ import { shareMusic } from '@/utils/tools'
 import playerState from '@/store/player/state'
 import settingState from '@/store/setting/state'
 import commonState from '@/store/common/state'
-import { updateSetting } from '@/core/common'
-import { toggleDesktopLyricLock } from '@/core/desktopLyric'
 import ActionSheet, { type ActionSheetItem, type ActionSheetType } from '@/components/common/ActionSheet'
 import MusicAddModal, { type MusicAddModalType } from '@/components/MusicAddModal'
-import DesktopLyricEnable, { type DesktopLyricEnableType } from '@/components/DesktopLyricEnable'
-import TimeoutExitEditModal, { type TimeoutExitEditModalType, useTimeInfo } from '@/components/TimeoutExitEditModal'
 import SettingPopup, { type SettingPopupType } from '@/screens/PlayDetail/components/SettingPopup'
 
 export interface MoreMenuType {
@@ -36,37 +32,17 @@ const getHeaderSubtitle = (name: string, singer: string, album: string) => {
 export default forwardRef<MoreMenuType>((_, ref) => {
   const t = useI18n()
   const theme = useTheme()
-  const timeInfo = useTimeInfo()
   const actionSheetRef = useRef<ActionSheetType>(null)
   const musicAddModalRef = useRef<MusicAddModalType>(null)
-  const desktopLyricEnableRef = useRef<DesktopLyricEnableType>(null)
-  const timeoutExitModalRef = useRef<TimeoutExitEditModalType>(null)
   const settingPopupRef = useRef<SettingPopupType>(null)
 
   const buildMenuItems = useCallback((): ActionSheetItem[] => {
     const hasMusic = !!getPlayingMusicInfo()
-    const enabledLyric = settingState.setting['desktopLyric.enable']
 
     return [
       { action: 'add', disabled: !hasMusic, label: t('add_to'), icon: 'add-music' },
       { action: 'share', disabled: !hasMusic, label: t('copy_name'), icon: 'share' },
       { action: 'locate', disabled: !hasMusic, label: t('list_locate_playing'), icon: 'list-order' },
-      {
-        action: 'desktopLyric',
-        label: t('setting_lyric_desktop'),
-        icon: enabledLyric ? 'lyric-on' : 'lyric-off',
-      },
-      {
-        action: 'desktopLyricLock',
-        disabled: !enabledLyric,
-        label: t('setting_lyric_desktop_lock'),
-        icon: 'lyric-off',
-      },
-      {
-        action: 'timeoutExit',
-        label: t('timeout_exit_tip_off'),
-        icon: 'music_time',
-      },
       { action: 'setting', label: t('play_detail_setting_title'), icon: 'slider' },
     ]
   }, [t])
@@ -117,19 +93,6 @@ export default forwardRef<MoreMenuType>((_, ref) => {
         }, 280)
         break
       }
-      case 'desktopLyric':
-        desktopLyricEnableRef.current?.setEnabled(!settingState.setting['desktopLyric.enable'])
-        break
-      case 'desktopLyricLock': {
-        const isLock = !settingState.setting['desktopLyric.isLock']
-        void toggleDesktopLyricLock(isLock).then(() => {
-          updateSetting({ 'desktopLyric.isLock': isLock })
-        })
-        break
-      }
-      case 'timeoutExit':
-        timeoutExitModalRef.current?.show()
-        break
       case 'setting':
         settingPopupRef.current?.show()
         break
@@ -142,8 +105,6 @@ export default forwardRef<MoreMenuType>((_, ref) => {
     <>
       <ActionSheet ref={actionSheetRef} onPress={handleAction} />
       <MusicAddModal ref={musicAddModalRef} />
-      <DesktopLyricEnable ref={desktopLyricEnableRef} />
-      <TimeoutExitEditModal ref={timeoutExitModalRef} timeInfo={timeInfo} />
       <SettingPopup ref={settingPopupRef} direction="vertical" />
     </>
   )

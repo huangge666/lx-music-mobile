@@ -104,9 +104,10 @@ export default forwardRef<ScriptImportOnlineType, {}>((props, ref) => {
     if (!url.length) return
     importingRef.current = true
     setBtn({ disabled: true, text: t('user_api_btn_import_online_input_loading') })
-    let script: string
     try {
-      script = await httpFetch(url).promise.then(resp => resp.body) as string
+      const script = await httpFetch(url).promise.then(resp => resp.body) as string
+      // 下载与落盘共用同一把锁，避免响应到达后重复提交或失败时提前关掉弹窗。
+      if (await handleImportScript(script)) alertRef.current?.setVisible(false)
     } catch (err: any) {
       toast(t('user_api_import_failed_tip', { message: err.message }), 'long')
       return
@@ -114,13 +115,6 @@ export default forwardRef<ScriptImportOnlineType, {}>((props, ref) => {
       importingRef.current = false
       setBtn({ disabled: false, text: t('user_api_btn_import_online_input_confirm') })
     }
-    if (script.length > 9_000_000) {
-      toast(t('user_api_import_failed_tip', { message: 'Too large script' }), 'long')
-      return
-    }
-    void handleImportScript(script)
-
-    alertRef.current?.setVisible(false)
   }
 
   return (

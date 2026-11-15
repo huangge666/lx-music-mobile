@@ -1,7 +1,6 @@
 import { version } from '../../package.json'
 import { createAppEventHub } from '@/event/appEvent'
 import { createListEventHub } from '@/event/listEvent'
-import { createDislikeEventHub } from '@/event/dislikeEvent'
 import { createStateEventHub } from '@/event/stateEvent'
 if (process.versions == null) {
   // @ts-expect-error
@@ -37,14 +36,8 @@ global.lx = {
 
   isScreenKeepAwake: false,
 
-  // 是否播放完后退出应用
-  isPlayedStop: false,
-
   // prevListPlayIndex: -1,
 
-  // syncKeyInfo: {},
-
-  isEnableSyncLog: false,
   isEnableUserApiLog: false,
 
   playerTrackId: '',
@@ -62,11 +55,7 @@ global.lx = {
 
   jumpMyListPosition: false,
 
-  settingActiveId: 'source',
-
   homePagerIdle: true,
-
-  // syncKeyInfo: initValue as LX.Sync.KeyInfo,
 
   // windowInfo: {
   //   screenW,
@@ -80,5 +69,4 @@ global.lx = {
 
 global.app_event = createAppEventHub()
 global.list_event = createListEventHub()
-global.dislike_event = createDislikeEventHub()
 global.state_event = createStateEventHub()

@@ -1,13 +1,12 @@
 import { memo, useMemo, useEffect, useRef, useCallback } from 'react'
 import { View, FlatList, TouchableOpacity, type FlatListProps, type LayoutChangeEvent, type NativeSyntheticEvent, type NativeScrollEvent } from 'react-native'
-// import { useLayout } from '@/utils/hooks'
 import { type Line, useLrcPlay, useLrcSet } from '@/plugins/lyric'
 import { createStyle } from '@/utils/tools'
-// import { useComponentIds } from '@/store/common/hook'
 import { useSettingValue } from '@/store/setting/hook'
 import { useI18n } from '@/lang'
 import { useReduceMotion } from '@/utils/hooks/useReduceMotion'
-import { AnimatedColorText } from '@/components/common/Text'
+import Text, { AnimatedColorText } from '@/components/common/Text'
+import { Icon } from '@/components/common/Icon'
 import { setSpText } from '@/utils/pixelRatio'
 import playerState from '@/store/player/state'
 import { scrollTo } from '@/utils/scroll'
@@ -17,50 +16,8 @@ import {
   MacTouchSize,
   Immersive,
 } from '../macOS'
-// import { screenkeepAwake } from '@/utils/nativeModules/utils'
-// import { log } from '@/utils/log'
-// import { toast } from '@/utils/tools'
 
 type FlatListType = FlatListProps<Line>
-
-// const useLock = () => {
-//   const showCommentRef = useRef(false)
-
-
-//   useEffect(() => {
-//     let appstateListener = AppState.addEventListener('change', (state) => {
-//       switch (state) {
-//         case 'active':
-//           if (showLyricRef.current && !showCommentRef.current) screenkeepAwake()
-//           break
-//         case 'background':
-//           screenUnkeepAwake()
-//           break
-//       }
-//     })
-//     return () => {
-//       appstateListener.remove()
-//     }
-//   }, [])
-//   useEffect(() => {
-//     let listener: ReturnType<typeof onNavigationComponentDidDisappearEvent>
-//     showCommentRef.current = !!componentIds.comment
-//     if (showCommentRef.current) {
-//       if (showLyricRef.current) screenUnkeepAwake()
-//       listener = onNavigationComponentDidDisappearEvent(componentIds.comment as string, () => {
-//         if (showLyricRef.current && AppState.currentState == 'active') screenkeepAwake()
-//       })
-//     }
-
-//     const rm = global.state_event.on('componentIdsUpdated', (ids) => {
-
-//     })
-
-//     return () => {
-//       if (listener) listener.remove()
-//     }
-//   }, [])
-// }
 
 interface LineProps {
   line: Line
@@ -119,6 +76,8 @@ const LrcLine = memo(({ line, lineNum, activeLine, onLayout }: LineProps) => {
   )
 }, (prevProps, nextProps) => {
   return prevProps.line === nextProps.line &&
+    prevProps.lineNum === nextProps.lineNum &&
+    prevProps.onLayout === nextProps.onLayout &&
     prevProps.activeLine != nextProps.lineNum &&
     nextProps.activeLine != nextProps.lineNum
 })
@@ -359,8 +318,14 @@ export default ({ onPress }: { onPress?: () => void }) => {
         contentContainerStyle={styles.contentContainer}
         ref={flatListRef}
         showsVerticalScrollIndicator={false}
-        ListHeaderComponent={spaceComponent}
-        ListFooterComponent={spaceComponent}
+        ListHeaderComponent={lyricLines.length ? spaceComponent : null}
+        ListFooterComponent={lyricLines.length ? spaceComponent : null}
+        ListEmptyComponent={(
+          <View style={styles.empty}>
+            <Icon name="lyric-off" rawSize={32} color={Immersive.textSecondary} />
+            <Text color={Immersive.textSecondary} size={15}>{t('player_no_lyrics')}</Text>
+          </View>
+        )}
         onScrollBeginDrag={handleScrollBeginDrag}
         onScrollEndDrag={onScrollEndDrag}
         fadingEdgeLength={100}
@@ -406,8 +371,10 @@ const styles = createStyle({
     paddingRight: 0,
   },
   contentContainer: {
+    flexGrow: 1,
     paddingHorizontal: MacSpacing.md,
   },
+  empty: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },
   space: {
     paddingTop: '100%',
   },

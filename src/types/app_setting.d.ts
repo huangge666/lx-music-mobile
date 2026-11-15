@@ -48,11 +48,6 @@ declare global {
       'common.autoHidePlayBar': boolean
 
       /**
-       * 抽屉组件弹出方向
-       */
-      'common.drawerLayoutPosition': 'left' | 'right'
-
-      /**
        * 启用首页滑动
        */
       'common.homePageScroll': boolean
@@ -61,16 +56,6 @@ declare global {
        * 允许通过底栏进度条调整进度
        */
       'common.allowProgressBarSeek': boolean
-
-      /**
-       * 是否显示返回按钮
-       */
-      'common.showBackBtn': boolean
-
-      /**
-       * 是否显示退出按钮
-       */
-      'common.showExitBtn': boolean
 
       /**
        * 使用系统文件选择器
@@ -153,16 +138,6 @@ declare global {
       'player.cacheSize': string
 
       /**
-       * 定时暂停播放-倒计时时间
-       */
-      'player.timeoutExit': string
-
-      /**
-       * 定时暂停播放-是否等待歌曲播放完毕再暂停
-       */
-      'player.timeoutExitPlayed': boolean
-
-      /**
        * 点击相同列表内的歌曲切歌时是否清空已播放列表（随机模式下列表内所有歌曲会重新参与随机）
        */
       'player.isAutoCleanPlayedList': boolean
@@ -198,16 +173,6 @@ declare global {
       'player.isS2t': boolean
 
       /**
-       * 是否启用蓝牙歌词
-       */
-      'player.isShowBluetoothLyric': boolean
-
-      /**
-       * 是否启用蓝牙完整歌词
-       */
-      'player.isShowBluetoothFullLyric': boolean
-
-      /**
        * 播放详情页-是否缩放当前播放的歌词行
        */
       // 'playDetail.isZoomActiveLrc': boolean
@@ -238,81 +203,6 @@ declare global {
       'playDetail.isShowLyricProgressSetting': boolean
 
       /**
-       * 是否启用桌面歌词
-       */
-      'desktopLyric.enable': boolean
-
-      /**
-       * 是否锁定桌面歌词
-       */
-      'desktopLyric.isLock': boolean
-
-      /**
-       * 桌面歌词窗口宽度
-       */
-      'desktopLyric.width': number
-
-      /**
-       * 桌面歌词最大行数
-       */
-      'desktopLyric.maxLineNum': number
-
-      /**
-       * 桌面歌词是否使用单行显示
-       */
-      'desktopLyric.isSingleLine': boolean
-
-      /**
-       * 桌面歌词是否启用歌词切换动画
-       */
-      'desktopLyric.showToggleAnima': boolean
-
-      /**
-       * 桌面歌词窗口x坐标
-       */
-      'desktopLyric.position.x': number
-
-      /**
-       * 桌面歌词窗口y坐标
-       */
-      'desktopLyric.position.y': number
-
-      /**
-       * 歌词水平对齐方式
-       */
-      'desktopLyric.textPosition.x': 'left' | 'center' | 'right'
-
-      /**
-       * 歌词垂直对齐方式
-       */
-      'desktopLyric.textPosition.y': 'top' | 'center' | 'bottom'
-
-      /**
-       * 桌面歌词字体大小
-       */
-      'desktopLyric.style.fontSize': number
-
-      /**
-       * 桌面歌词字体透明度
-       */
-      'desktopLyric.style.opacity': number
-
-      /**
-       * 桌面歌词未播放字体颜色
-       */
-      'desktopLyric.style.lyricUnplayColor': string
-
-      /**
-        * 桌面歌词已播放字体颜色
-        */
-      'desktopLyric.style.lyricPlayedColor': string
-
-      /**
-        * 桌面歌词字体阴影颜色
-        */
-      'desktopLyric.style.lyricShadowColor': string
-
-      /**
        * 是否显示热门搜索
        */
       'search.isShowHotSearch': boolean
@@ -323,7 +213,7 @@ declare global {
       'search.isShowHistorySearch': boolean
 
       /**
-       * 是否启用双击列表里的歌曲时自动切换到当前列表播放（仅对歌单、排行榜有效）
+       * 是否启用双击列表里的歌曲时自动切换到当前歌单播放
        */
       'list.isClickPlayList': boolean
 
@@ -364,10 +254,6 @@ declare global {
       'download.isEmbedLyricRoma': boolean
       'download.isEmbedLyricAwlrc': boolean
 
-      /**
-       * 是否启用同步
-       */
-      'sync.enable': boolean
     }
   }
 }

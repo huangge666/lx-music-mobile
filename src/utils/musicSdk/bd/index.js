@@ -1,4 +1,3 @@
-import leaderboard from './leaderboard'
 import { apis } from '../api-source'
 import musicInfo from './musicInfo'
 import songList from './songList'
@@ -7,7 +6,6 @@ import musicSearch from './musicSearch'
 import hotSearch from './hotSearch'
 
 const bd = {
-  leaderboard,
   songList,
   musicSearch,
   hotSearch,

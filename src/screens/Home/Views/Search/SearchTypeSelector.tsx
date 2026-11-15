@@ -33,6 +33,7 @@ export default () => {
   }, [t])
 
   const handleTypeChange = (next: SearchType) => {
+    if (next == type) return
     setType(next)
     global.app_event.searchTypeChanged(next)
   }
@@ -77,7 +78,8 @@ const styles = createStyle({
     flexShrink: 0,
   },
   tab: {
-    height: 30,
+    minHeight: 42,
+    paddingVertical: 8,
     paddingHorizontal: 10,
     borderRadius: 13,
     alignItems: 'center',

@@ -112,6 +112,7 @@ const ListItem = memo(({
         </View>
         <Switch
           value={enabled}
+          accessibilityLabel={item.name}
           onValueChange={() => { onToggle(item.id) }}
           trackColor={{
             false: theme['c-primary-input-background'],

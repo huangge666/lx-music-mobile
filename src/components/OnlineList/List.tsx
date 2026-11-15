@@ -17,6 +17,7 @@ import { useSettingValue } from '@/store/setting/hook'
 import ListState from '@/components/common/ListState'
 import { usePlayMusicInfo } from '@/store/player/hook'
 import { useFontSize } from '@/store/common/hook'
+import { useWindowSize } from '@/utils/hooks'
 
 type FlatListType = FlatListProps<LX.Music.MusicInfoOnline>
 
@@ -93,6 +94,8 @@ const List = forwardRef<ListType, ListProps>(({
     ? null
     : <View onLayout={handleHeaderLayout}>{ListHeaderComponent}</View>, [ListHeaderComponent, handleHeaderLayout])
   const rowInfo = useRef(getRowInfo(rowType))
+  useWindowSize()
+  rowInfo.current = getRowInfo(rowType)
   useFontSize()
   const rowHeight = getMusicRowHeight()
   const isShowAlbumName = useSettingValue('list.isShowAlbumName')
@@ -226,7 +229,8 @@ const List = forwardRef<ListType, ListProps>(({
   )
   const getkey: FlatListType['keyExtractor'] = item => item.id
   const getItemLayout: FlatListType['getItemLayout'] = (data, index) => {
-    const rowIndex = Math.floor(index / (rowInfo.current.rowNum ?? 1))
+    // numColumns 模式下 FlatList 给 getItemLayout 的 index 已是行下标，不可再除列数。
+    const rowIndex = index
     // 内容起点包含随列表滚动的头部，偏移不加上它会让定位落在错误行
     return { length: rowHeight, offset: headerHeightRef.current + rowHeight * rowIndex, index }
   }
@@ -263,6 +267,8 @@ const List = forwardRef<ListType, ListProps>(({
 
   return (
     <FlatList
+      // 旋转只重建列表宿主，不重新搜索，也不丢掉已加载歌曲和选择状态。
+      key={`online-columns-${rowInfo.current.rowNum ?? 1}`}
       ref={flatListRef}
       style={styles.list}
       data={currentList}

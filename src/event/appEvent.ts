@@ -3,17 +3,7 @@ import Event from './Event'
 import commonState from '@/store/common/state'
 import { type Source as SonglistSource } from '@/store/songlist/state'
 import { type SearchType } from '@/store/search/state'
-import { type SettingScreenIds } from '@/screens/Home/Views/Setting'
 
-
-// {
-//   // sync: {
-//   //   send_action_list: 'send_action_list',
-//   //   handle_action_list: 'handle_action_list',
-//   //   send_sync_list: 'send_sync_list',
-//   //   handle_sync_list: 'handle_sync_list',
-//   // },
-// }
 
 export class AppEvent extends Event {
   // configUpdate() {
@@ -159,18 +149,6 @@ export class AppEvent extends Event {
     this.emit('musicInfoUpdate', musicInfo)
   }
 
-  changeMenuVisible(visible: boolean) {
-    this.emit('changeMenuVisible', visible)
-  }
-
-  settingScreenChanged(id: SettingScreenIds | null) {
-    this.emit('settingScreenChanged', id)
-  }
-
-  closeSettingScreen() {
-    this.emit('closeSettingScreen')
-  }
-
   /**
    * 搜索类型改变事件
    * @param type
@@ -219,10 +197,6 @@ export class AppEvent extends Event {
 
   songlistTagInfoChange(name: string, id: string) {
     this.emit('songlistTagInfoChange', name, id)
-  }
-
-  selectSyncMode(mode: LX.Sync.ModeType) {
-    this.emit('selectSyncMode', mode)
   }
 }
 

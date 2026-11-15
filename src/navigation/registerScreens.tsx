@@ -7,7 +7,6 @@ import {
   PlayDetail,
   SonglistDetail,
   MylistDetail,
-  Comment,
   SourceManager,
   SettingScreen,
 } from '@/screens'
@@ -18,15 +17,10 @@ import {
   PLAY_DETAIL_SCREEN,
   SONGLIST_DETAIL_SCREEN,
   MYLIST_DETAIL_SCREEN,
-  COMMENT_SCREEN,
   SOURCE_MANAGER_SCREEN,
   SETTING_SCREEN,
-  VERSION_MODAL,
-  SYNC_MODE_MODAL,
   // SETTING_SCREEN,
 } from './screenNames'
-import VersionModal from './components/VersionModal'
-import SyncModeModal from './components/SyncModeModal'
 
 function WrappedComponent(Component: any) {
   return function inject(props: Record<string, any>) {
@@ -47,11 +41,8 @@ export default () => {
   Navigation.registerComponent(PLAY_DETAIL_SCREEN, () => WrappedComponent(PlayDetail))
   Navigation.registerComponent(SONGLIST_DETAIL_SCREEN, () => WrappedComponent(SonglistDetail))
   Navigation.registerComponent(MYLIST_DETAIL_SCREEN, () => WrappedComponent(MylistDetail))
-  Navigation.registerComponent(COMMENT_SCREEN, () => WrappedComponent(Comment))
   Navigation.registerComponent(SOURCE_MANAGER_SCREEN, () => WrappedComponent(SourceManager))
   Navigation.registerComponent(SETTING_SCREEN, () => WrappedComponent(SettingScreen))
-  Navigation.registerComponent(VERSION_MODAL, () => WrappedComponent(VersionModal))
-  Navigation.registerComponent(SYNC_MODE_MODAL, () => WrappedComponent(SyncModeModal))
   // Navigation.registerComponent(SETTING_SCREEN, () => WrappedComponent(Setting))
 
   console.info('All screens have been registered...')

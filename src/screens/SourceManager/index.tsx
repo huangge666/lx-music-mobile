@@ -58,7 +58,7 @@ const Header = memo(({ componentId, transparent }: { componentId: string, transp
 
 /**
  * 音源管理独立页面。
- * 页面注册在 React Native Navigation 栈中，返回行为与播放详情、评论页保持一致。
+ * 页面注册在 React Native Navigation 栈中，返回行为与播放详情、设置子页保持一致。
  */
 export default ({ componentId }: { componentId: string }) => {
   const theme = useTheme()

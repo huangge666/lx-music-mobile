@@ -16,6 +16,7 @@ import { BorderRadius } from '@/theme'
 import CheckBox from '@/components/common/CheckBox'
 import { getShuffledRemaining } from '@/core/player/shuffleQueue'
 import { useFontSize } from '@/store/common/hook'
+import { useWindowSize } from '@/utils/hooks'
 
 export interface PlayQueuePopupType {
   show: () => void
@@ -139,6 +140,7 @@ const QueueItem = memo(({ item, index, active, snWidth, onPress, rowHeight }: {
 export default forwardRef<PlayQueuePopupType>((_, ref) => {
   const t = useI18n()
   const theme = useTheme()
+  const windowSize = useWindowSize()
   const [visible, setVisible] = useState(false)
   const popupRef = useRef<PopupType>(null)
   const flatListRef = useRef<FlatList<LX.Music.MusicInfo>>(null)
@@ -284,7 +286,7 @@ export default forwardRef<PlayQueuePopupType>((_, ref) => {
 
   return (
     <Popup ref={popupRef} title={t('play_detail_queue')} subtitle={subtitle}>
-      <View style={styles.container}>
+      <View style={[styles.container, { height: Math.max(120, windowSize.height * 0.64) }]}>
         <View style={styles.toolbar}>
           <CheckBox
             check={originalOrder}
@@ -329,7 +331,7 @@ const styles = createStyle({
   container: {
     flexGrow: 1,
     flexShrink: 1,
-    minHeight: 360,
+    minHeight: 0,
   },
   toolbar: {
     flexGrow: 0,

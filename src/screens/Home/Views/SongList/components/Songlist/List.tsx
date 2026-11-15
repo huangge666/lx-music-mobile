@@ -150,7 +150,7 @@ export default forwardRef<ListType, ListProps>(({ onRefresh, onLoadMore, onOpenD
   }, [currentList, rowInfo])
 
   // 编辑式精选货架：只取有封面且有真实来源的前几张，不构造假数据
-  const featured = useMemo(() => currentList.filter(item => item.img && item.source).slice(0, 5), [currentList])
+  const featured = useMemo(() => search ? [] : currentList.filter(item => item.img && item.source).slice(0, 5), [currentList, search])
   const headerComponent = useMemo(() => (
     <View>
       <Featured items={featured} width={width - CONTENT_PADDING * 2} onOpenDetail={onOpenDetail} />
@@ -238,8 +238,8 @@ const styles = createStyle({
   gridTitle: {
     fontWeight: '700',
     letterSpacing: -0.4,
-    paddingTop: 18,
-    paddingBottom: 10,
+    paddingTop: 22,
+    paddingBottom: 16,
   },
   footer: {
     textAlign: 'center',

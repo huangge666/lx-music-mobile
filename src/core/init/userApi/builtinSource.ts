@@ -28,7 +28,6 @@ export type BuiltinUserApi = typeof BUILTIN_USER_APIS[number]
 export type BuiltinUserApiId = BuiltinUserApi['id']
 
 const BUILTIN_USER_API_MAX_SIZE = 9_000_000
-export const USER_API_IMPORT_LIMIT = 20
 
 const isUserApiScript = (script: unknown): script is string => {
   return typeof script == 'string' &&

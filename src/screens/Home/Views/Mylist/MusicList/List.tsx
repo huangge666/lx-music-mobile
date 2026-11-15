@@ -10,7 +10,6 @@ import { getListMusics, setActiveList } from '@/core/list'
 import ListItem from './ListItem'
 import { getMusicRowHeight } from '@/components/common/MusicRow'
 import { createStyle, getRowInfo } from '@/utils/tools'
-import { windowSizeTools } from '@/utils/windowSizeTools'
 import { scaleSizeW } from '@/utils/pixelRatio'
 import { usePlayInfo, usePlayMusicInfo } from '@/store/player/hook'
 import type { Position } from './ListMenu'
@@ -19,6 +18,7 @@ import { useBottomInset } from '@/components/common/BottomInset'
 import { useActiveListId } from '@/store/list/hook'
 import { useSettingValue } from '@/store/setting/hook'
 import { useFontSize } from '@/store/common/hook'
+import { useWindowSize } from '@/utils/hooks'
 
 type FlatListType = FlatListProps<LX.Music.MusicInfo>
 
@@ -75,7 +75,9 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
   const bottomInset = useBottomInset()
   const currentListIdRef = useRef('')
   const waitJumpListPositionRef = useRef(false)
+  const windowSize = useWindowSize()
   const rowInfo = useRef(getRowInfo())
+  rowInfo.current = getRowInfo()
   useFontSize()
   const rowHeight = getMusicRowHeight()
   const rowHeightRef = useRef(rowHeight)
@@ -292,10 +294,10 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
 
   // 首屏按屏幕高度计算，至少保留原来的 12 行，避免短列表或窗口高度未就绪时少渲染
   const initialNumToRender = useMemo(() => {
-    const height = windowSizeTools.getSize().height
+    const height = windowSize.height
     if (height <= 0) return 12
     return Math.max(12, Math.ceil(height / rowHeight) + 2)
-  }, [rowHeight])
+  }, [rowHeight, windowSize.height])
 
   const renderItem: FlatListType['renderItem'] = ({ item, index }) => (
     <ListItem
@@ -315,13 +317,16 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
   )
   const getkey: FlatListType['keyExtractor'] = item => item.id
   const getItemLayout: FlatListType['getItemLayout'] = (data, index) => {
-    const rowIndex = Math.floor(index / (rowInfo.current.rowNum ?? 1))
+    // FlatList 在多列模式下传入的是行下标；歌曲定位入口才需要把歌曲下标除列数。
+    const rowIndex = index
     // 偏移从内容起点算起，必须加上随列表滚动的头部高度，否则 scrollToIndex 会跳错位置
     return { length: rowHeight, offset: headerHeightRef.current + rowHeight * rowIndex, index }
   }
 
   return (
     <FlatList
+      // RN 不允许原实例动态改列数；只重建原生列表，歌曲与多选状态仍由本组件保留。
+      key={`music-columns-${rowInfo.current.rowNum ?? 1}`}
       ref={flatListRef}
       onScroll={handleScroll}
       style={styles.list}

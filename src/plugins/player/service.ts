@@ -18,13 +18,6 @@ let isInitialized = false
 // let prevDuration = 0
 // let isPlaying = false
 
-// 销毁播放器并退出
-const handleExitApp = async(reason: string) => {
-  global.lx.isPlayedStop = false
-  exitApp(reason)
-}
-
-
 const registerPlaybackService = async() => {
   if (isInitialized) return
 
@@ -51,7 +44,7 @@ const registerPlaybackService = async() => {
 
   TrackPlayer.addEventListener(TPEvent.RemoteStop, () => {
     // console.log('remote-stop')
-    void handleExitApp('Remote Stop')
+    exitApp('Remote Stop')
   })
 
   // TrackPlayer.addEventListener(TPEvent.RemoteDuck, async({ permanent, paused, ducking }) => {
@@ -106,8 +99,6 @@ const registerPlaybackService = async() => {
         // console.log('playback-state', info)
         break
     }
-    if (global.lx.isPlayedStop) return handleExitApp('Timeout Exit')
-
     // console.log('currentIsPlaying', currentIsPlaying, global.lx.playInfo.isPlaying)
     // void updateMetaData(global.lx.store_playMusicInfo.musicInfo, currentIsPlaying)
   })
@@ -123,17 +114,13 @@ const registerPlaybackService = async() => {
    */
   const keepDummyAlive = () => {
     // 用户主动暂停/停止，或启动后只恢复了播放信息、并未要求播放时，不能自己复活
-    if (isPausedByUser() || !isPlaybackRequested() || global.lx.isPlayedStop) return
+    if (isPausedByUser() || !isPlaybackRequested()) return
     console.log('keep placeholder track alive, repeat=one')
     void TrackPlayer.setRepeatMode(RepeatMode.Track).catch(() => {})
     void TrackPlayer.seekTo(0).catch(() => {})
     void TrackPlayer.play().catch(() => {})
   }
   const handleAutoEnd = () => {
-    if (global.lx.isPlayedStop) {
-      void handleExitApp('Timeout Exit')
-      return
-    }
     // 启动恢复占位轨不是「当前曲播完」。用户暂停后同样不能从这里切下一首。
     if (isPausedByUser() || !isPlaybackRequested()) return
     keepDummyAlive()
@@ -150,11 +137,6 @@ const registerPlaybackService = async() => {
   TrackPlayer.addEventListener(TPEvent.PlaybackTrackChanged, info => {
     // console.log('PlaybackTrackChanged====>', info)
     if (info.track == null) return
-    if (global.lx.isPlayedStop) {
-      void handleExitApp('Timeout Exit')
-      return
-    }
-
     const adoptTrackId = (id: string) => {
       global.lx.playerTrackId = id
       if (dummyIdRxp.test(id)) {

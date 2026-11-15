@@ -1,4 +1,3 @@
-import { hideDesktopLyric } from './desktopLyric'
 import { exitApp as utilExitApp } from '@/utils/nativeModules/utils'
 import { setPause as pausePlayer } from '@/plugins/player/utils'
 import { initSetting as initAppSetting } from '@/config/setting'
@@ -13,7 +12,6 @@ import { isMainNavId, normalizeNavId, storageDataPrefix } from '@/config/constan
 import { saveData } from '@/plugins/storage'
 import { throttle } from '@/utils/common'
 import { getSelectedManagedFolder, saveFontSize, saveViewPrevState, setSelectedManagedFolder } from '@/utils/data'
-import { hideDesktopLyricView } from '@/utils/nativeModules/lyricDesktop'
 import { flushPendingListInterval } from '@/core/init/player/playProgress'
 import { getPersistedUriList, selectManagedFolder } from '@/utils/fs'
 
@@ -58,10 +56,8 @@ export const exitApp = (reason: string) => {
   // 退出前把内存里补齐的时长写回歌单；进程随后会被立刻结束，写不完只丢这次补齐
   void flushPendingListInterval().catch(() => {})
 
-  // 先发暂停和隐藏歌词，但不等待 JS 侧 destroy（缓存释放会卡住数秒）
+  // 先暂停，但不等待 JS 侧 destroy（缓存释放会卡住数秒）。
   void pausePlayer().catch(() => {})
-  void hideDesktopLyric().catch(() => {})
-  void hideDesktopLyricView().catch(() => {})
 
   // 原生立刻停止播放服务并结束进程
   utilExitApp()
@@ -83,7 +79,7 @@ export const removeComponentId = (name: string) => {
   commonActions.removeComponentId(name)
 }
 
-// 下载与设置是覆盖在主页分页上的独立页面，不能作为返回落点；排行榜自 Phase 7 起是主标签。
+// 设置是唯一覆盖页，不作为返回落点；主标签写回原有导航存储。
 export const setNavActiveId = (id: Parameters<typeof commonActions.setNavActiveId>['0']) => {
   if (id == commonState.navActiveId) return
   commonActions.setNavActiveId(id)
@@ -95,16 +91,6 @@ export const setNavActiveId = (id: Parameters<typeof commonActions.setNavActiveI
 
 export const backToHomeTab = () => {
   setNavActiveId(normalizeNavId(commonState.lastNavActiveId))
-}
-
-/** 打开排行榜主标签 */
-export const openLeaderboard = () => {
-  setNavActiveId('nav_top')
-}
-
-/** 离开排行榜：回到浏览主标签（保留给旧调用方与测试） */
-export const closeLeaderboard = () => {
-  setNavActiveId('nav_songlist')
 }
 
 export const checkStoragePermissions = async() => {

@@ -1,16 +1,13 @@
 import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import {
   View,
-  TouchableOpacity,
   Animated,
   Easing,
   Modal,
   TouchableWithoutFeedback,
-  PanResponder,
   StyleSheet,
 } from 'react-native'
 
-import { Icon } from '@/components/common/Icon'
 import { useKeyboard, useWindowSize } from '@/utils/hooks'
 import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
@@ -18,10 +15,12 @@ import Text from './Text'
 import { useStatusbarHeight } from '@/store/common/hook'
 import { BorderRadius, BorderWidths } from '@/theme'
 import GlassSurface from '@/components/common/GlassSurface'
+import GlassIconButton from './GlassIconButton'
+import { useI18n } from '@/lang'
+import { useReduceMotion } from '@/utils/hooks/useReduceMotion'
+import { useSheetDrag } from '@/utils/hooks/useSheetDrag'
 
 const ANIMATION_DURATION = 260
-const DISMISS_DISTANCE = 100
-const DISMISS_VELOCITY = 1.2
 
 export interface PopupProps {
   onHide?: () => void
@@ -63,6 +62,8 @@ export default forwardRef<PopupType, PopupProps>(({
   children,
 }: PopupProps, ref) => {
   const theme = useTheme()
+  const t = useI18n()
+  const reduceMotion = useReduceMotion()
   const { keyboardShown, keyboardHeight } = useKeyboard()
   const statusBarHeight = useStatusbarHeight()
   const windowSize = useWindowSize()
@@ -79,6 +80,19 @@ export default forwardRef<PopupType, PopupProps>(({
   const closeDrawer = useCallback((onFinished?: () => void) => {
     if (closingRef.current || !visibleRef.current) return
     closingRef.current = true
+    const finish = () => {
+      visibleRef.current = false
+      closingRef.current = false
+      setVisible(false)
+      onHide?.()
+      onFinished?.()
+    }
+    if (reduceMotion) {
+      translate.setValue(hiddenOffsetRef.current)
+      backdrop.setValue(0)
+      finish()
+      return
+    }
     Animated.parallel([
       Animated.timing(translate, {
         toValue: hiddenOffsetRef.current,
@@ -91,14 +105,8 @@ export default forwardRef<PopupType, PopupProps>(({
         duration: 200,
         useNativeDriver: true,
       }),
-    ]).start(() => {
-      visibleRef.current = false
-      closingRef.current = false
-      setVisible(false)
-      onHide?.()
-      onFinished?.()
-    })
-  }, [backdrop, onHide, translate])
+    ]).start(({ finished }) => { if (finished) finish() })
+  }, [backdrop, onHide, translate, reduceMotion])
 
   const openDrawer = useCallback(() => {
     closingRef.current = false
@@ -106,7 +114,13 @@ export default forwardRef<PopupType, PopupProps>(({
     translate.setValue(hiddenOffsetRef.current)
     backdrop.setValue(0)
     setVisible(true)
+    if (reduceMotion) {
+      translate.setValue(0)
+      backdrop.setValue(1)
+      return
+    }
     requestAnimationFrame(() => {
+      if (closingRef.current || !visibleRef.current) return
       Animated.parallel([
         Animated.spring(translate, {
           toValue: 0,
@@ -122,46 +136,32 @@ export default forwardRef<PopupType, PopupProps>(({
         }),
       ]).start()
     })
-  }, [backdrop, translate])
+  }, [backdrop, translate, reduceMotion])
 
-  const closeDrawerRef = useRef(closeDrawer)
-  closeDrawerRef.current = closeDrawer
+  const resetDrag = () => {
+    if (reduceMotion) {
+      translate.setValue(0)
+      backdrop.setValue(1)
+      return
+    }
+    Animated.parallel([
+      Animated.spring(translate, { toValue: 0, useNativeDriver: true, damping: 24, mass: 0.8, stiffness: 260 }),
+      Animated.timing(backdrop, { toValue: 1, duration: 160, useNativeDriver: true }),
+    ]).start()
+  }
 
   // 仅底部抽屉在拉条/标题栏上下拉关闭，避免和内容区 ScrollView 抢手势
-  const panResponder = useRef(PanResponder.create({
-    onMoveShouldSetPanResponder: (_, gesture) => {
-      return gesture.dy > 8 && Math.abs(gesture.dy) > Math.abs(gesture.dx)
-    },
-    onPanResponderMove: (_, gesture) => {
-      if (gesture.dy <= 0) {
-        translate.setValue(0)
-        backdrop.setValue(1)
-        return
-      }
-      translate.setValue(gesture.dy)
-      backdrop.setValue(Math.max(0, 1 - gesture.dy / 320))
-    },
-    onPanResponderRelease: (_, gesture) => {
-      if (gesture.dy > DISMISS_DISTANCE || gesture.vy > DISMISS_VELOCITY) {
-        closeDrawerRef.current()
-        return
-      }
-      Animated.parallel([
-        Animated.spring(translate, {
-          toValue: 0,
-          useNativeDriver: true,
-          damping: 24,
-          mass: 0.8,
-          stiffness: 260,
-        }),
-        Animated.timing(backdrop, {
-          toValue: 1,
-          duration: 160,
-          useNativeDriver: true,
-        }),
-      ]).start()
-    },
-  })).current
+  const dragHandlers = useSheetDrag(distance => {
+    if (closingRef.current) return
+    translate.stopAnimation()
+    backdrop.stopAnimation()
+    translate.setValue(distance)
+    backdrop.setValue(Math.max(0, 1 - distance / 320))
+  }, dismiss => {
+    if (closingRef.current) return
+    if (dismiss) closeDrawer()
+    else resetDrag()
+  })
 
   useImperativeHandle(ref, () => ({
     setVisible(nextVisible: boolean) {
@@ -183,15 +183,13 @@ export default forwardRef<PopupType, PopupProps>(({
 
   const closeBtnComponent = useMemo(() => closeBtn
     ? (
-        <TouchableOpacity
-          style={[styles.closeBtn, { backgroundColor: theme['c-primary-input-background'] }]}
-          activeOpacity={0.7}
+        <GlassIconButton
+          name="close"
+          label={t('close')}
           onPress={() => { closeDrawer() }}
-        >
-          <Icon name="close" size={13} color={theme['c-font-label']} />
-        </TouchableOpacity>
+        />
       )
-    : null, [closeBtn, closeDrawer, theme])
+    : null, [closeBtn, closeDrawer, t])
 
   const [rootStyle, sheetStyle] = useMemo(() => {
     switch (position) {
@@ -274,12 +272,14 @@ export default forwardRef<PopupType, PopupProps>(({
           ]}
         >
           {/* 底部留白必须位于玻璃背景内，避免面板下方出现透明断层。 */}
-          <GlassSurface highlight="none" style={[styles.sheetFill, isBottom && {
-            borderTopLeftRadius: BorderRadius.xlarge,
-            borderTopRightRadius: BorderRadius.xlarge,
+          <GlassSurface highlight="none" scrim={theme.isDark ? 0.7 : 0.4} style={[styles.sheetFill, position == 'top' && {
+            borderBottomLeftRadius: BorderRadius.xlarge,
+            borderBottomRightRadius: BorderRadius.xlarge,
+          }, isBottom && {
+            borderRadius: BorderRadius.xlarge,
             paddingBottom: 28 + (keyboardShown ? keyboardHeight : 0),
           }]}>
-          <View {...(isBottom ? panResponder.panHandlers : {})}>
+          <View collapsable={false} {...(isBottom ? dragHandlers : {})}>
             {
               isBottom
                 ? (
@@ -344,6 +344,8 @@ const styles = createStyle({
   },
   rootBottom: {
     justifyContent: 'flex-end',
+    paddingHorizontal: 8,
+    paddingBottom: 8,
   },
   rootTop: {
     justifyContent: 'flex-start',
@@ -405,13 +407,6 @@ const styles = createStyle({
   },
   headerTitleWithSub: {
     marginBottom: 3,
-  },
-  closeBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   body: {
     flexGrow: 0,

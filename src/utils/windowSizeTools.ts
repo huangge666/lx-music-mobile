@@ -25,7 +25,8 @@ export const windowSizeTools = {
     this.listeners.push(handler)
 
     return () => {
-      this.listeners.splice(this.listeners.indexOf(handler), 1)
+      const index = this.listeners.indexOf(handler)
+      if (index >= 0) this.listeners.splice(index, 1)
     }
   },
   async init() {
@@ -64,6 +65,7 @@ export const windowSizeTools = {
       width: Math.round(width),
       height: Math.round(height),
     }
-    for (const handler of this.listeners) handler(this.size)
+    // 通知会同步切换横竖屏子树并移除监听；遍历快照，避免跳过后面的页面根监听。
+    for (const handler of [...this.listeners]) handler(this.size)
   },
 }

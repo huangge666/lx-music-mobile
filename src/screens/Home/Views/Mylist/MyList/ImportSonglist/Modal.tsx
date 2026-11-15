@@ -123,8 +123,8 @@ export default forwardRef<ModalType, {}>((props, ref) => {
     const parsed = parseSonglistInput(id, fallbackSource)
     alertRef.current?.setVisible(false)
     toast(global.i18n.t('list_loading'))
-    void handleImportSonglist(parsed.id, parsed.source).then(() => {
-      toast(global.i18n.t('setting_backup_part_import_list_tip_success'))
+    void handleImportSonglist(parsed.id, parsed.source).then(imported => {
+      if (imported) toast(global.i18n.t('setting_backup_part_import_list_tip_success'))
     }).catch((err) => {
       log.error(err)
       toast(global.i18n.t('list_import_songlist_tip_error'))

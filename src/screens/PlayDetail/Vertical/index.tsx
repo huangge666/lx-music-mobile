@@ -8,7 +8,6 @@ import Pic from './Pic'
 import SongTitle from './SongTitle'
 import Lyric from './Lyric'
 import { screenkeepAwake, screenUnkeepAwake } from '@/utils/nativeModules/utils'
-import commonState, { type InitState as CommonState } from '@/store/common/state'
 import { createStyle } from '@/utils/tools'
 import { useReduceMotion } from '@/utils/hooks/useReduceMotion'
 
@@ -50,17 +49,12 @@ export default memo(({ componentId }: { componentId: string }) => {
 
   // 屏幕常亮
   useEffect(() => {
-    const handleComponentIdsChange = (ids: CommonState['componentIds']) => {
-      if (ids.comment) screenUnkeepAwake()
-      else if (AppState.currentState == 'active') screenkeepAwake()
-    }
-
     screenkeepAwake()
 
     const appstateListener = AppState.addEventListener('change', (state) => {
       switch (state) {
         case 'active':
-          if (!commonState.componentIds.comment) screenkeepAwake()
+          screenkeepAwake()
           break
         case 'background':
           screenUnkeepAwake()
@@ -68,10 +62,7 @@ export default memo(({ componentId }: { componentId: string }) => {
       }
     })
 
-    global.state_event.on('componentIdsUpdated', handleComponentIdsChange)
-
     return () => {
-      global.state_event.off('componentIdsUpdated', handleComponentIdsChange)
       appstateListener.remove()
       screenUnkeepAwake()
     }

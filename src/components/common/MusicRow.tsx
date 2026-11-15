@@ -8,6 +8,7 @@ import { LIST_ITEM_HEIGHT } from '@/config/constant'
 import { useTheme } from '@/store/theme/hook'
 import { scaleSizeH } from '@/utils/pixelRatio'
 import { createStyle } from '@/utils/tools'
+import { useI18n } from '@/lang'
 
 export interface MusicRowPosition {
   x: number
@@ -63,6 +64,7 @@ const MusicRow = memo(({
   moreAccessibilityLabel,
 }: MusicRowProps) => {
   const theme = useTheme()
+  const t = useI18n()
   const moreButtonRef = useRef<TouchableOpacity>(null)
   const rowHeight = height ?? getMusicRowHeight()
   const hasCover = rank == null
@@ -88,7 +90,7 @@ const MusicRow = memo(({
         {
           width,
           height: rowHeight,
-          backgroundColor: selected ? theme['c-primary-background-hover'] : 'transparent',
+          backgroundColor: selected || active ? theme['c-accent-soft'] : 'transparent',
           opacity: disabled ? 0.45 : 1,
         },
         style,
@@ -113,7 +115,7 @@ const MusicRow = memo(({
           ]}
         >
           {active
-            ? <Icon name="play-outline" size={18} color={theme['c-accent']} />
+            ? <Icon name="logo" size={19} color={theme['c-accent']} />
             : rank != null
               ? <Text style={styles.rankText} size={12} color={theme['c-font-label']}>{rank}</Text>
               : coverUrl
@@ -142,7 +144,7 @@ const MusicRow = memo(({
               onPress={handleShowMenu}
               disabled={disabled}
               accessibilityRole="button"
-              accessibilityLabel={moreAccessibilityLabel}
+              accessibilityLabel={moreAccessibilityLabel ?? t('list_music_actions', { name: title })}
             >
               <Icon name="dots-vertical" color={theme['c-font-label']} size={16} />
             </TouchableOpacity>
@@ -150,20 +152,6 @@ const MusicRow = memo(({
         : null}
     </View>
   )
-}, (prevProps, nextProps) => {
-  return prevProps.title === nextProps.title &&
-    prevProps.subtitle === nextProps.subtitle &&
-    prevProps.coverUrl === nextProps.coverUrl &&
-    prevProps.duration === nextProps.duration &&
-    prevProps.active === nextProps.active &&
-    prevProps.selected === nextProps.selected &&
-    prevProps.disabled === nextProps.disabled &&
-    prevProps.rank === nextProps.rank &&
-    prevProps.rankWidth === nextProps.rankWidth &&
-    prevProps.metadataKey === nextProps.metadataKey &&
-    prevProps.width === nextProps.width &&
-    prevProps.height === nextProps.height &&
-    prevProps.style === nextProps.style
 })
 
 export default MusicRow
@@ -225,7 +213,7 @@ const styles = createStyle({
     fontWeight: '400',
   },
   title: {
-    fontWeight: '500',
+    fontWeight: '600',
     letterSpacing: -0.2,
   },
   duration: {

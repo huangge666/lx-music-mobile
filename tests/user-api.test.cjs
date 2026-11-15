@@ -13,6 +13,7 @@ for (const primary of [true, false]) {
       '@/utils/data': { getUserApiScript: async() => 'script' },
       '@/utils/nativeModules/userApi': { loadScript: info => loaded.push(info) },
       '@/utils/log': { log: {} },
+      '@/config/constant': { USER_API_IMPORT_LIMIT: 20 },
     }, { lx })
     await api.setUserApi('user_api_secondary')
     if (primary) assert.equal(Object.keys(lx.qualityList).length, 0)

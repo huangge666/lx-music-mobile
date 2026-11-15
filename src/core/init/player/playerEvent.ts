@@ -17,12 +17,6 @@ export default () => {
     // console.log('start load timeout')
     clearLoadingTimeout()
     loadingTimeout = BackgroundTimer.setTimeout(() => {
-      // if (global.lx.isPlayedStop) {
-      //   prevTimeoutId = null
-      //   setStatusText('')
-      //   return
-      // }
-
       // 如果加载超时，则尝试刷新URL
       if (prevTimeoutId == playerState.musicInfo.id) {
         prevTimeoutId = null
@@ -50,7 +44,7 @@ export default () => {
     clearDelayNextTimeout()
     delayNextTimeout = BackgroundTimer.setTimeout(() => {
       // 用户暂停/停止，或已判定连续取链失败而停播时，不能再自动往下切
-      if (global.lx.isPlayedStop || isPausedByUser()) {
+      if (isPausedByUser()) {
         setStatusText('')
         return
       }
@@ -62,7 +56,7 @@ export default () => {
     console.log('handleLoadstart', playerState.isPlay)
     // 自动切歌会先 pause，isPlay 为 false；锁屏时 Ready 也会再发一次 pause。
     // 用用户是否主动暂停判断，否则加载超时永远不启动，卡在 buffering。
-    if (global.lx.isPlayedStop || isPausedByUser()) return
+    if (isPausedByUser()) return
     startLoadingTimeout()
     setStatusText(global.i18n.t('player__loading'))
   }
@@ -88,14 +82,13 @@ export default () => {
 
   const handleWating = () => {
     setStatusText(global.i18n.t('player__buffering'))
-    if (global.lx.isPlayedStop || isPausedByUser()) return
+    if (isPausedByUser()) return
     startLoadingTimeout()
   }
 
   const handleError = () => {
     if (!playerState.musicInfo.id) return
     clearLoadingTimeout()
-    if (global.lx.isPlayedStop) return
     // 已处于暂停/停止态（含「连续取链失败」的停播）时不再重试或自动跳下一首，
     // 否则失败处理会绕过停播状态，把整张列表无声音地扫一遍
     if (isPausedByUser()) return
@@ -112,7 +105,7 @@ export default () => {
         setStatusText(global.i18n.t('player__refresh_url'))
         BackgroundTimer.setTimeout(() => {
           // 延迟期间用户可能已切歌或已停播，需再次校验
-          if (playerState.playMusicInfo.musicInfo !== musicInfo || global.lx.isPlayedStop || isPausedByUser()) return
+          if (playerState.playMusicInfo.musicInfo !== musicInfo || isPausedByUser()) return
           setMusicUrl(playerState.playMusicInfo.musicInfo, true)
         }, retryDelay)
       })

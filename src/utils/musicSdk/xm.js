@@ -15,14 +15,6 @@ const xm = {
   // leaderboard,
   // hotSearch,
   // closeVerifyModal,
-  comment: {
-    getComment() {
-      return Promise.reject(new Error('fail'))
-    },
-    getHotComment() {
-      return Promise.reject(new Error('fail'))
-    },
-  },
   getMusicUrl(songInfo, type) {
     return {
       promise: Promise.reject(new Error('fail')),

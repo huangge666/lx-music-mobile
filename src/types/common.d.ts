@@ -7,10 +7,4 @@ declare namespace LX {
   type QualityList = Partial<Record<LX.Source, LX.Quality[]>>
 
   type ShareType = 'system' | 'clipboard'
-
-  type UpdateStatus = 'downloaded' | 'downloading' | 'error' | 'checking' | 'idle'
-  interface VersionInfo {
-    version: string
-    desc: string
-  }
 }

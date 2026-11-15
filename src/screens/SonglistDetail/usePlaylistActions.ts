@@ -11,8 +11,9 @@ import { useSettingValue } from '@/store/setting/hook'
 import { toast } from '@/utils/tools'
 import { getShuffleStartIndex } from '@/utils/shuffle'
 import { handleCollect, handlePlay } from './listAction'
+import { getSonglistId, isImportedSonglist } from '@/utils/songlistId'
 
-export const getSonglistId = (id: string, source: LX.OnlineSource) => `${source}__${id}`
+export { getSonglistId } from '@/utils/songlistId'
 
 export interface PlaylistActions {
   isCollected: boolean
@@ -44,8 +45,7 @@ export const usePlaylistActions = (info: ListInfoItem | undefined): PlaylistActi
     }
   }, [])
 
-  const listId = info ? getSonglistId(info.id, info.source) : ''
-  const isCollected = !!info && lists.some(list => 'sourceListId' in list && (list.sourceListId == listId || list.sourceListId == info.id))
+  const isCollected = !!info && lists.some(list => 'sourceListId' in list && isImportedSonglist(list, info.id, info.source))
 
   const play = useCallback(() => {
     if (!info || busyRef.current) return

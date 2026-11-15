@@ -1,7 +1,5 @@
 /**
- * Apple Music 风格排版与设计令牌
- *
- * 字体层级遵循 Apple HIG（Human Interface Guidelines）：
+ * 内容优先的排版与设计令牌。使用设备原生字体，不依赖未随包提供的 SF Pro。
  * - LargeTitle 34pt — 首页大标题（粗体）
  * - Title1 28pt — 导航栏大标题
  * - Title2 22pt — 区块标题
@@ -16,16 +14,13 @@
 
 export const FontWeights = {
   Bold: {
-    fontFamily: 'SFProDisplay-Bold',
-    color: '#000',
+    fontWeight: '700',
   },
   Regular: {
-    fontFamily: 'SFProDisplay-Regular',
-    color: '#000',
+    fontWeight: '400',
   },
   Light: {
-    fontFamily: 'SFProDisplay-Light',
-    color: '#000',
+    fontWeight: '300',
   },
 }
 

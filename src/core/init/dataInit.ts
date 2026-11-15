@@ -6,7 +6,6 @@ import { setNavActiveId } from '../common'
 import { getViewPrevState, saveViewPrevState } from '@/utils/data'
 import { normalizeNavId } from '@/config/constant'
 import { bootLog } from '@/utils/bootLog'
-import { getDislikeInfo, setDislikeInfo } from '@/core/dislikeList'
 import { unlink } from '@/utils/fs'
 import { TEMP_FILE_PATH } from '@/utils/tools'
 // import { play, playList } from '../player/player'
@@ -30,11 +29,10 @@ export default async(appSetting: LX.AppSetting) => {
   void musicSdkInit() // 初始化音乐sdk
   bootLog('User list init...')
   setUserList(await getUserLists()) // 获取用户列表
-  setDislikeInfo(await getDislikeInfo()) // 获取不喜欢列表
   bootLog('User list inited.')
   const prevState = await getViewPrevState()
   const navActiveId = normalizeNavId(prevState.id)
-  // 归一化结果写回：旧的排行榜/下载/设置值不再长期留在本地存储里
+  // 归一化结果写回：已移除的旧页面回到我的歌单，原有列表数据不变。
   if (navActiveId != prevState.id) saveViewPrevState({ id: navActiveId })
   setNavActiveId(navActiveId)
   void unlink(TEMP_FILE_PATH)

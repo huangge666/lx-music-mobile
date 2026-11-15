@@ -1,36 +1,32 @@
-import { TouchableOpacity } from 'react-native'
+import { StyleSheet, TouchableOpacity } from 'react-native'
 import { Icon } from '@/components/common/Icon'
-import { createStyle } from '@/utils/tools'
-import { useTheme } from '@/store/theme/hook'
-import { scaleSizeW } from '@/utils/pixelRatio'
+import { Immersive } from '../../macOS'
 
-import { HEADER_HEIGHT } from '@/config/constant'
-export const BTN_WIDTH = scaleSizeW(HEADER_HEIGHT)
+export const BTN_WIDTH = 48
 export const BTN_ICON_SIZE = 20
 
-export default ({ icon, size, color, onPress, onLongPress }: {
+export default ({ icon, size, color, label, onPress, onLongPress }: {
   icon: string
   size?: number
   color?: string
+  label: string
   onPress: () => void
   onLongPress?: () => void
 }) => {
-  const theme = useTheme()
   return (
-    <TouchableOpacity style={{ ...styles.cotrolBtn, width: BTN_WIDTH, height: BTN_WIDTH }} activeOpacity={0.5} onPress={onPress} onLongPress={onLongPress}>
-      <Icon name={icon} color={color ?? theme['c-550']} size={size ?? BTN_ICON_SIZE} />
+    <TouchableOpacity style={styles.cotrolBtn} activeOpacity={0.65} onPress={onPress} onLongPress={onLongPress} accessibilityRole="button" accessibilityLabel={label}>
+      <Icon name={icon} color={color ?? Immersive.text} rawSize={size ?? BTN_ICON_SIZE} />
     </TouchableOpacity>
   )
 }
 
-const styles = createStyle({
+const styles = StyleSheet.create({
   cotrolBtn: {
-    // marginLeft: 5,
+    width: BTN_WIDTH,
+    height: BTN_WIDTH,
+    borderRadius: BTN_WIDTH / 2,
+    backgroundColor: Immersive.glass,
     justifyContent: 'center',
     alignItems: 'center',
-
-    // backgroundColor: '#ccc',
-    shadowOpacity: 1,
-    textShadowRadius: 1,
   },
 })

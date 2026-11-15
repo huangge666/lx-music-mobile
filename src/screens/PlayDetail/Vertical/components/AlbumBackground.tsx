@@ -6,6 +6,8 @@ import { usePlayerMusicInfo } from '@/store/player/hook'
 import { useWindowSize } from '@/utils/hooks'
 import { scaleSizeAbsHR } from '@/utils/pixelRatio'
 import { Immersive } from '../../macOS'
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg'
+import RecordArtwork from '@/components/common/RecordArtwork'
 
 // 大模糊 — 封面色块自然铺满
 const BLUR_RADIUS = Math.max(scaleSizeAbsHR(48), 28)
@@ -20,9 +22,7 @@ export default memo(() => {
   const { width, height } = useWindowSize()
   const [pic, setPic] = useState(musicInfo.pic)
 
-  useEffect(() => {
-    if (musicInfo.pic) setPic(musicInfo.pic)
-  }, [musicInfo.pic])
+  useEffect(() => { setPic(musicInfo.pic) }, [musicInfo.pic])
 
   const source = useMemo(() => {
     if (!pic) return null
@@ -48,7 +48,21 @@ export default memo(() => {
               <View style={styles.overlay} />
             </ImageBackground>
           )
-        : <View style={[StyleSheet.absoluteFill, { backgroundColor: Immersive.fallback }]} />}
+        : (
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: Immersive.fallback }]}>
+              <RecordArtwork seed={musicInfo.id ?? 'lx-player'} style={{ ...StyleSheet.absoluteFillObject, opacity: 0.16 }} />
+            </View>
+          )}
+      <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" pointerEvents="none">
+        <Defs>
+          <LinearGradient id="player-scrim" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor="#0D1B10" stopOpacity={0.45} />
+            <Stop offset="0.45" stopColor="#0D1B10" stopOpacity={0.56} />
+            <Stop offset="1" stopColor="#0D1B10" stopOpacity={0.96} />
+          </LinearGradient>
+        </Defs>
+        <Rect width="100%" height="100%" fill="url(#player-scrim)" />
+      </Svg>
     </View>
   )
 })
@@ -60,6 +74,6 @@ const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
     // 比原先更轻，封面色更通透；且整屏一致，下半不会像面板
-    backgroundColor: 'rgba(12,10,16,0.22)',
+    backgroundColor: 'rgba(13,27,16,0.25)',
   },
 })

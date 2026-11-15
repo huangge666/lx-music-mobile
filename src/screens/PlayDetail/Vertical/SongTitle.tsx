@@ -1,10 +1,10 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react'
-import { View, TouchableOpacity } from 'react-native'
+import { StyleSheet, View, TouchableOpacity } from 'react-native'
 import Text from '@/components/common/Text'
 import { Icon } from '@/components/common/Icon'
 import { usePlayerMusicInfo } from '@/store/player/hook'
 import { useI18n } from '@/lang'
-import { createStyle, toast } from '@/utils/tools'
+import { toast } from '@/utils/tools'
 import { collectMusic, uncollectMusic } from '@/core/player/player'
 import { getListMusicSync } from '@/utils/listManage'
 import { LIST_IDS } from '@/config/constant'
@@ -14,7 +14,6 @@ import {
   MacFontSize,
   MacIconSize,
   MacSpacing,
-  MacTouchSize,
 } from '../macOS'
 
 
@@ -25,16 +24,20 @@ const checkIsLove = (musicId: string | null | undefined): boolean => {
 }
 
 /**
- * Apple Music 风格标题行
+ * 沉浸式标题行
  * — 左：粗体歌名 + 浅色歌手
  * — 右：半透明圆钮 收藏 + 更多（歌曲操作抽屉）
  * — 收藏按钮已收藏时用心形实心填充，读屏同时给出选中态；无当前曲目时整行禁用
  */
-const SongTitle = () => {
+const SongTitle = ({ compact = false }: { compact?: boolean }) => {
   const t = useI18n()
   const musicInfo = usePlayerMusicInfo()
   const moreMenuRef = useRef<MoreMenuType>(null)
   const [isLove, setIsLove] = useState(() => checkIsLove(musicInfo.id))
+  const [savingLove, setSavingLove] = useState(false)
+  const savingLoveRef = useRef(false)
+  const currentMusicIdRef = useRef(musicInfo.id)
+  currentMusicIdRef.current = musicInfo.id
   const hasTrack = !!musicInfo.id
 
   const syncLoveState = useCallback(() => {
@@ -63,20 +66,26 @@ const SongTitle = () => {
   }, [syncLoveState])
 
   const handleLove = useCallback(() => {
-    if (!musicInfo.id) return
+    if (!musicInfo.id || savingLoveRef.current) return
 
+    const musicId = musicInfo.id
     const nextIsLove = !isLove
-    // 收藏写入是异步操作，先更新视觉状态，确保按下后立即变色。
+    // 同一写入完成前不接收第二次点按；旧歌曲的异步回调不能改写新歌曲的收藏状态。
+    savingLoveRef.current = true
+    setSavingLove(true)
     setIsLove(nextIsLove)
     void (nextIsLove ? collectMusic() : uncollectMusic()).then((success) => {
-      if (!success) {
-        setIsLove(isLove)
-        return
-      }
+      if (currentMusicIdRef.current != musicId) return
+      setIsLove(checkIsLove(musicId))
+      if (!success) return
       toast(global.i18n.t(nextIsLove ? 'collect_success' : 'list_edit_action_tip_remove_success'))
     }).catch((err: unknown) => {
-      setIsLove(isLove)
+      if (currentMusicIdRef.current != musicId) return
+      setIsLove(checkIsLove(musicId))
       toast(err instanceof Error && err.message ? err.message : global.i18n.t('list_edit_action_tip_add_failed'))
+    }).finally(() => {
+      savingLoveRef.current = false
+      setSavingLove(false)
     })
   }, [isLove, musicInfo.id])
 
@@ -85,11 +94,11 @@ const SongTitle = () => {
   }, [])
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, compact ? styles.compact : null]}>
       <View style={styles.textCol}>
         <Text
           style={styles.name}
-          size={MacFontSize.title}
+          size={compact ? 19 : 26}
           color={Immersive.text}
           numberOfLines={1}
           accessibilityLabel={musicInfo.name ? musicInfo.name : undefined}
@@ -98,7 +107,7 @@ const SongTitle = () => {
         </Text>
         <Text
           style={styles.singer}
-          size={MacFontSize.body}
+          size={compact ? 12 : MacFontSize.body}
           color={Immersive.textSecondary}
           numberOfLines={1}
         >
@@ -108,19 +117,19 @@ const SongTitle = () => {
 
       <View style={styles.actions}>
         <TouchableOpacity
-          style={[styles.circleBtn, hasTrack ? null : styles.disabled]}
+          style={[styles.circleBtn, hasTrack && !savingLove ? null : styles.disabled]}
           activeOpacity={0.7}
           onPress={handleLove}
-          disabled={!hasTrack}
+          disabled={!hasTrack || savingLove}
           accessibilityRole="button"
           accessibilityLabel={t('collect')}
-          accessibilityState={{ selected: isLove, disabled: !hasTrack }}
+          accessibilityState={{ selected: isLove, disabled: !hasTrack || savingLove, busy: savingLove }}
         >
           <Icon
             name={isLove ? 'heart' : 'love'}
             color={isLove ? Immersive.accent : Immersive.text}
             fill={isLove ? Immersive.accent : 'none'}
-            size={MacIconSize.md}
+            rawSize={MacIconSize.md}
           />
         </TouchableOpacity>
         <TouchableOpacity
@@ -132,7 +141,7 @@ const SongTitle = () => {
           accessibilityLabel={t('play_detail_action_more')}
           accessibilityState={{ disabled: !hasTrack }}
         >
-          <Icon name="dots-vertical" color={Immersive.text} size={MacIconSize.md} />
+          <Icon name="dots-vertical" color={Immersive.text} rawSize={MacIconSize.md} />
         </TouchableOpacity>
       </View>
 
@@ -141,16 +150,16 @@ const SongTitle = () => {
   )
 }
 
-const BTN = MacTouchSize.medium
+const BTN = 48
 
-const styles = createStyle({
+const styles = StyleSheet.create({
   container: {
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: MacSpacing.xxl,
     // 封面与标题之间留白更舒适
-    paddingTop: MacSpacing.xxl,
+    paddingTop: 16,
     paddingBottom: MacSpacing.md,
   },
   textCol: {
@@ -159,9 +168,14 @@ const styles = createStyle({
     paddingRight: MacSpacing.md,
     justifyContent: 'center',
   },
+  compact: {
+    paddingHorizontal: 24,
+    paddingTop: 8,
+    paddingBottom: 2,
+  },
   name: {
     fontWeight: '700',
-    letterSpacing: 0.1,
+    letterSpacing: -0.6,
   },
   singer: {
     marginTop: 4,

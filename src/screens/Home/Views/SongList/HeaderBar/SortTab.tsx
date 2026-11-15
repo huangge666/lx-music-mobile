@@ -53,8 +53,10 @@ export default forwardRef<SortTabType, SortTabProps>(({ onSortChange }, ref) => 
           const active = activeId == s.id
           return (
             <TouchableOpacity
-              style={styles.button}
+              style={[styles.button, active ? { backgroundColor: theme['c-accent-soft'] } : null]}
               activeOpacity={0.72}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: active }}
               onPress={() => { handleSortChange(s.id) }}
               key={s.id}
             >
@@ -79,8 +81,9 @@ const styles = createStyle({
     gap: 8,
   },
   button: {
-    height: 30,
-    borderRadius: 8,
+    minHeight: 48,
+    paddingVertical: 8,
+    borderRadius: 12,
     paddingHorizontal: 12,
     flexDirection: 'row',
     alignItems: 'center',

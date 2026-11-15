@@ -7,7 +7,7 @@ import {
   Easing,
   Modal,
   TouchableWithoutFeedback,
-  Dimensions,
+  useWindowDimensions,
   StyleSheet,
 } from 'react-native'
 import { Icon } from '@/components/common/Icon'
@@ -17,6 +17,9 @@ import { useI18n } from '@/lang'
 import { createStyle } from '@/utils/tools'
 import { BorderRadius, BorderWidths } from '@/theme'
 import GlassSurface from '@/components/common/GlassSurface'
+import GlassIconButton from './GlassIconButton'
+import { useReduceMotion } from '@/utils/hooks/useReduceMotion'
+import { useSheetDrag } from '@/utils/hooks/useSheetDrag'
 
 export interface ActionSheetItem {
   action: string
@@ -45,16 +48,18 @@ export interface ActionSheetProps {
   onHide?: () => void
 }
 
-const SCREEN_HEIGHT = Dimensions.get('window').height
 const ANIMATION_DURATION = 260
 
 export default forwardRef<ActionSheetType, ActionSheetProps>(({ onPress, onHide }, ref) => {
   const theme = useTheme()
   const t = useI18n()
+  const { height: screenHeight } = useWindowDimensions()
+  const reduceMotion = useReduceMotion()
   const [visible, setVisible] = useState(false)
   const [header, setHeader] = useState<ActionSheetHeader>({ title: '' })
   const [items, setItems] = useState<ActionSheetItem[]>([])
   const animValue = useRef(new Animated.Value(0)).current
+  const drag = useRef(new Animated.Value(0)).current
   const visibleRef = useRef(false)
   const closingRef = useRef(false)
 
@@ -62,6 +67,11 @@ export default forwardRef<ActionSheetType, ActionSheetProps>(({ onPress, onHide 
     closingRef.current = false
     setVisible(true)
     visibleRef.current = true
+    drag.setValue(0)
+    if (reduceMotion) {
+      animValue.setValue(1)
+      return
+    }
     animValue.setValue(0)
     Animated.spring(animValue, {
       toValue: 1,
@@ -70,24 +80,45 @@ export default forwardRef<ActionSheetType, ActionSheetProps>(({ onPress, onHide 
       mass: 0.8,
       stiffness: 260,
     }).start()
-  }, [animValue])
+  }, [animValue, drag, reduceMotion])
 
   const closeDrawer = useCallback((onFinished?: () => void) => {
     if (closingRef.current || !visibleRef.current) return
     closingRef.current = true
-    Animated.timing(animValue, {
-      toValue: 0,
-      duration: ANIMATION_DURATION,
-      easing: Easing.bezier(0.36, 0.66, 0.04, 1),
-      useNativeDriver: true,
-    }).start(() => {
+    const finish = () => {
       visibleRef.current = false
       closingRef.current = false
       setVisible(false)
       onHide?.()
       onFinished?.()
-    })
-  }, [animValue, onHide])
+    }
+    if (reduceMotion) {
+      animValue.setValue(0)
+      finish()
+      return
+    }
+    Animated.timing(animValue, {
+      toValue: 0,
+      duration: ANIMATION_DURATION,
+      easing: Easing.bezier(0.36, 0.66, 0.04, 1),
+      useNativeDriver: true,
+    }).start(({ finished }) => { if (finished) finish() })
+  }, [animValue, onHide, reduceMotion])
+
+  // 仅标题与拉条接收下拉，菜单滚动和行点击不会被关闭手势截走。
+  const resetDrag = () => {
+    if (reduceMotion) drag.setValue(0)
+    else Animated.spring(drag, { toValue: 0, damping: 24, stiffness: 260, mass: 0.8, useNativeDriver: true }).start()
+  }
+  const dragHandlers = useSheetDrag(distance => {
+    if (closingRef.current) return
+    drag.stopAnimation()
+    drag.setValue(distance)
+  }, dismiss => {
+    if (closingRef.current) return
+    if (dismiss) closeDrawer()
+    else resetDrag()
+  })
 
   useImperativeHandle(ref, () => ({
     show(options) {
@@ -115,7 +146,7 @@ export default forwardRef<ActionSheetType, ActionSheetProps>(({ onPress, onHide 
   })
   const sheetTranslateY = animValue.interpolate({
     inputRange: [0, 1],
-    outputRange: [SCREEN_HEIGHT * 0.7, 0],
+    outputRange: [screenHeight, 0],
   })
   const headerCoverBg = header.iconBg ?? theme['c-primary-input-background']
   const headerCoverColor = header.iconColor ?? theme['c-font-label']
@@ -137,11 +168,11 @@ export default forwardRef<ActionSheetType, ActionSheetProps>(({ onPress, onHide 
         <Animated.View
           style={[
             styles.drawerSheet,
-            { transform: [{ translateY: sheetTranslateY }] },
+            { transform: [{ translateY: Animated.add(sheetTranslateY, drag) }] },
           ]}
-          onStartShouldSetResponder={() => true}
         >
-          <GlassSurface highlight="none" style={styles.drawerFill}>
+          <GlassSurface highlight="none" scrim={theme.isDark ? 0.7 : 0.4} style={styles.drawerFill}>
+          <View collapsable={false} {...dragHandlers}>
           <View style={styles.grabberContainer}>
             <View style={[styles.grabber, { backgroundColor: theme['c-font-label'], opacity: 0.3 }]} />
           </View>
@@ -168,15 +199,12 @@ export default forwardRef<ActionSheetType, ActionSheetProps>(({ onPress, onHide 
                   : null
               }
             </View>
-            <TouchableOpacity
-              style={[styles.closeBtn, { backgroundColor: theme['c-primary-input-background'] }]}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel={t('close')}
+            <GlassIconButton
+              name="close"
+              label={t('close')}
               onPress={() => { closeDrawer() }}
-            >
-              <Icon name="close" size={13} color={theme['c-font-label']} />
-            </TouchableOpacity>
+            />
+          </View>
           </View>
 
           <ScrollView
@@ -185,7 +213,7 @@ export default forwardRef<ActionSheetType, ActionSheetProps>(({ onPress, onHide 
             showsVerticalScrollIndicator={false}
             bounces={false}
           >
-            <View style={[styles.menuGroup, { backgroundColor: theme['c-card-background'], borderColor: theme['c-border-background'] }]}>
+            <View style={[styles.menuGroup, { backgroundColor: theme['c-glass-surface'], borderColor: theme['c-border-background'] }]}>
               {items.map((item, index) => {
                 const isLast = index === items.length - 1
                 // 危险项用统一的危险色；禁用项只降透明度并置灰
@@ -211,6 +239,7 @@ export default forwardRef<ActionSheetType, ActionSheetProps>(({ onPress, onHide 
                       item.disabled && styles.menuItemDisabled,
                     ]}
                     activeOpacity={item.disabled ? 1 : 0.6}
+                    disabled={item.disabled}
                     accessibilityRole="button"
                     accessibilityLabel={item.label}
                     accessibilityState={{ disabled: !!item.disabled, selected: !!item.selected }}
@@ -268,7 +297,10 @@ const styles = createStyle({
     backgroundColor: '#000000',
   },
   drawerSheet: {
-    width: '100%',
+    width: '96%',
+    maxWidth: 560,
+    alignSelf: 'center',
+    marginBottom: 10,
     maxHeight: '82%',
     elevation: 24,
     shadowColor: '#000',
@@ -277,8 +309,9 @@ const styles = createStyle({
     shadowRadius: 16,
   },
   drawerFill: {
-    borderTopLeftRadius: BorderRadius.xlarge,
-    borderTopRightRadius: BorderRadius.xlarge,
+    flexShrink: 1,
+    minHeight: 0,
+    borderRadius: BorderRadius.xlarge,
     borderWidth: 0.5,
     paddingBottom: 28,
   },
@@ -317,14 +350,6 @@ const styles = createStyle({
     fontWeight: '700',
     marginBottom: 3,
   },
-  closeBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 8,
-  },
   menuScroll: {
     flexGrow: 0,
     flexShrink: 1,
@@ -342,7 +367,8 @@ const styles = createStyle({
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 52,
+    minHeight: 52,
+    paddingVertical: 12,
     paddingHorizontal: 14,
   },
   menuItemDisabled: {

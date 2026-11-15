@@ -33,7 +33,6 @@ import ListOrdered from 'lucide-react-native/dist/cjs/icons/list-ordered'
 import ListPlus from 'lucide-react-native/dist/cjs/icons/list-plus'
 import LogOut from 'lucide-react-native/dist/cjs/icons/log-out'
 import Menu from 'lucide-react-native/dist/cjs/icons/menu'
-import MessageCircle from 'lucide-react-native/dist/cjs/icons/message-circle'
 import Minus from 'lucide-react-native/dist/cjs/icons/minus'
 import Music2 from 'lucide-react-native/dist/cjs/icons/music-2'
 import Pause from 'lucide-react-native/dist/cjs/icons/pause'
@@ -55,7 +54,6 @@ import SquareMinus from 'lucide-react-native/dist/cjs/icons/square-minus'
 import SquarePlay from 'lucide-react-native/dist/cjs/icons/square-play'
 import ThumbsUp from 'lucide-react-native/dist/cjs/icons/thumbs-up'
 import Trash2 from 'lucide-react-native/dist/cjs/icons/trash-2'
-import Trophy from 'lucide-react-native/dist/cjs/icons/trophy'
 import Volume1 from 'lucide-react-native/dist/cjs/icons/volume-1'
 import Volume2 from 'lucide-react-native/dist/cjs/icons/volume-2'
 import VolumeX from 'lucide-react-native/dist/cjs/icons/volume-x'
@@ -86,7 +84,6 @@ const ICON_MAP: Record<string, LucideIcon> = {
   'chevron-up': ChevronUp,
   'close': X,
   'crosshair': Crosshair,
-  'comment': MessageCircle,
   'dots-vertical': EllipsisVertical,
   'download-2': Download,
   'eraser': Eraser,
@@ -96,7 +93,6 @@ const ICON_MAP: Record<string, LucideIcon> = {
   'heart': Heart,
   'help': CircleQuestionMark,
   'home': House,
-  'leaderboard': Trophy,
   'list-loop': Repeat,
   'list-order': ListOrdered,
   'list-random': Shuffle,
@@ -157,7 +153,11 @@ export const Icon = memo(({ size = 15, rawSize, color, style, name, allowFontSca
     textShadowRadius: 2,
   }, style) : style
 
-  const LucideComp = ICON_MAP[name] ?? EXTRA_ICONS[name] ?? Play
+  const LucideComp = ICON_MAP[name] ?? EXTRA_ICONS[name]
+  if (!LucideComp) {
+    if (__DEV__) console.warn(`Unknown Lucide icon: ${name}`)
+    return null
+  }
   const iconSize = rawSize ?? scaleSizeW(size)
   const iconColor = color ?? theme['c-font']
 

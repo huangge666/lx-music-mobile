@@ -1,7 +1,6 @@
-import { memo, useEffect } from 'react'
+import { memo } from 'react'
 import { View, StatusBar as RNStatusBar, StyleSheet, TouchableOpacity } from 'react-native'
 import { pop } from '@/navigation'
-import StatusBar from '@/components/common/StatusBar'
 import commonState from '@/store/common/state'
 import { useStatusbarHeight } from '@/store/common/hook'
 import { usePlayerMusicInfo } from '@/store/player/hook'
@@ -15,7 +14,7 @@ import { Immersive, MacSpacing } from '../../macOS'
 
 export const HEADER_HEIGHT = scaleSizeH(_HEADER_HEIGHT)
 
-const CIRCLE = scaleSizeW(38)
+const CIRCLE = 48
 
 /**
  * 沉浸式顶栏
@@ -31,10 +30,6 @@ export default memo(({ showLyric, onBackToCover, onShowLyric }: {
   const statusBarHeight = useStatusbarHeight()
   const musicInfo = usePlayerMusicInfo()
 
-  useEffect(() => {
-    RNStatusBar.setBarStyle('light-content')
-  }, [])
-
   const back = () => {
     void pop(commonState.componentIds.playDetail!)
   }
@@ -44,7 +39,7 @@ export default memo(({ showLyric, onBackToCover, onShowLyric }: {
       style={{ height: HEADER_HEIGHT + statusBarHeight, paddingTop: statusBarHeight }}
       nativeID={NAV_SHEAR_NATIVE_IDS.playDetail_header}
     >
-      <StatusBar />
+      <RNStatusBar translucent backgroundColor="transparent" barStyle="light-content" />
       <View style={styles.container}>
         <TouchableOpacity
           style={styles.circleBtn}
@@ -59,6 +54,10 @@ export default memo(({ showLyric, onBackToCover, onShowLyric }: {
             rawSize={scaleSizeW(22)}
           />
         </TouchableOpacity>
+        <View style={styles.brand}>
+          <Text size={10} color={Immersive.textSecondary} style={styles.brandText}>LX / MUSIC</Text>
+          <Text size={13} color={Immersive.text} style={styles.nowPlaying}>{t('player_now_playing')}</Text>
+        </View>
         <View style={styles.spacer} />
         <TouchableOpacity
           style={styles.modeBtn}
@@ -99,7 +98,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   modeBtn: {
-    minHeight: 44,
+    minHeight: 48,
     paddingHorizontal: 14,
     borderRadius: 22,
     flexDirection: 'row',
@@ -109,6 +108,9 @@ const styles = StyleSheet.create({
     borderColor: Immersive.glassBorder,
   },
   modeLabel: { marginLeft: 8, fontWeight: '600' },
+  brand: { marginLeft: 12, gap: 3 },
+  brandText: { fontWeight: '700', letterSpacing: 2 },
+  nowPlaying: { fontWeight: '500' },
   coverThumb: {
     width: 24,
     height: 24,

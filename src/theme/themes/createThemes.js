@@ -1,8 +1,6 @@
 //! 更新默认主题配置后，需要执行 npm run build:theme 重新构建 themes.ts
 //!
-//! 主题只有两套基底：
-//! - green：浅色，iOS systemGroupedBackground + Apple Music 粉红强调色
-//! - black：深色，纯黑内容底 + 提亮的粉红强调色
+//! 主题只有两套基底：green 纸白 / black 石墨；保留历史 id 与用户设置兼容。
 //! 玻璃材质用于浮动导航栏、迷你播放器、抽屉和弹层；内容区使用实色分组。
 //! 其他历史主题 id 已废弃，运行时会回退到这两套。
 
@@ -16,11 +14,10 @@ const defaultThemes = [
     name: '浅色',
     isDark: false,
     config: {
-      // 浅白玻璃上的墨色主色，避免刺眼的纯黑
-      primary: 'rgb(42, 46, 54)',
-      font: 'rgb(28, 32, 38)',
-      'c-app-background': 'rgb(236, 240, 244)',
-      'c-main-background': 'rgba(255, 255, 255, 0.62)',
+      primary: 'rgb(61, 92, 39)',
+      font: 'rgb(25, 33, 26)',
+      'c-app-background': 'rgb(247, 248, 242)',
+      'c-main-background': 'rgba(247, 248, 242, 0.88)',
       'bg-image': '',
       'bg-image-position': 'center',
       'bg-image-size': 'cover',
@@ -35,11 +32,10 @@ const defaultThemes = [
     name: '深色',
     isDark: true,
     config: {
-      // 黑玻璃上的雾白主色，保证图标和选中态可读
-      primary: 'rgb(232, 236, 242)',
-      font: 'rgb(236, 238, 244)',
-      'c-app-background': 'rgb(8, 10, 14)',
-      'c-main-background': 'rgba(18, 20, 26, 0.72)',
+      primary: 'rgb(211, 239, 165)',
+      font: 'rgb(239, 244, 233)',
+      'c-app-background': 'rgb(17, 22, 18)',
+      'c-main-background': 'rgba(17, 22, 18, 0.88)',
       'bg-image': '',
       'bg-image-position': 'center',
       'bg-image-size': 'cover',

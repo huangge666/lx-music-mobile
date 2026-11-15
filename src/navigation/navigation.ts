@@ -6,7 +6,6 @@ import {
   PLAY_DETAIL_SCREEN,
   SONGLIST_DETAIL_SCREEN,
   MYLIST_DETAIL_SCREEN,
-  COMMENT_SCREEN,
   SOURCE_MANAGER_SCREEN,
   SETTING_SCREEN,
 } from './screenNames'
@@ -460,90 +459,6 @@ export function pushSettingScreen(componentId: string, settingScreenId: SettingS
                   from: 0,
                   to: windowSizeTools.getSize().width,
                   duration: 260,
-                },
-              },
-            },
-          },
-        },
-      },
-    })
-  })
-}
-
-export function pushCommentScreen(componentId: string) {
-  /*
-    Navigation.setDefaultOptions({
-      topBar: {
-        background: {
-          color: '#039893',
-        },
-        title: {
-          color: 'white',
-        },
-        backButton: {
-          title: '', // Remove previous screen name from back button
-          color: 'white',
-        },
-        buttonColor: 'white',
-      },
-      statusBar: {
-        style: 'light',
-      },
-      layout: {
-        orientation: ['portrait'],
-      },
-      bottomTabs: {
-        titleDisplayMode: 'alwaysShow',
-      },
-      bottomTab: {
-        textColor: 'gray',
-        selectedTextColor: 'black',
-        iconColor: 'gray',
-        selectedIconColor: 'black',
-      },
-    })
-  */
-  requestAnimationFrame(() => {
-    const theme = themeState.theme
-
-    void Navigation.push(componentId, {
-      component: {
-        name: COMMENT_SCREEN,
-        options: {
-          topBar: {
-            visible: false,
-            height: 0,
-            drawBehind: false,
-          },
-          statusBar: {
-            drawBehind: true,
-            visible: true,
-            style: getStatusBarStyle(theme.isDark),
-            backgroundColor: 'transparent',
-          },
-          navigationBar: {
-            // visible: false,
-            backgroundColor: theme['c-content-background'],
-          },
-          layout: {
-            componentBackgroundColor: theme['c-content-background'],
-          },
-          animations: {
-            push: {
-              content: {
-                translationX: {
-                  from: windowSizeTools.getSize().width,
-                  to: 0,
-                  duration: 300,
-                },
-              },
-            },
-            pop: {
-              content: {
-                translationX: {
-                  from: 0,
-                  to: windowSizeTools.getSize().width,
-                  duration: 300,
                 },
               },
             },

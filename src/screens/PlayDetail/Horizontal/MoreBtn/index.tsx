@@ -3,32 +3,12 @@ import { View } from 'react-native'
 import PlayModeBtn from './PlayModeBtn'
 import QueueBtn from './QueueBtn'
 import MusicAddBtn from './MusicAddBtn'
-import TimeoutExitBtn from './TimeoutExitBtn'
-import { useTheme } from '@/store/theme/hook'
-import { MacRadius, MacSpacing, MacShadow } from '../../macOS'
 
 
-/**
- * macOS 风格侧边工具栏
- *
- * 左侧浮起一个紧凑的毛玻璃胶囊：
- *  定时关闭 / 收藏 / 播放模式 / 当前播放列表
- *
- * 圆角 22pt，纵向排列，每个按钮 36pt 触控
- */
+/** 工具栏置于歌词区顶部，不再绝对定位到封面和播放控制之上。 */
 export default () => {
-  const theme = useTheme()
-
   return (
-    <View style={[
-      styles.container,
-      {
-        backgroundColor: theme['c-card-background'],
-        borderColor: theme['c-border-background'],
-      },
-      MacShadow.small,
-    ]}>
-      <TimeoutExitBtn />
+    <View style={styles.container}>
       <MusicAddBtn />
       <PlayModeBtn />
       <QueueBtn />
@@ -41,19 +21,10 @@ const styles = createStyle({
   container: {
     flexShrink: 0,
     flexGrow: 0,
-    flexDirection: 'column',
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'absolute',
-    height: 'auto',
-    left: MacSpacing.sm,
-    top: '50%',
-    paddingVertical: MacSpacing.sm,
-    paddingHorizontal: MacSpacing.xs,
-    borderRadius: MacRadius.xl,
-    borderWidth: 0.5,
-    gap: MacSpacing.sm,
-    zIndex: 1,
-    transform: [{ translateY: -50 }],
+    paddingVertical: 4,
+    gap: 16,
   },
 })

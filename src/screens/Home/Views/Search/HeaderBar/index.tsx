@@ -11,6 +11,7 @@ import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import { type Source as MusicSource } from '@/store/search/music/state'
 import { type Source as SonglistSource } from '@/store/search/songlist/state'
+import { Icon } from '@/components/common/Icon'
 
 type Sources = Readonly<Array<MusicSource | SonglistSource>>
 type SourceSelectorProps = _SourceSelectorProps<Sources>
@@ -60,6 +61,7 @@ export default forwardRef<HeaderBarType, HeaderBarProps>(({ onSourceChange, onTi
         backgroundColor: theme['c-primary-input-background'],
         borderColor: theme['c-border-background'],
       }}>
+        <Icon name="search-2" rawSize={21} color={theme['c-accent']} />
         <SearchInput
           ref={searchInputRef}
           onChangeText={onTipSearch}
@@ -80,31 +82,32 @@ export default forwardRef<HeaderBarType, HeaderBarProps>(({ onSourceChange, onTi
 
 const styles = createStyle({
   wrap: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 24,
     paddingTop: 4,
     paddingBottom: 10,
     zIndex: 2,
   },
   inputRow: {
-    height: 48,
-    borderRadius: 14,
+    minHeight: 56,
+    borderRadius: 16,
     borderWidth: 0.5,
-    paddingHorizontal: 6,
+    paddingLeft: 16,
+    paddingRight: 4,
+    flexDirection: 'row',
     alignItems: 'center',
   },
   filterRow: {
-    minHeight: 44,
-    marginTop: 8,
+    minHeight: 48,
+    marginTop: 10,
     borderRadius: 14,
-    borderWidth: 0.5,
-    paddingHorizontal: 6,
+    paddingHorizontal: 4,
     flexDirection: 'row',
     alignItems: 'center',
   },
   selector: {
     flex: 1,
     minWidth: 0,
-    height: 42,
+    minHeight: 48,
     justifyContent: 'center',
   },
 })

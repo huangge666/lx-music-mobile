@@ -7,7 +7,7 @@ import { NAV_SHEAR_NATIVE_IDS } from '@/config/constant'
 import { useNavigationComponentDidAppear } from '@/navigation'
 import { HEADER_HEIGHT } from './components/Header'
 import Image from '@/components/common/Image'
-import { Icon } from '@/components/common/Icon'
+import RecordArtwork from '@/components/common/RecordArtwork'
 import { useI18n } from '@/lang'
 import { useStatusbarHeight } from '@/store/common/hook'
 import commonState from '@/store/common/state'
@@ -114,11 +114,7 @@ export default ({ componentId, onPress }: {
           ? null
           : (
               <View style={[styles.placeholder, coverStyle]}>
-                <Icon
-                  name="music"
-                  color={Immersive.textTertiary}
-                  rawSize={Math.max(24, Math.round(size * 0.26))}
-                />
+                <RecordArtwork seed={musicInfo.id ?? 'lx-player'} style={coverStyle} />
               </View>
             )}
       </TouchableOpacity>

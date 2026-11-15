@@ -15,33 +15,36 @@
 
 本仓库是 [lyswhut/lx-music-mobile](https://github.com/lyswhut/lx-music-mobile) 的衍生仓库，在上游项目基础上合并了功能与体验改动。当前仓库的 Release、Issue 与自动化构建结果以本仓库为准。
 
-当前版本：`2.1.9`（版本号来源于 `package.json`，并与 `publish/version.json` 保持同步）。完整变更记录请查看 [CHANGELOG.md](CHANGELOG.md)。
+当前版本：`2.1.9`（版本号来源于 `package.json`，并与 `publish/version.json` 保持同步）。当前工作区已按核心功能范围精简，GitHub 上的既有 Release 不代表本次本地候选。完整变更记录请查看 [CHANGELOG.md](CHANGELOG.md)，现行范围见 [核心版说明](docs/core-refactor.md)。
 
 ### 主要功能
 
-- 聚合搜索、歌单与排行榜浏览，以及多音源切换。
-- 播放详情、歌词、翻译歌词、罗马音歌词、评论和桌面歌词。
-- 我的列表、试听列表、稍后播放、收藏歌单和歌曲换源。
+- 我的歌单、在线歌单、歌曲与歌单搜索。
+- 从分享链接、歌单 ID 或本地 `.json`、`.lxmc`、`.bin` 文件导入歌单，兼容既有备份格式。
+- 自定义音源的本地/在线导入与启用；最多保存 20 个音源，同时启用 5 个。
+- 在线与本地播放、页内歌词、翻译/罗马音歌词、播放队列、收藏和稍后播放。
 - 在线歌曲下载到本地，支持下载音质、封面、歌词与保存路径设置。
 - Android 下载目录为系统公共目录 `Download/lxmusic`，下载完成后会主动通知媒体库扫描；iOS 路径为应用沙盒 `Documents/download/lxmusic`。
-- 动态背景、多主题、横竖屏布局、后台播放、通知栏媒体控制与播放队列。
-- 通过独立的 [数据同步服务](https://github.com/lyswhut/lx-music-sync-server) 在受信任的网络中同步多端列表。
+- 明暗主题、统一 Lucide 图标、唱片主视觉、横竖屏布局、后台播放与通知栏媒体控制。
+
+首页固定为 **我的歌单 / 在线歌单 / 搜索 / 下载**。设置仅保留音源、基本、播放、搜索、列表和下载；排行榜、评论、多端同步、桌面/蓝牙歌词、定时退出和应用内更新已移除。
 
 ### 本仓库的定制内容
 
 | 模块 | 说明 |
 | --- | --- |
-| 底部导航 | 横屏与竖屏首页接入 `BottomBar`，并增加下载页签。 |
+| 底部导航 | 横竖屏共用四个核心页签及浮动播放器，旧页面恢复值回到我的歌单。 |
 | 下载能力 | 在线列表、我的歌单列表支持下载，核心逻辑位于 `src/core/music/downloader.ts`。 |
 | 下载路径与权限 | Android 使用 `Download/lxmusic`，写入前申请存储权限；拒绝权限时提供系统设置引导。 |
 | 取链与音质 | 下载音质使用“设置 → 下载设置 → 下载音质”，与播放音质分别保存；请求会携带常见 `Referer` 以减少高码率直链失败。 |
 | 播放体验 | 增加下一首歌曲 URL 预取、有限延迟重试和稳定随机播放队列，降低切歌等待与重复播放。 |
-| 界面体验 | 设置页、播放详情页、歌单页、排行榜页、侧边栏及底部操作栏持续进行沉浸式交互优化。 |
+| 界面体验 | 大标题、唱片图形和玻璃操作层统一歌单、播放、搜索、下载与设置。 |
+| 导入可靠性 | 数据校验后才写入；落盘完成后才提示成功，取消和失败不会显示假成功。 |
 
 ## 下载与支持平台
 
 - 下载地址：[GitHub Releases](https://github.com/huangge666/lx-music-mobile/releases)
-- 常见问题：[FAQ.md](FAQ.md) 或 [在线文档](https://lyswhut.github.io/lx-music-doc/mobile/faq)
+- 当前核心版常见问题：[FAQ.md](FAQ.md)。[上游在线文档](https://lyswhut.github.io/lx-music-doc/mobile/faq) 的功能范围可能不同。
 - 目前官方发布流程以 Android APK 为主，最低支持 Android 5（API 21）。
 - 仓库保留 iOS 工程与脚本，但当前 CI 和官方 Release 未提供 iOS 安装包。
 - 桌面版项目：[lx-music-desktop](https://github.com/lyswhut/lx-music-desktop)
@@ -56,7 +59,7 @@
 - Node.js `18` 或更高版本（仓库提供 `.nvmrc`）。
 - npm `8.5.2` 或更高版本。
 - Android Studio、Android SDK、Android SDK Platform 36、Android SDK Build-Tools 35.0.0。
-- JDK、Android SDK 与模拟器或已开启开发者选项的 Android 设备。
+- JDK 17、Android SDK 与模拟器或已开启开发者选项的 Android 设备。
 
 建议先按照 [移动版源码使用文档](https://lyswhut.github.io/lx-music-doc/mobile/use-source-code) 配置 React Native 环境。
 
@@ -80,10 +83,8 @@ npm run dev
 npm run lint                 # ESLint 检查
 npm run lint:fix             # 自动修复可修复的 ESLint 问题
 npm run typecheck            # TypeScript 类型检查
-npm test                     # 存储、下载、网络请求与发布回归测试
+npm test                     # 核心功能、导入、存储、下载、布局与网络回归
 npm run build:theme          # 重新生成主题文件
-npm run clear                # 清理 Android 构建缓存
-npm run sc                   # 清理 Metro 缓存后启动
 ```
 
 ### 构建 Android APK
@@ -101,6 +102,18 @@ Windows PowerShell 或 CMD：
 cd android
 gradlew.bat assembleDebug
 ```
+
+无需 Metro 的本地预览包：
+
+```powershell
+npm run pack:android:preview
+# 只构建当前 x86_64 模拟器时：
+.\android\gradlew.bat -p android assemblePreview -PreactNativeArchitectures=x86_64
+```
+
+Preview 使用调试签名、内置 production JS 和独立包名 `cn.toside.music.mobile.preview`，可与正式版并存。产物位于 `android/app/build/outputs/apk/preview`；用 `adb install -r <APK路径>` 更新同一预览版，其歌单与音源数据会保留。Preview 与正式版的数据互不共享。
+
+2026-11-15 的本地候选已通过 **115 项 Node 回归、TypeScript、全量 ESLint**，并在 Android API 25 模拟器上验证导入、音源、播放、搜索、下载失败重试及横竖屏布局。通用 APK 与实测截图见 [核心版范围与验收](docs/core-refactor.md)。真机软键盘布局与 iOS 尚未验收；本地 Preview 不作为正式版升级包。
 
 Release 构建：
 
@@ -146,8 +159,8 @@ git merge upstream/master
 
 - [更新日志](CHANGELOG.md)
 - [常见问题](FAQ.md)
-- [移动版在线文档](https://lyswhut.github.io/lx-music-doc/mobile)
-- [数据同步服务](https://github.com/lyswhut/lx-music-sync-server#readme)
+- [核心版范围与验收](docs/core-refactor.md)
+- [上游移动版在线文档](https://lyswhut.github.io/lx-music-doc/mobile)
 
 ## 贡献代码
 

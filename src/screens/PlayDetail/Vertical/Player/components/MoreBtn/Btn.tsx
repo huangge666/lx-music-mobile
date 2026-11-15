@@ -1,7 +1,6 @@
-import { TouchableOpacity } from 'react-native'
+import { StyleSheet, TouchableOpacity } from 'react-native'
 import { Icon } from '@/components/common/Icon'
-import { createStyle } from '@/utils/tools'
-import { Immersive, MacTouchSize, MacIconSize } from '../../../../macOS'
+import { Immersive } from '../../../../macOS'
 
 
 /**
@@ -10,8 +9,8 @@ import { Immersive, MacTouchSize, MacIconSize } from '../../../../macOS'
  * — 默认白色，可覆盖激活色
  * — 传入 label 时提供本地化读屏文字、选中态与禁用态，禁用态用低透明度表达
  */
-export const BTN_WIDTH = MacTouchSize.medium
-export const BTN_ICON_SIZE = MacIconSize.md
+export const BTN_WIDTH = 48
+export const BTN_ICON_SIZE = 20
 
 export default ({ icon, color, label, disabled, selected, onPress, onLongPress }: {
   icon: string
@@ -30,9 +29,6 @@ export default ({ icon, color, label, disabled, selected, onPress, onLongPress }
           ...styles.controlBtn,
           width: BTN_WIDTH,
           height: BTN_WIDTH,
-          backgroundColor: 'rgba(255, 255, 255, 0.08)',
-          borderWidth: 0.5,
-          borderColor: 'rgba(255, 255, 255, 0.14)',
         },
         disabled ? styles.disabled : null,
       ]}
@@ -44,12 +40,12 @@ export default ({ icon, color, label, disabled, selected, onPress, onLongPress }
       accessibilityLabel={label}
       accessibilityState={{ disabled: !!disabled, selected: !!selected }}
     >
-      <Icon name={icon} color={color ?? Immersive.text} size={BTN_ICON_SIZE} />
+      <Icon name={icon} color={color ?? Immersive.text} rawSize={BTN_ICON_SIZE} />
     </TouchableOpacity>
   )
 }
 
-const styles = createStyle({
+const styles = StyleSheet.create({
   controlBtn: {
     justifyContent: 'center',
     alignItems: 'center',

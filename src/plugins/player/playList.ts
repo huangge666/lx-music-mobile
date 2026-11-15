@@ -3,7 +3,6 @@ import BackgroundTimer from 'react-native-background-timer'
 import { defaultUrl } from '@/config'
 // import { action as playerAction } from '@/store/modules/player'
 import settingState from '@/store/setting/state'
-import playerState from '@/store/player/state'
 
 
 const list: LX.Player.Track[] = []
@@ -50,20 +49,12 @@ const formatMusicInfo = (musicInfo: LX.Player.PlayMusic) => {
   }
 }
 
-const getCurrentFullLyric = (targetId: string | null) => {
-  return (settingState.setting['player.isShowBluetoothFullLyric'] && targetId &&
-      playerState.musicInfo.id == targetId && playerState.musicInfo.lrc)
-    ? playerState.musicInfo.lrc
-    : undefined
-}
-
 const buildTracks = (musicInfo: LX.Player.PlayMusic, url?: LX.Player.Track['url'], duration?: LX.Player.Track['duration']): LX.Player.Track[] => {
   const mInfo = formatMusicInfo(musicInfo)
   const track = [] as LX.Player.Track[]
   const isShowNotificationImage = settingState.setting['player.isShowNotificationImage']
   const album = mInfo.album || undefined
   const artwork = isShowNotificationImage && mInfo.pic && httpRxp.test(mInfo.pic) ? mInfo.pic : undefined
-  const lyric = getCurrentFullLyric(mInfo.id)
   if (url) {
     track.push({
       id: `${mInfo.id}__//${Math.random()}__//${url}`,
@@ -74,7 +65,6 @@ const buildTracks = (musicInfo: LX.Player.PlayMusic, url?: LX.Player.Track['url'
       artwork,
       userAgent: defaultUserAgent,
       musicId: mInfo.id,
-      lyric,
       // original: { ...musicInfo },
       duration,
     })
@@ -87,7 +77,6 @@ const buildTracks = (musicInfo: LX.Player.PlayMusic, url?: LX.Player.Track['url'
     album,
     artwork,
     musicId: mInfo.id,
-    lyric,
     // original: { ...musicInfo },
     duration: 0,
   })
@@ -320,22 +309,14 @@ const updateMetaInfo = async(mInfo: LX.Player.MusicInfo) => {
   state.isPlaying = await TrackPlayer.getState() == State.Playing
   let artwork = isShowNotificationImage ? mInfo.pic ?? prevArtwork : undefined
   if (mInfo.pic) prevArtwork = mInfo.pic
-  let title: string
-  let artist: string
-  if (playerState.lastLyric == null) {
-    title = mInfo.name ?? 'Unknow'
-    artist = mInfo.singer ?? 'Unknow'
-  } else {
-    title = playerState.lastLyric
-    artist = `${mInfo.name}${mInfo.singer ? ` - ${mInfo.singer}` : ''}`
-  }
+  const title = mInfo.name ?? ''
+  const artist = mInfo.singer ?? ''
   await TrackPlayer.updateNowPlayingMetadata({
     title,
     artist,
     album: mInfo.album ?? undefined,
     artwork,
     duration: state.prevDuration || 0,
-    lyric: getCurrentFullLyric(mInfo.id),
   }, state.isPlaying)
 }
 

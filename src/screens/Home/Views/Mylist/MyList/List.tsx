@@ -3,6 +3,7 @@ import {
   View,
   TouchableOpacity,
   FlatList,
+  StyleSheet,
   type LayoutChangeEvent,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
@@ -27,14 +28,14 @@ import { useI18n } from '@/lang'
 import { useBottomInset } from '@/components/common/BottomInset'
 import { useFontSize } from '@/store/common/hook'
 import { getLibraryRowHeight } from './rowLayout'
+import RecordArtwork from '@/components/common/RecordArtwork'
+import LibraryHero from './LibraryHero'
+import { useHorizontalMode } from '@/utils/hooks'
 
 type FlatListType = FlatListProps<LX.List.MyListInfo>
 
 /**
- * 资料库列表（Phase 7）。
- *
- * 由三列小卡网格改为 iOS 资料库的列表形态：
- * 52dp 圆角封面 + 17/600 标题 + 13 歌曲数 + 从文字处起笔的发丝分隔线。
+ * 我的歌单：唱片主视觉下的可滚动目录。
  * 行高由同一份计算同时喂给渲染与 `getItemLayout`，大字号变化时一起更新。
  */
 const DESIGN = {
@@ -50,11 +51,9 @@ const DESIGN = {
   separatorInset: 16 + 52 + 12,
 }
 
-const MORE_HIT_SLOP = { top: 8, bottom: 8, left: 8, right: 8 }
-
 type ListFilter = 'all' | 'mine' | 'system'
 
-/** iOS 分段控件的三个真实视图：全部列表 / 用户歌单 / 系统列表 */
+/** 按实际歌单类型筛选：全部 / 用户歌单 / 系统列表。 */
 const FILTER_OPTIONS = [
   { id: 'all', label: 'library_filter_all' },
   { id: 'mine', label: 'library_filter_mine' },
@@ -143,11 +142,12 @@ const ListRow = memo(({
           borderRadius: metrics.coverRadius,
           backgroundColor: tint.backgroundColor,
         }]}>
+          <RecordArtwork seed={item.id} style={{ position: 'absolute', width: '100%', height: '100%', opacity: 0.6 }} />
           {fetching
             ? <Loading color={tint.color} size={18} />
             : initial
               ? <Text style={styles.coverInitial} color={tint.color} numberOfLines={1}>{initial}</Text>
-              : <Icon name={getListIcon(item.id)} size={Math.max(Math.round(metrics.coverSize * 0.4), 16)} color={tint.color} />}
+              : <Icon name={getListIcon(item.id)} rawSize={Math.max(Math.round(metrics.coverSize * 0.4), 16)} color={tint.color} />}
         </View>
         <View style={styles.textCol}>
           <Text
@@ -171,10 +171,9 @@ const ListRow = memo(({
           onPress={handleShowMenu}
           ref={moreButtonRef}
           style={styles.moreButton}
-          hitSlop={MORE_HIT_SLOP}
           activeOpacity={0.6}
           accessibilityRole="button"
-          accessibilityLabel={t('list_music_actions')}
+          accessibilityLabel={t('list_music_actions', { name: item.name })}
         >
           <Icon name="dots-vertical" color={theme['c-font-label']} size={18} />
         </TouchableOpacity>
@@ -189,13 +188,6 @@ const ListRow = memo(({
           )}
     </View>
   )
-}, (prevProps, nextProps) => {
-  return prevProps.item.id == nextProps.item.id &&
-    prevProps.item.name == nextProps.item.name &&
-    prevProps.index == nextProps.index &&
-    prevProps.last == nextProps.last &&
-    prevProps.metrics.rowHeight == nextProps.metrics.rowHeight &&
-    prevProps.metrics.coverSize == nextProps.metrics.coverSize
 })
 
 export default ({ onShowMenu }: {
@@ -207,8 +199,10 @@ export default ({ onShowMenu }: {
   const t = useI18n()
   const bottomInset = useBottomInset()
   const fontScale = useFontSize()
+  const wide = useHorizontalMode()
   const [width, setWidth] = useState(0)
   const [filter, setFilter] = useState<ListFilter>('all')
+  const [headerHeight, setHeaderHeight] = useState(0)
   const scrollOffsetRef = useRef(0)
   const firstScrollRef = useRef(false)
   const pendingOffsetRef = useRef<number | null>(null)
@@ -252,15 +246,15 @@ export default ({ onShowMenu }: {
 
   const applyPendingOffset = useCallback(() => {
     const offset = pendingOffsetRef.current
-    if (offset == null) return
+    if (offset == null || headerHeight <= 0) return
     requestAnimationFrame(() => {
       if (pendingOffsetRef.current !== offset) return
       pendingOffsetRef.current = null
-      flatListRef.current?.scrollToOffset({ offset, animated: false })
-      scrollOffsetRef.current = offset
+      flatListRef.current?.scrollToOffset({ offset: offset + headerHeight, animated: false })
+      scrollOffsetRef.current = offset + headerHeight
       firstScrollRef.current = true
     })
-  }, [])
+  }, [headerHeight])
 
   useEffect(() => {
     if (restoredRef.current || width <= 0) return
@@ -297,8 +291,8 @@ export default ({ onShowMenu }: {
     }
     // 分段筛选是临时视图，不覆盖「全部」列表保存的位置
     if (filter != 'all') return
-    void saveMusicListPosition(LIST_SCROLL_POSITION_KEY, offsetY, metrics.rowHeight, 1)
-  }, [metrics.rowHeight, filter])
+    void saveMusicListPosition(LIST_SCROLL_POSITION_KEY, Math.max(0, offsetY - headerHeight), metrics.rowHeight, 1)
+  }, [metrics.rowHeight, filter, headerHeight])
 
   const handleToggleList = useCallback((item: LX.List.MyListInfo) => {
     setActiveList(item.id)
@@ -324,7 +318,7 @@ export default ({ onShowMenu }: {
   const getkey: FlatListType['keyExtractor'] = item => item.id
   const getItemLayout: FlatListType['getItemLayout'] = (data, index) => ({
     length: metrics.rowHeight,
-    offset: metrics.rowHeight * index,
+    offset: headerHeight + metrics.rowHeight * index,
     index,
   })
 
@@ -334,34 +328,6 @@ export default ({ onShowMenu }: {
         ? null
         : (
             <>
-              {/* iOS 资料库分段控件：全部 / 我的歌单 / 系统列表 */}
-              <View style={[styles.filterTrack, {
-                marginHorizontal: metrics.contentPadding,
-                backgroundColor: theme['c-primary-input-background'],
-              }]}>
-                {FILTER_OPTIONS.map(option => {
-                  const active = filter == option.id
-                  return (
-                    <TouchableOpacity
-                      key={option.id}
-                      style={[styles.filterSegment, active
-                        ? { backgroundColor: theme['c-card-background'], elevation: 2, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 2, shadowOffset: { width: 0, height: 1 } }
-                        : null]}
-                      activeOpacity={0.7}
-                      accessibilityRole="tab"
-                      accessibilityState={{ selected: active }}
-                      onPress={() => { handleFilterChange(option.id) }}
-                    >
-                      <Text
-                        size={13}
-                        numberOfLines={1}
-                        color={active ? theme['c-font'] : theme['c-font-label']}
-                        style={active ? styles.filterTextActive : null}
-                      >{t(option.label)}</Text>
-                    </TouchableOpacity>
-                  )
-                })}
-              </View>
               <FlatList
                 ref={flatListRef}
                 onScroll={handleScroll}
@@ -382,6 +348,26 @@ export default ({ onShowMenu }: {
                 getItemLayout={getItemLayout}
                 onLayout={applyPendingOffset}
                 onContentSizeChange={applyPendingOffset}
+                ListHeaderComponent={(
+                  <View onLayout={({ nativeEvent }) => { setHeaderHeight(nativeEvent.layout.height) }}>
+                    {allList.find(item => item.id == LIST_IDS.LOVE)
+                      ? <LibraryHero list={allList.find(item => item.id == LIST_IDS.LOVE)!} onPress={handleToggleList} />
+                      : null}
+                    <View style={[styles.filterTrack, wide ? compactStyles.filterTrack : null, { backgroundColor: theme['c-primary-input-background'] }]} accessibilityRole="tablist">
+                      {FILTER_OPTIONS.map(option => {
+                        const active = filter == option.id
+                        return (
+                          <TouchableOpacity key={option.id} style={[styles.filterSegment, wide ? compactStyles.filterSegment : null, active ? { backgroundColor: theme['c-card-background'] } : null]}
+                            activeOpacity={0.7} accessibilityRole="tab" accessibilityState={{ selected: active }}
+                            onPress={() => { handleFilterChange(option.id) }}>
+                            <Text size={13} numberOfLines={1} color={active ? theme['c-accent'] : theme['c-font-label']}
+                              style={active ? styles.filterTextActive : null}>{t(option.label)}</Text>
+                          </TouchableOpacity>
+                        )
+                      })}
+                    </View>
+                  </View>
+                )}
                 ListEmptyComponent={(
                   <View style={styles.empty}>
                     <Text size={13} color={theme['c-font-label']}>{t('list_no_content')}</Text>
@@ -405,17 +391,18 @@ const styles = createStyle({
   // iOS 分段控件：浅灰轨道 + 白色选中块
   filterTrack: {
     flexDirection: 'row',
-    height: 34,
+    minHeight: 48,
     marginTop: 4,
-    marginBottom: 4,
-    padding: 2,
-    borderRadius: 9,
+    marginBottom: 16,
+    padding: 3,
+    borderRadius: 14,
     alignItems: 'center',
   },
   filterSegment: {
     flex: 1,
-    height: 30,
-    borderRadius: 7,
+    minHeight: 42,
+    paddingVertical: 8,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 4,
@@ -431,7 +418,7 @@ const styles = createStyle({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 2,
   },
   cover: {
     alignItems: 'center',
@@ -452,12 +439,18 @@ const styles = createStyle({
     justifyContent: 'center',
   },
   moreButton: {
-    width: 32,
-    height: 32,
+    width: 48,
+    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
   },
   separator: {
     height: 0.5,
   },
+})
+
+// 横屏只有高度受限；保留文字字号，收紧分段控件的外部留白而不是缩小文字。
+const compactStyles = StyleSheet.create({
+  filterTrack: { minHeight: 48, marginTop: 0, marginBottom: 8 },
+  filterSegment: { minHeight: 42, paddingVertical: 6 },
 })

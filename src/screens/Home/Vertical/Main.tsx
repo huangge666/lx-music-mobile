@@ -3,7 +3,6 @@ import { View } from 'react-native'
 import Search from '../Views/Search'
 import SongList from '../Views/SongList'
 import Mylist from '../Views/Mylist'
-import Leaderboard from '../Views/Leaderboard'
 import Download from '../Views/Download'
 import Setting from '../Views/Setting'
 import commonState, { type InitState as CommonState } from '@/store/common/state'
@@ -30,14 +29,14 @@ const hideKeys = [
 
 const PAGE_COMPONENTS: Record<MAIN_NAV_ID_Type, ComponentType> = {
   nav_songlist: SongList,
-  nav_top: Leaderboard,
   nav_love: Mylist,
   nav_search: Search,
+  nav_download: Download,
 }
 
 /**
  * 首页分页内容。
- * 首次被选中时挂载，之后保持挂载以保留搜索内容、榜单选择与列表滚动位置；
+ * 首次被选中时挂载，之后保持挂载以保留搜索内容与列表滚动位置；
  * 进入设置页（以及停留在设置页时的主题、语言、关键列表配置变化）时卸载，
  * 返回时按新设置重新挂载。
  */
@@ -148,14 +147,7 @@ const Main = () => {
           </View>
         ))}
       </PagerView>
-      {/* 下载与设置是覆盖页：盖住分页层，底层分页手势同时在事件里关闭。 */}
-      {navActiveId == 'nav_download'
-        ? (
-            <View key="nav_download" style={[styles.overlay, { backgroundColor: theme['c-content-background'] }]}>
-              <Download />
-            </View>
-          )
-        : null}
+      {/* 设置盖住分页层，底层分页手势同时在事件里关闭。 */}
       {navActiveId == 'nav_setting'
         ? (
             <View key="nav_setting" style={[styles.overlay, { backgroundColor: theme['c-grouped-background'] }]}>

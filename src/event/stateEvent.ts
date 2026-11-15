@@ -2,18 +2,8 @@ import Event from './Event'
 import type { InitState as CommonState } from '@/store/common/state'
 import type { InitState as ListState } from '@/store/list/state'
 import type { InitState as PlayerState } from '@/store/player/state'
-import type { InitState as VersionState } from '@/store/version/state'
 import { type I18n } from '@/lang'
 
-
-// {
-//   // sync: {
-//   //   send_action_list: 'send_action_list',
-//   //   handle_action_list: 'handle_action_list',
-//   //   send_sync_list: 'send_sync_list',
-//   //   handle_sync_list: 'handle_sync_list',
-//   // },
-// }
 
 export class StateEvent extends Event {
   configUpdated(keys: Array<keyof LX.AppSetting>, setting: Partial<LX.AppSetting>) {
@@ -92,22 +82,6 @@ export class StateEvent extends Event {
 
   fetchingListStatusUpdated(fetchingListStatus: ListState['fetchingListStatus']) {
     this.emit('fetchingListStatusUpdated', fetchingListStatus)
-  }
-
-  syncStatusUpdated(status: LX.Sync.Status) {
-    this.emit('syncStatusUpdated', status)
-  }
-
-  versionInfoUpdated(info: VersionState['versionInfo']) {
-    this.emit('versionInfoUpdated', info)
-  }
-
-  versionInfoIgnoreVersionUpdated(version: VersionState['ignoreVersion']) {
-    this.emit('versionInfoIgnoreVersionUpdated', version)
-  }
-
-  versionDownloadProgressUpdated(progress: VersionState['progress']) {
-    this.emit('versionDownloadProgressUpdated', progress)
   }
 
   componentIdsUpdated(ids: CommonState['componentIds']) {

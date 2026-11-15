@@ -7,9 +7,11 @@ import Title from './components/Title'
 import ControlBtn from './components/ControlBtn'
 import { createStyle } from '@/utils/tools'
 import { useSettingValue } from '@/store/setting/hook'
-import { useNavActiveId } from '@/store/common/hook'
+import { useFontSize } from '@/store/common/hook'
 import commonState from '@/store/common/state'
 import LiquidGlass from '@/components/common/LiquidGlass'
+import { getMiniPlayerHeight } from './layout'
+import { usePlayerMusicInfo } from '@/store/player/hook'
 
 interface PlayerBarProps {
   isHome?: boolean
@@ -25,16 +27,16 @@ interface PlayerBarProps {
 export default memo(({ isHome = false, embedded = false, componentId }: PlayerBarProps) => {
   const { keyboardShown } = useKeyboard()
   const wide = useHorizontalMode()
+  useFontSize()
   const autoHidePlayBar = useSettingValue('common.autoHidePlayBar')
-  const navActiveId = useNavActiveId()
+  const musicInfo = usePlayerMusicInfo()
   const targetComponentId = componentId ?? commonState.componentIds.home
-  // 手机迷你条 43dp 胶囊；横屏对齐 Sonify 平板条 62dp。
-  const barHeight = wide ? 62 : 43
+  const barHeight = getMiniPlayerHeight(wide)
   const barRadius = barHeight / 2
 
   const playerComponent = useMemo(() => {
     const content = (
-      <View style={embedded ? embeddedLayout.content : styles.content}>
+      <View style={[embedded ? embeddedLayout.content : styles.content, { minHeight: barHeight }]}>
         <View style={styles.left}>
           <Pic isHome={isHome} embedded={embedded} componentId={targetComponentId} />
         </View>
@@ -51,14 +53,15 @@ export default memo(({ isHome = false, embedded = false, componentId }: PlayerBa
 
     return (
       <View style={styles.detailWrap}>
-        <LiquidGlass radius={barRadius} shadow={false} style={[styles.docked, { minHeight: barHeight, borderRadius: barRadius }]}>
+        <LiquidGlass radius={barRadius} scrim={0.16} shadow={false} style={[styles.docked, { minHeight: barHeight, borderRadius: barRadius }]}>
           {content}
         </LiquidGlass>
       </View>
     )
   }, [barHeight, barRadius, embedded, isHome, targetComponentId, wide])
 
-  if (isHome && navActiveId == 'nav_setting') return null
+  // 页面容器负责决定是否挂载；下载也是核心页面，不能只隐藏内容而留下 Dock 的玻璃空壳。
+  if (!musicInfo.id) return null
   return autoHidePlayBar && keyboardShown ? null : playerComponent
 })
 
@@ -71,9 +74,8 @@ const styles = createStyle({
   },
   // 详情页/横屏的浮动迷你条：内容布局落在这里，圆角与阴影由 LiquidGlass 绘制
   docked: {
-    minHeight: 43,
     paddingVertical: 0,
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -90,8 +92,8 @@ const styles = createStyle({
     flexDirection: 'column',
     flexGrow: 1,
     flexShrink: 1,
-    paddingLeft: 8,
-    paddingRight: 5,
+    paddingLeft: 10,
+    paddingRight: 4,
     justifyContent: 'center',
   },
   right: {
@@ -102,14 +104,14 @@ const styles = createStyle({
   },
 })
 
-// 首页胶囊高度是固定 dp。这里不能走 createStyle，否则 padding 和封面会被放大到槽位外面。
+// 首页槽位用 dp，不能再走 createStyle 的屏幕缩放。
 const embeddedLayout = StyleSheet.create({
   content: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingLeft: 12,
-    paddingRight: 8,
+    paddingLeft: 10,
+    paddingRight: 4,
     overflow: 'hidden',
   },
 })

@@ -1,10 +1,9 @@
 import { memo } from 'react'
-import { View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import MoreBtn from './components/MoreBtn'
 import PlayInfo from './components/PlayInfo'
 import ControlBtn from './components/ControlBtn'
-import { createStyle } from '@/utils/tools'
 import { NAV_SHEAR_NATIVE_IDS } from '@/config/constant'
 import { MacSpacing } from '../../macOS'
 
@@ -27,7 +26,7 @@ export default memo(() => {
   )
 })
 
-const styles = createStyle({
+const styles = StyleSheet.create({
   container: {
     flex: 0,
     width: '100%',

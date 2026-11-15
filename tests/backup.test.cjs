@@ -5,7 +5,7 @@ const { loadSource, flush } = require('./load-source.cjs')
 for (const fail of [false, true]) {
   test(`backup export ${fail ? 'reports write failure instead of false success' : 'reports success after writing'}`, async() => {
     const messages = []
-    const api = loadSource('src/screens/Home/Views/Setting/settings/Backup/actions.ts', {
+    const api = loadSource('src/core/listImportExport.ts', {
       '@/config/constant': { LIST_IDS: { DEFAULT: 'default' } },
       '@/core/list': { getListMusics: async() => [] },
       '@/utils': {},

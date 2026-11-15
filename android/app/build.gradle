@@ -165,6 +165,14 @@ android {
         debug {
             signingConfig signingConfigs.debug
         }
+        // 独立本地预览：调试签名但内置 production JS，不依赖 Metro，也不覆盖用户的正式安装数据。
+        preview {
+            initWith debug
+            debuggable false
+            applicationIdSuffix ".preview"
+            matchingFallbacks = ["debug"]
+            signingConfig signingConfigs.debug
+        }
         release {
             // Caution! In production, you need to generate your own keystore file.
             // see https://reactnative.dev/docs/signed-apk-android.

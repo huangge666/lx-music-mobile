@@ -1,10 +1,8 @@
-import { memo, useMemo, useRef } from 'react'
+import { memo, useMemo } from 'react'
 import { Platform, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native'
-import { BlurView } from '@react-native-community/blur'
-import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg'
 
 import { useTheme } from '@/store/theme/hook'
-import { BorderWidths } from '@/theme'
+import GlassSurface from './GlassSurface'
 
 interface Props {
   children?: React.ReactNode
@@ -24,24 +22,9 @@ interface Props {
   blurAmount?: number
 }
 
-let gradientSeed = 0
-
 /**
- * iOS 26 Liquid Glass 表面。
- *
- * 用 `@react-native-community/blur` 的 `BlurView` 做**真实背景模糊**：
- * 它采样窗口内这一层后面的内容（列表封面、滚动中的页面），
- * 不是对封面图做高斯模糊，也不再需要 `blurSource`。
- *
- * 合成顺序：
- * 1. `BlurView`：原生背景模糊
- * 2. 半透明材质着色：`c-glass-background`
- * 3. 可选色膜：`scrim`（标签栏用，保证小字对比度）
- * 4. 斜向高光渐变 + 发丝边框 + 顶部亮边
- *
- * 布局样式落在内层（`clip`），外层只负责圆角与阴影：
- * 否则调用方传进来的 `flexDirection: 'row'` 会把内层挤成内容宽度，
- * 详情页的迷你播放器会只剩半宽。
+ * 浮动玻璃容器。材质与抽屉、弹层共用 GlassSurface。
+ * 布局落在内层，外层只负责阴影，避免 row 布局把播放器挤成半宽。
  */
 export default memo(({
   children,
@@ -53,7 +36,6 @@ export default memo(({
   blurAmount = 18,
 }: Props) => {
   const theme = useTheme()
-  const gradientId = useRef(`liquid-glass-${++gradientSeed}`).current
   const isDark = theme.isDark
 
   const shadowStyle = useMemo(() => {
@@ -82,75 +64,14 @@ export default memo(({
         containerStyle,
       ]}
     >
-      {/*
-        布局样式落内层；内外两层都不能铺不透明底色，
-        否则 BlurView 采样到的是自己这层白膜，看起来就是纯白面板。
-      */}
-      <View style={[styles.clip, { borderRadius: radius }, style]}>
-        <BlurView
-          style={StyleSheet.absoluteFill}
-          blurType={isDark ? 'dark' : 'light'}
-          blurAmount={blurAmount}
-          // Android 走 blurRadius + overlayColor；overlayColor 必须透明，
-          // 否则库的默认白色覆盖会把任何背景都洗成浅灰（就不是模糊了）。
-          blurRadius={blurAmount}
-          downsampleFactor={4}
-          overlayColor="transparent"
-          reducedTransparencyFallbackColor={theme['c-glass-background']}
-        />
-        {/* 材质着色：模糊图之上再加一层，保证任意内容下文字都可读 */}
-        <View
-          pointerEvents="none"
-          style={[StyleSheet.absoluteFill, { backgroundColor: theme['c-glass-background'] }]}
-        />
-        {scrim > 0
-          ? (
-              <View
-                pointerEvents="none"
-                style={[StyleSheet.absoluteFill, {
-                  backgroundColor: isDark ? `rgba(0,0,0,${scrim})` : `rgba(255,255,255,${scrim})`,
-                }]}
-              />
-            )
-          : null}
-        {/* 斜向镜面高光 */}
-        <Svg
-          pointerEvents="none"
-          style={StyleSheet.absoluteFill}
-          width="100%"
-          height="100%"
-        >
-          <Defs>
-            <LinearGradient id={gradientId} x1="0" y1="0" x2="0.35" y2="1">
-              <Stop offset="0" stopColor="#FFFFFF" stopOpacity={isDark ? 0.16 : 0.34} />
-              <Stop offset="0.42" stopColor="#FFFFFF" stopOpacity={isDark ? 0.05 : 0.10} />
-              <Stop offset="1" stopColor="#FFFFFF" stopOpacity={0.01} />
-            </LinearGradient>
-          </Defs>
-          <Rect width="100%" height="100%" fill={`url(#${gradientId})`} />
-        </Svg>
-        {/* 边框与顶部亮边 */}
-        <View
-          pointerEvents="none"
-          style={[StyleSheet.absoluteFill, {
-            borderRadius: radius,
-            borderWidth: BorderWidths.hairline,
-            borderColor: theme['c-glass-border'],
-          }]}
-        />
-        <View
-          pointerEvents="none"
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: radius * 0.6,
-            right: radius * 0.6,
-            height: BorderWidths.hairline,
-            backgroundColor: theme['c-glass-highlight'],
-          }}
-        />
+      <GlassSurface
+        highlight="none"
+        scrim={scrim}
+        blurAmount={blurAmount}
+        style={[{ borderRadius: radius }, style]}
+      >
         {children}
-      </View>
+      </GlassSurface>
     </View>
   )
 })
@@ -158,8 +79,5 @@ export default memo(({
 const styles = StyleSheet.create({
   shadowWrap: {
     overflow: 'visible',
-  },
-  clip: {
-    overflow: 'hidden',
   },
 })

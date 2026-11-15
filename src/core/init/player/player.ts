@@ -1,5 +1,5 @@
 import { addPlayedList, clearPlayedList } from '@/core/player/playedList'
-import { pause, playNextIfAuto, recoverPlaybackIfNeeded } from '@/core/player/player'
+import { playNextIfAuto, recoverPlaybackIfNeeded } from '@/core/player/player'
 import { setStatusText, setIsPlay } from '@/core/player/playStatus'
 // import { resetPlayerMusicInfo } from '@/core/player/playInfo'
 import { setStop } from '@/plugins/player'
@@ -15,24 +15,15 @@ export default async(setting: LX.AppSetting) => {
   }
   const setPauseStatus = () => {
     setIsPlay(false)
-    if (global.lx.isPlayedStop) void pause()
   }
 
   const handleEnded = () => {
-    // setTimeout(() => {
-    if (global.lx.isPlayedStop) {
-      setStatusText(global.i18n.t('player__end'))
-      return
-    }
-    // resetPlayerMusicInfo()
-    // global.app_event.stop()
     void playNextIfAuto().then((toggled) => {
       if (!toggled) return
       // 进度已在 handlePlay 里同步清零。这里再 setProgress(0) 会把新歌 seek 到 0，
       // 锁屏后台时该回调可能晚到，打断已经开始的加载。
       setStatusText(global.i18n.t('player__end'))
     })
-    // })
   }
 
   const setStopStatus = () => {

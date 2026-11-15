@@ -54,14 +54,14 @@ const styles = createStyle({
     zIndex: 2,
   },
   sourceRow: {
-    height: 44,
-    marginHorizontal: 12,
+    minHeight: 48,
+    marginHorizontal: 16,
     marginBottom: 6,
     borderRadius: 12,
     overflow: 'hidden',
   },
   controlsRow: {
-    minHeight: 44,
+    minHeight: 48,
     paddingTop: 6,
     flexDirection: 'row',
     alignItems: 'center',

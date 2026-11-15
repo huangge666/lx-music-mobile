@@ -5,12 +5,10 @@ import initI18n from './i18n'
 import initUserApi from './userApi'
 import initPlayer from './player'
 import dataInit from './dataInit'
-import initSync from './sync'
 import initCommonState from './common'
 import { initDeeplink } from './deeplink'
 import { setApiSource, enqueueUserApiInit, getActiveApiSources } from '@/core/apiSource'
 import commonActions from '@/store/common/action'
-import { checkUpdate } from '@/core/version'
 import { bootLog } from '@/utils/bootLog'
 import { cheatTip } from '@/utils/tools'
 import { startPendingAutoPlay } from './player/playInfo'
@@ -21,7 +19,6 @@ const handlePushedHomeScreen = async() => {
   await cheatTip()
   if (isFirstPush) {
     isFirstPush = false
-    void checkUpdate()
     void initDeeplink()
   }
 }
@@ -60,11 +57,6 @@ export default async() => {
   bootLog('Data inited.')
   await initCommonState(setting)
   bootLog('Common State inited.')
-
-  void initSync(setting)
-  bootLog('Sync inited.')
-
-  // syncSetting()
 
   isInited ||= true
 

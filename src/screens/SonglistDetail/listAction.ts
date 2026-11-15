@@ -3,14 +3,13 @@ import { playList } from '@/core/player/player'
 import { getListDetail, getListDetailAll } from '@/core/songlist'
 import { LIST_IDS } from '@/config/constant'
 import listState from '@/store/list/state'
-import syncSourceList from '@/core/syncSourceList'
+import updateImportedList from '@/core/updateImportedList'
 import { confirmDialog, toMD5, toast } from '@/utils/tools'
 import { type Source } from '@/store/songlist/state'
-
-const getListId = (id: string, source: LX.OnlineSource) => `${source}__${id}`
+import { getSonglistId, isImportedSonglist } from '@/utils/songlistId'
 
 export const handlePlay = async(id: string, source: Source, list?: LX.Music.MusicInfoOnline[], index = 0) => {
-  const listId = getListId(id, source)
+  const listId = getSonglistId(id, source)
   let isPlayingList = false
   // console.log(list)
   if (!list?.length) list = (await getListDetail(id, source, 1)).list
@@ -32,17 +31,16 @@ export const handlePlay = async(id: string, source: Source, list?: LX.Music.Musi
 }
 
 export const handleCollect = async(id: string, source: Source, name: string) => {
-  const listId = getListId(id, source)
-  // Older versions stored only the source playlist id, so keep matching those entries.
-  const targetList = listState.userList.find(l => l.sourceListId == listId || l.sourceListId == id)
+  const listId = getSonglistId(id, source)
+  const targetList = listState.userList.find(l => isImportedSonglist(l, id, source))
   if (targetList) {
     const confirm = await confirmDialog({
       message: global.i18n.t('duplicate_list_tip', { name: targetList.name }),
-      cancelButtonText: global.i18n.t('list_import_part_button_cancel'),
+      cancelButtonText: global.i18n.t('cancel'),
       confirmButtonText: global.i18n.t('confirm_button_text'),
     })
     if (!confirm) return
-    return syncSourceList(targetList)
+    return updateImportedList(targetList)
   }
 
   const list = await getListDetailAll(source, id)

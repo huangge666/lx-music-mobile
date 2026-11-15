@@ -30,7 +30,6 @@ import { setMaxplayTime, setNowPlayTime } from '@/core/player/progress'
 import { checkIgnoringBatteryOptimization, checkNotificationPermission } from '@/utils/tools'
 import { LIST_IDS } from '@/config/constant'
 import { addListMusics, removeListMusics } from '@/core/list'
-import { addDislikeInfo } from '@/core/dislikeList'
 import { getActiveApiSources, getUserApiHandlers, isUserApiReady } from '@/core/apiSource'
 import { toOldMusicInfo } from '@/utils'
 import { getMusicUrl as getStoreMusicUrl } from '@/utils/data'
@@ -55,7 +54,7 @@ const createDelayNextTimeout = (delay: number) => {
     timeout = BackgroundTimer.setTimeout(() => {
       timeout = null
       // pausedByUser：用户暂停/停止或已判定连续失败停播时，不能再自动往下切
-      if (global.lx.isPlayedStop || pausedByUser) return
+      if (pausedByUser) return
       console.log('delay next timeout timeout', delay)
       void playNext(true)
     }, delay)
@@ -124,7 +123,6 @@ const diffCurrentMusicInfo = (curMusicInfo: LX.Music.MusicInfo | LX.Download.Lis
  * 刷新当前歌曲 URL（音质切换 / 错误重试）时忽略 isPlay，否则播放中拿到的新地址会被当成过期请求丢掉。
  */
 const isMusicUrlRequestInvalid = (musicInfo: LX.Music.MusicInfo | LX.Download.ListItem, isRefresh = false): boolean => {
-  if (global.lx.isPlayedStop) return true
   if (createGettingUrlId(musicInfo) != global.lx.gettingUrlId) return true
   if (musicInfo.id != playerState.playMusicInfo.musicInfo?.id) return true
   // 自动切歌会先 pause 再取链，但 pause 事件异步到达时 isPlay 可能还是 true，
@@ -490,7 +488,6 @@ const handlePlay = async() => {
     })
   }
 
-  global.lx.isPlayedStop &&= false
   pausedByUser = false
   waitingPlay = true
   resetRandomNextMusicInfo()
@@ -683,7 +680,6 @@ export const getNextPlayMusicInfo = async(): Promise<LX.Player.PlayMusicInfo | n
     list: currentList,
     playedList,
     playerMusicInfo: currentList[playInfo.playerPlayIndex],
-    isNext: true,
   })
 
   // 等待期间用户可能已手动点歌，丢弃过期结果，避免把旧下一首写回缓存
@@ -799,7 +795,7 @@ const isPrewarmUrlUsable = async(url: string): Promise<boolean> => {
  * 一首歌播完时下一首 URL 最多只会拉一次。
  */
 export const prewarmNextMusicUrl = () => {
-  if (pausedByUser || global.lx.isPlayedStop) return
+  if (pausedByUser) return
   const playMusicInfo = playerState.playMusicInfo
   if (!playMusicInfo.musicInfo) return
   // 切歌后允许立刻预取新的下一首；同一首歌在节流间隔内不重复触发
@@ -814,7 +810,7 @@ export const prewarmNextMusicUrl = () => {
   // 过期序号的结果直接丢弃
   const seq = ++prewarmSeq
   prewarmInFlight = { context, seq }
-  const isValid = () => seq === prewarmSeq && context === getPrewarmContext() && !pausedByUser && !global.lx.isPlayedStop
+  const isValid = () => seq === prewarmSeq && context === getPrewarmContext() && !pausedByUser
   // 预取前顺手清理过期条目，避免用户频繁切歌后缓存表持续增长。
   for (const [key, caching] of prewarmMusicUrlMap) {
     if (triggerNow >= caching.expireAt) prewarmMusicUrlMap.delete(key)
@@ -966,7 +962,6 @@ export const playNext = async(isAutoToggle = false): Promise<void> => {
     list: currentList,
     playedList,
     playerMusicInfo: currentList[playInfo.playerPlayIndex],
-    isNext: true,
   })
 
   // 等待期间用户可能已手动点歌，避免把旧的下一首盖回去
@@ -1062,7 +1057,6 @@ export const playPrev = async(isAutoToggle = false): Promise<void> => {
     list: currentList,
     playedList,
     playerMusicInfo: currentList[playInfo.playerPlayIndex],
-    isNext: false,
   })
   if (playerState.playMusicInfo.musicInfo?.id !== startedForId) return
   if (!filteredList.length) return handleToggleStop()
@@ -1154,7 +1148,7 @@ export const stop = async() => {
  * 歌曲自然结束时切下一首。合并 track-changed / queue-ended 的重复回调。
  */
 export const playNextIfAuto = async() => {
-  if (pausedByUser || global.lx.isPlayedStop || waitingPlay || autoNextInFlight) return false
+  if (pausedByUser || waitingPlay || autoNextInFlight) return false
   // 启动只恢复播放信息、用户还没点播放（也没开「启动后自动播放」）时不要当切歌
   if (!playbackRequested) return false
   const now = Date.now()
@@ -1217,7 +1211,7 @@ export const consumeNativeNextIfNeeded = (trackId?: string | null): boolean => {
  * 应用回到前台时，把后台被挂起的自动切歌/取链补上。
  */
 export const recoverPlaybackIfNeeded = () => {
-  if (pausedByUser || global.lx.isPlayedStop) return
+  if (pausedByUser) return
   // 本来就没有要播放（如启动时只恢复播放信息、用户还没点播放）时不要补切歌
   if (!playbackRequested) return
   const musicInfo = playerState.playMusicInfo.musicInfo
@@ -1243,7 +1237,6 @@ export const recoverPlaybackIfNeeded = () => {
  * 播放、暂停播放切换
  */
 export const togglePlay = () => {
-  global.lx.isPlayedStop &&= false
   if (playerState.isPlay) {
     void pause()
   } else {
@@ -1275,15 +1268,5 @@ export const uncollectMusic = async(): Promise<boolean> => {
       : playerState.playMusicInfo.musicInfo.id,
   ])
   return true
-}
-
-/**
- * 不喜欢当前播放的歌曲
- */
-export const dislikeMusic = async() => {
-  if (!playerState.playMusicInfo.musicInfo) return
-  const minfo = 'progress' in playerState.playMusicInfo.musicInfo ? playerState.playMusicInfo.musicInfo.metadata.musicInfo : playerState.playMusicInfo.musicInfo
-  await addDislikeInfo([{ name: minfo.name, singer: minfo.singer }])
-  await playNext(true)
 }
 

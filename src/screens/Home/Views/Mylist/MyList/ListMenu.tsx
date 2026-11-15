@@ -79,7 +79,7 @@ export default forwardRef<ListMenuType, ListMenuProps>(({
         userList = listInfo as LX.List.UserListInfo
         rename = true
         remove = true
-        sync = !!(userList.source && musicSdk[userList.source]?.songList)
+        sync = !!(userList.source && musicSdk[userList.source]?.songList && !userList.sourceListId?.startsWith('board__'))
         break
     }
 

@@ -3,6 +3,7 @@ import { addUserApi, getUserApiScript, removeUserApi as removeUserApiFromStore, 
 import { destroy, loadScript } from '@/utils/nativeModules/userApi'
 import { log as writeLog } from '@/utils/log'
 import settingState from '@/store/setting/state'
+import { USER_API_IMPORT_LIMIT } from '@/config/constant'
 
 
 export const setUserApi = async(apiId: string) => {
@@ -30,6 +31,7 @@ export const setUserApiList: typeof action['setUserApiList'] = (list) => {
 }
 
 export const importUserApi = async(script: string) => {
+  if (state.list.length >= USER_API_IMPORT_LIMIT) throw new Error(global.i18n.t('user_api_max_tip'))
   const info = await addUserApi(script)
   action.addUserApi(info)
 }

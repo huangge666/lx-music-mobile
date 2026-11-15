@@ -1,9 +1,9 @@
 import { addListMusics, getListMusics, removeListMusics, removeUserList, setFetchingListStatus, updateListMusics } from '@/core/list'
 import { confirmDialog, handleReadFile, handleSaveFile, showImportTip, toast } from '@/utils/tools'
-import syncSourceList from '@/core/syncSourceList'
+import updateImportedList from '@/core/updateImportedList'
 import { log } from '@/utils/log'
 import { filterFileName, filterMusicList, formatPlayTime2, toNewMusicInfo } from '@/utils'
-import { handleImportListPart } from '@/screens/Home/Views/Setting/settings/Backup/actions'
+import { handleImportListPart } from '@/core/listImportExport'
 import { readMetadata, scanAudioFiles, type MusicMetadataFull } from '@/utils/localMediaMetadata'
 import settingState from '@/store/setting/state'
 import BackgroundTimer from 'react-native-background-timer'
@@ -47,7 +47,7 @@ export const handleImport = (path: string, position: number) => {
   toast(global.i18n.t('setting_backup_part_import_list_tip_unzip'))
   void readListData(path).then(async listData => {
     if (listData == null) return
-    void handleImportListPart(listData, position)
+    await handleImportListPart(listData, position)
   }).catch((err) => {
     log.error(err)
     toast(global.i18n.t('setting_backup_part_import_list_tip_error'))
@@ -66,11 +66,12 @@ const exportList = async(listInfo: LX.List.MyListInfo, path: string) => {
     await handleSaveFile(`${path}/lx_list_part_${filterFileName(listInfo.name)}.lxmc`, data)
   } catch (error: any) {
     log.error(error.stack)
+    throw error
   }
 }
-export const handleExport = (listInfo: LX.List.MyListInfo, path: string) => {
+export const handleExport = async(listInfo: LX.List.MyListInfo, path: string) => {
   toast(global.i18n.t('setting_backup_part_export_list_tip_zip'))
-  exportList(listInfo, path).then(() => {
+  return exportList(listInfo, path).then(() => {
     toast(global.i18n.t('setting_backup_part_export_list_tip_success'))
   }).catch((err: any) => {
     log.error(err.message)
@@ -85,9 +86,9 @@ export const handleSync = (listInfo: LX.List.UserListInfo) => {
   }).then(isSync => {
     if (!isSync) return
 
-    // syncSourceList 会在请求期间维护列表 loading 状态，这里只负责给出即时的开始提示。
+    // 更新原平台歌单，与已移除的多端同步无关。
     toast(global.i18n.t('list_loading'))
-    void syncSourceList(listInfo).then(() => {
+    void updateImportedList(listInfo).then(() => {
       toast(global.i18n.t('list_update_success', { name: listInfo.name }))
     }).catch((error: unknown) => {
       console.error(error)

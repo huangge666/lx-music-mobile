@@ -111,7 +111,7 @@ export default forwardRef<ListImportExportType, {}>((props, ref) => {
         handleImport(path, selectInfoRef.current.index)
         break
       case 'export':
-        handleExport(selectInfoRef.current.listInfo, path)
+        void handleExport(selectInfoRef.current.listInfo, path)
         break
       case 'selectFile':
         void handleImportMediaFile(selectInfoRef.current.listInfo, path)

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import { getUserTheme, saveUserTheme } from '@/utils/data'
 import themes from '@/theme/themes/themes'
-import { createSemanticPalette } from '@/theme/themes/palette'
+import { createActiveTheme } from './active'
 import settingState from '@/store/setting/state'
 import themeState from '@/store/theme/state'
 import { isUrl } from '@/utils'
@@ -69,50 +69,7 @@ export const buildActiveThemeColors = (theme: LX.Theme): LX.ActiveTheme => {
     theme.config.extInfo[k] = theme.config.themeColors[v.replace(varColorRxp, '$1') as ColorsKey]
   }
 
-  // 语义角色（内容底/实色卡片/输入填充/分隔/强调/危险/玻璃）集中在 palette 里，
-  // 浅色雾青、深色暖沙，辅色独立于主色，避免整屏只剩黑白。
-  // 依赖主色的角色（字色、主色半透明层、按钮）继续按主题主色派生。
-  const isDark = theme.isDark
-  return {
-    'id': theme.id,
-    'name': theme.name,
-    isDark,
-    ...theme.config.themeColors,
-    ...theme.config.extInfo,
-    // 主文字色 — 亮色 #1C1C1E / 暗色 #EBEBF0
-    'c-font': isDark ? theme.config.themeColors['c-850'] : theme.config.themeColors['c-900'],
-    // 次要文字：Sonify headline #88878E / headlineDark #8E8D93
-    'c-font-label': isDark ? 'rgb(142, 141, 147)' : 'rgb(136, 135, 142)',
-    // 强调色文字
-    'c-primary-font': theme.config.themeColors['c-primary'],
-    'c-primary-font-hover': theme.config.themeColors['c-primary-alpha-300'],
-    'c-primary-font-active': theme.config.themeColors['c-primary-dark-100-alpha-200'],
-    // 强调色背景层 — 用于选中态、悬浮态
-    'c-primary-background': isDark
-      ? theme.config.themeColors['c-primary-alpha-800']
-      : theme.config.themeColors['c-primary-alpha-900'],
-    'c-primary-background-hover': isDark
-      ? theme.config.themeColors['c-primary-alpha-700']
-      : theme.config.themeColors['c-primary-alpha-800'],
-    'c-primary-background-active': isDark
-      ? theme.config.themeColors['c-primary-alpha-600']
-      : theme.config.themeColors['c-primary-alpha-700'],
-    // 按钮色
-    'c-button-font': theme.config.themeColors['c-primary-alpha-100'],
-    'c-button-font-selected': theme.config.themeColors['c-primary-dark-100-alpha-100'],
-    'c-button-background': isDark
-      ? theme.config.themeColors['c-primary-alpha-800']
-      : theme.config.themeColors['c-primary-alpha-900'],
-    'c-button-background-selected': theme.config.themeColors['c-primary-alpha-600'],
-    'c-button-background-hover': isDark
-      ? theme.config.themeColors['c-primary-alpha-700']
-      : theme.config.themeColors['c-primary-alpha-800'],
-    'c-button-background-active': isDark
-      ? theme.config.themeColors['c-primary-alpha-600']
-      : theme.config.themeColors['c-primary-alpha-700'],
-    ...createSemanticPalette(isDark),
-    'bg-image': bgImg,
-  } as const
+  return createActiveTheme(theme, bgImg)
 }
 
 

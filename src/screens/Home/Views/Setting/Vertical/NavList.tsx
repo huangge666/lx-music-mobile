@@ -5,11 +5,12 @@ import { Icon } from '@/components/common/Icon'
 import Text from '@/components/common/Text'
 import { useI18n } from '@/lang'
 import { useTheme } from '@/store/theme/hook'
-import versionState from '@/store/version/state'
+import { version } from '../../../../../../package.json'
 import { createStyle } from '@/utils/tools'
 import Section from '../components/Section'
 import SettingIcon from '../components/SettingIcon'
 import { settingLayout } from '../components/style'
+import { useReduceMotion } from '@/utils/hooks/useReduceMotion'
 import {
   SETTING_NAV_DESC,
   SETTING_NAV_GROUPS,
@@ -31,26 +32,32 @@ const NavRow = memo(({
 }) => {
   const theme = useTheme()
   const t = useI18n()
+  const reducedMotion = useReduceMotion()
   // 按压进度：驱动图标瓷贴弹簧缩放与 chevron 位移微交互
   const press = useRef(new Animated.Value(0)).current
 
   const handlePressIn = useCallback(() => {
+    if (reducedMotion) return
     Animated.spring(press, {
       toValue: 1,
       useNativeDriver: true,
       friction: 7,
       tension: 220,
     }).start()
-  }, [press])
+  }, [press, reducedMotion])
 
   const handlePressOut = useCallback(() => {
+    if (reducedMotion) {
+      press.setValue(0)
+      return
+    }
     Animated.spring(press, {
       toValue: 0,
       useNativeDriver: true,
       friction: 5,
       tension: 160,
     }).start()
-  }, [press])
+  }, [press, reducedMotion])
 
   return (
     <View>
@@ -120,17 +127,24 @@ export default ({ onChangeId }: {
 }) => {
   const theme = useTheme()
   const t = useI18n()
+  const reducedMotion = useReduceMotion()
   // 整页入场进度：分组卡错峰上浮，底部签名随末尾浮现
   const enter = useRef(new Animated.Value(0)).current
 
   useEffect(() => {
-    Animated.timing(enter, {
+    if (reducedMotion) {
+      enter.setValue(1)
+      return
+    }
+    const animation = Animated.timing(enter, {
       toValue: 1,
       duration: 640,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
-    }).start()
-  }, [enter])
+    })
+    animation.start()
+    return () => { animation.stop() }
+  }, [enter, reducedMotion])
 
   const footerOpacity = useMemo(() => enter.interpolate({
     inputRange: [0.55, 1],
@@ -196,8 +210,8 @@ export default ({ onChangeId }: {
         }]}>
           <Icon name="logo" size={18} color={theme['c-accent']} />
         </View>
-        <Text size={12} style={styles.footerName} color={theme['c-font-label']}>音乐YY</Text>
-        <Text size={10} color={theme['c-font-label']}>v{versionState.versionInfo.version}</Text>
+        <Text size={12} style={styles.footerName} color={theme['c-font-label']}>LX Music</Text>
+        <Text size={10} color={theme['c-font-label']}>v{version}</Text>
       </Animated.View>
     </ScrollView>
   )

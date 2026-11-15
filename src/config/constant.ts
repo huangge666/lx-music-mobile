@@ -3,11 +3,6 @@ export const LIST_ITEM_HEIGHT = 60
 export const LEGACY_LIST_ITEM_HEIGHT = 54
 export const LIST_SCROLL_POSITION_KEY = '__LIST_SCROLL_POSITION_KEY__'
 
-export const SPLIT_CHAR = {
-  DISLIKE_NAME: '@',
-  DISLIKE_NAME_ALIAS: '#',
-} as const
-
 export const LIST_IDS = {
   DEFAULT: 'default',
   LOVE: 'love',
@@ -26,7 +21,6 @@ export enum COMPONENT_IDS {
   playDetail = 'playDetail',
   songlistDetail = 'songlistDetail',
   mylistDetail = 'mylistDetail',
-  comment = 'comment',
   sourceManager = 'sourceManager',
   setting = 'setting',
 }
@@ -57,10 +51,6 @@ export const storageDataPrefix = {
   musicOtherSource: '@music_other_source__',
   playInfo: '@play_info',
 
-  syncAuthKey: '@sync_auth_key',
-  syncHost: '@sync_host',
-  syncHostHistory: '@sync_host_history',
-
   openStoragePath: '@open_storage_path',
   selectedManagedFolder: '@selected_managed_folder',
   notificationTipEnable: '@notification_tip_enable',
@@ -68,9 +58,6 @@ export const storageDataPrefix = {
 
   searchHistoryList: '@search_history_list',
   listUpdateInfo: '@list_update_info',
-  ignoreVersion: '@ignore_version',
-  ignoreVersionFailTipTimeKey: '@ignore_version_fail_tip_time',
-  leaderboardSetting: '@leaderboard_setting',
   songListSetting: '@songist_setting',
   searchSetting: '@search_setting',
 
@@ -79,10 +66,6 @@ export const storageDataPrefix = {
   theme: '@theme',
 
   cheatTip: '@cheat_tip',
-  remoteLyricTip: '@remote_lyric_tip',
-
-  dislikeList: '@dislike_list',
-
   userApi: '@user_api__',
 } as const
 
@@ -95,9 +78,6 @@ export const storageDataPrefixOld = {
   // lyric: '@lyric__',
   // musicUrl: '@music_url__',
   playInfo: '@play_info',
-  syncAuthKey: '@sync_auth_key',
-  syncHost: '@sync_host',
-  syncHostHistory: '@sync_host_history',
   notificationTipEnable: '@notification_tip_enable',
 } as const
 
@@ -105,11 +85,9 @@ export const APP_PROVIDER_NAME = 'cn.toside.music.mobile.provider'
 
 
 export const NAV_MENUS = [
-  { id: 'nav_search', icon: 'search-2' },
-  { id: 'nav_songlist', icon: 'album' },
-  { id: 'nav_top', icon: 'leaderboard' },
-  // 资料库：与 iOS 的「音乐列表」图标对应，heart 只保留给「我喜欢」列表
   { id: 'nav_love', icon: 'playlist' },
+  { id: 'nav_songlist', icon: 'album' },
+  { id: 'nav_search', icon: 'search-2' },
   { id: 'nav_download', icon: 'download-2' },
   { id: 'nav_setting', icon: 'setting' },
 ] as const
@@ -119,27 +97,22 @@ export type NAV_ID_Type = typeof NAV_MENUS[number]['id']
 export type NAV_MENU_Type = typeof NAV_MENUS[number]
 
 /**
- * 首页四个主标签的唯一顺序（浏览 / 排行榜 / 资料库 / 搜索）。
- * 底部标签栏、首页分页器与主标签判断共用这一份定义；
- * 下载、设置仍是覆盖页，保留在 NAV_MENUS 的完整 id 集合里。
- * icon 必须与 NAV_MENUS 中同 id 的图标一致（有回归测试覆盖）。
+ * 首页只有我的歌单、在线歌单、搜索、下载。
+ * 分页器与两种方向的导航共用顺序；设置是唯一覆盖页。
+ * 继续使用原有 id，升级时不改歌单、音源或下载的存储格式。
  */
 export const MAIN_NAV_MENUS = [
-  { id: 'nav_songlist', icon: 'album' },
-  { id: 'nav_top', icon: 'leaderboard' },
   { id: 'nav_love', icon: 'playlist' },
+  { id: 'nav_songlist', icon: 'album' },
   { id: 'nav_search', icon: 'search-2' },
+  { id: 'nav_download', icon: 'download-2' },
 ] as const
 export type MAIN_NAV_ID_Type = typeof MAIN_NAV_MENUS[number]['id']
 
 export const MAIN_NAV_IDS: readonly MAIN_NAV_ID_Type[] = MAIN_NAV_MENUS.map(menu => menu.id)
 
-/** 新安装、缺失值与未知值统一回到的默认主标签（对齐 Apple Music 首页优先） */
-export const DEFAULT_MAIN_NAV_ID: MAIN_NAV_ID_Type = 'nav_songlist'
-
-/** 首页辅助抽屉承载的覆盖页入口，主标签不在这里重复出现 */
-export const DRAWER_NAV_MENUS: readonly NAV_MENU_Type[] = (['nav_download', 'nav_setting'] as const)
-  .map(id => NAV_MENUS.find(menu => menu.id == id)!)
+/** 新安装及已移除的旧页面都回到我的歌单。 */
+export const DEFAULT_MAIN_NAV_ID: MAIN_NAV_ID_Type = 'nav_love'
 
 export const isMainNavId = (id: string | null | undefined): id is MAIN_NAV_ID_Type =>
   typeof id == 'string' && (MAIN_NAV_IDS as readonly string[]).includes(id)
@@ -151,8 +124,8 @@ export const getMainNavIdAt = (index: number): MAIN_NAV_ID_Type | undefined => M
 
 /**
  * 冷启动恢复时归一化历史导航值：
- * - 四个主标签原样恢复（排行榜自 Phase 7 起是主标签）
- * - 下载/设置等覆盖页、缺失或未知值统一回到默认主标签
+ * - 保留的主标签原样恢复，包括下载
+ * - 旧排行榜、设置、缺失或未知值回到我的歌单
  */
 export const normalizeNavId = (id: string | null | undefined): MAIN_NAV_ID_Type => {
   if (isMainNavId(id)) return id
@@ -161,6 +134,7 @@ export const normalizeNavId = (id: string | null | undefined): MAIN_NAV_ID_Type 
 
 export const LXM_FILE_EXT_RXP = ['json', 'lxmc', 'bin']
 export const USER_API_SOURCE_FILE_EXT_RXP = ['js']
+export const USER_API_IMPORT_LIMIT = 20
 
 export const MUSIC_TOGGLE_MODE = {
   listLoop: 'listLoop', // 列表循环
@@ -179,11 +153,6 @@ export const MUSIC_TOGGLE_MODE_LIST = [
 ] as const
 
 export const DEFAULT_SETTING = {
-  leaderboard: {
-    source: 'kw' as LX.OnlineSource,
-    boardId: 'kw__16',
-  },
-
   songList: {
     source: 'kw' as LX.OnlineSource,
     sortId: 'new',

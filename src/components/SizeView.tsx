@@ -1,5 +1,5 @@
 import { memo, useCallback, useRef, useEffect } from 'react'
-import { type LayoutChangeEvent, StyleSheet, View, StatusBar, Dimensions } from 'react-native'
+import { type LayoutChangeEvent, StyleSheet, View, StatusBar } from 'react-native'
 import commonState from '@/store/common/state'
 import settingState from '@/store/setting/state'
 import { setStatusbarHeight } from '@/core/common'
@@ -17,13 +17,12 @@ const getStatusbarHeight = (winHeight: number, layoutHeight: number) => {
 export default memo(() => {
   const currentHeightRef = useRef(commonState.statusbarHeight)
   const sizeRef = useRef([0, 0])
-  const dimensionsChangedRef = useRef(true)
+  const layoutRequestRef = useRef(0)
   const handleLayout = useCallback(({ nativeEvent: { layout } }: LayoutChangeEvent | { nativeEvent: { layout: { width: number, height: number } } }) => {
-    // console.log('handleLayout')
-    if (!dimensionsChangedRef.current) return
+    // Android 可能先触发 onLayout 再通知 Dimensions；不能用后者的标记丢弃旋转后的实际布局。
+    const request = ++layoutRequestRef.current
     void getWindowSize().then(size => {
-      dimensionsChangedRef.current = false
-      // console.log(layout, size)
+      if (request != layoutRequestRef.current) return
       sizeRef.current = [size.height, layout.height]
       const height = getStatusbarHeight(size.height, layout.height)
 
@@ -31,26 +30,14 @@ export default memo(() => {
         currentHeightRef.current = height
         setStatusbarHeight(height)
       }
-      // console.log(layout, size)
       const currentSize = windowSizeTools.getSize()
-      if (currentSize.width != layout.width || currentSize.height != layout.height) {
+      if (currentSize.width != Math.round(layout.width) || currentSize.height != Math.round(layout.height)) {
         windowSizeTools.setWindowSize(layout.width, layout.height)
       }
     })
   }, [])
   useEffect(() => {
-    // let timeout: NodeJS.Timeout | null = null
-    const subscription = Dimensions.addEventListener('change', () => {
-      dimensionsChangedRef.current = true
-      // if (timeout) clearTimeout(timeout)
-      // timeout = setTimeout(() => {
-      //   timeout = null
-      //   viewRef.current?.measureInWindow((x, y, width, height) => {
-      //     handleLayout({ nativeEvent: { layout: { width, height } } })
-      //   })
-      // }, 100)
-    })
-
+    const invalidateLayout = () => { layoutRequestRef.current++ }
     const handleSettingUpdate = (keys: Array<keyof LX.AppSetting>) => {
       if (!keys.includes('common.alwaysKeepStatusbarHeight') || !sizeRef.current[1]) return
       const height = getStatusbarHeight(sizeRef.current[0], sizeRef.current[1])
@@ -63,10 +50,10 @@ export default memo(() => {
     global.state_event.on('configUpdated', handleSettingUpdate)
 
     return () => {
-      subscription.remove()
+      invalidateLayout()
       global.state_event.off('configUpdated', handleSettingUpdate)
     }
   }, [])
-  return (<View style={StyleSheet.absoluteFill} onLayout={handleLayout} />)
+  return (<View style={StyleSheet.absoluteFill} pointerEvents="none" onLayout={handleLayout} />)
 }, () => true)
 

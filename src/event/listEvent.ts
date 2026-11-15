@@ -45,15 +45,6 @@ export const notifyListMusicUpdated = (changedIds: string[]) => {
 }
 
 
-// {
-//   // sync: {
-//   //   send_action_list: 'send_action_list',
-//   //   handle_action_list: 'handle_action_list',
-//   //   send_sync_list: 'send_sync_list',
-//   //   handle_sync_list: 'handle_sync_list',
-//   // },
-// }
-
 // 兼容v2.3.0之前版本插入数字类型的ID导致其意外在末尾追加 .0 的问题，确保所有ID都是字符串类型
 const fixListIdType = (lists: LX.List.UserListInfo[] | LX.List.UserListInfoFull[]) => {
   for (const list of lists) {

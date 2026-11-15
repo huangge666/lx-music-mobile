@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useState } from 'react'
-import { View, type LayoutChangeEvent } from 'react-native'
+import { StyleSheet, View, type LayoutChangeEvent } from 'react-native'
 // import { useLayout } from '@/utils/hooks'
 import { usePlayerMusicInfo } from '@/store/player/hook'
 import { useWindowSize } from '@/utils/hooks'
@@ -8,12 +8,12 @@ import { NAV_SHEAR_NATIVE_IDS } from '@/config/constant'
 import { createStyle } from '@/utils/tools'
 import { BorderRadius } from '@/theme'
 import { HEADER_HEIGHT } from './components/Header'
-import { BTN_WIDTH } from './MoreBtn/Btn'
 import { marginLeft } from './constant'
 import Image from '@/components/common/Image'
 import { useStatusbarHeight } from '@/store/common/hook'
 import commonState from '@/store/common/state'
 import { getHorizontalCoverSize } from './coverSize'
+import RecordArtwork from '@/components/common/RecordArtwork'
 
 
 export default memo(({ componentId }: { componentId: string }) => {
@@ -38,19 +38,16 @@ export default memo(({ componentId }: { componentId: string }) => {
   }, [])
 
   // 设计上限：窗口比例 + 字号补偿，保持正常屏幕上的观感
-  let designCap = Math.min((winWidth * 0.45 - marginLeft - BTN_WIDTH) * 0.76, (winHeight - statusBarHeight - HEADER_HEIGHT) * 0.62)
+  let designCap = Math.min(winWidth * 0.44 - marginLeft * 2, (winHeight - statusBarHeight - HEADER_HEIGHT) * 0.7)
   designCap -= designCap * (global.lx.fontSize - 1) * 0.3
   // 实测可用空间是硬约束：短屏横屏时封面收缩，不挤压播放控制
   const imgSize = getHorizontalCoverSize(box, designCap)
 
   return (
     <View style={styles.container} onLayout={handleLayout}>
-      <View style={{ ...styles.content, elevation: animated ? 3 : 0 }}>
-        <Image url={pic} nativeID={NAV_SHEAR_NATIVE_IDS.playDetail_pic} style={{
-          width: imgSize,
-          height: imgSize,
-          borderRadius: BorderRadius.small,
-        }} />
+      <View style={{ ...styles.content, width: imgSize, height: imgSize, elevation: animated ? 3 : 0 }} nativeID={NAV_SHEAR_NATIVE_IDS.playDetail_pic}>
+        <RecordArtwork seed={musicInfo.id ?? 'lx-player'} style={StyleSheet.absoluteFill} />
+        {pic ? <Image url={pic} style={StyleSheet.absoluteFill} /> : null}
       </View>
     </View>
   )
@@ -69,7 +66,8 @@ const styles = createStyle({
   },
   content: {
     // elevation: 3,
-    backgroundColor: 'rgba(0,0,0,0)',
+    backgroundColor: '#172218',
     borderRadius: BorderRadius.medium,
+    overflow: 'hidden',
   },
 })

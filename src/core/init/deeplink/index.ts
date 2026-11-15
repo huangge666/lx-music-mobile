@@ -47,6 +47,7 @@ const handleFileAction = async(link: string) => {
   switch (extname(file.name)) {
     case 'json':
     case 'lxmc':
+    case 'bin':
       await handleFileLXMCAction(file)
       break
     case 'js':
