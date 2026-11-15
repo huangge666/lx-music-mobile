@@ -99,3 +99,15 @@ test('release failure annotation reports the Gradle cause without exposing signi
   assert.match(messages[0], /%0A/)
   assert.doesNotMatch(messages[0], /secret-password|release-alias|stacktrace|Progress|\n/)
 })
+
+test('release preserves the successful production Secret whitespace normalization contract', () => {
+  const { parse } = require('yaml')
+  const workflow = parse(fs.readFileSync(path.resolve(__dirname, '../.github/workflows/release.yml'), 'utf8'))
+  const build = workflow.jobs.Android.steps.find(step => step.name == 'Build Packages')
+  for (const name of ['KEYSTORE_STORE_FILE', 'KEYSTORE_KEY_ALIAS', 'KEYSTORE_PASSWORD', 'KEYSTORE_KEY_PASSWORD']) {
+    const normalization = `${name}=$(printf '%s' "$${name}" | tr -d '[:space:]')`
+    assert(build.run.includes(normalization))
+    assert(build.run.indexOf(normalization) < build.run.indexOf('for name in '))
+    assert(build.run.indexOf(normalization) < build.run.indexOf('./gradlew'))
+  }
+})

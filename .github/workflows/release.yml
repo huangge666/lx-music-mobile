@@ -34,6 +34,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # 既有正式发布约定：这四项 Secret 去除粘贴空白，不能改变已配置的签名输入。
+          KEYSTORE_STORE_FILE=$(printf '%s' "$KEYSTORE_STORE_FILE" | tr -d '[:space:]')
+          KEYSTORE_KEY_ALIAS=$(printf '%s' "$KEYSTORE_KEY_ALIAS" | tr -d '[:space:]')
+          KEYSTORE_PASSWORD=$(printf '%s' "$KEYSTORE_PASSWORD" | tr -d '[:space:]')
+          KEYSTORE_KEY_PASSWORD=$(printf '%s' "$KEYSTORE_KEY_PASSWORD" | tr -d '[:space:]')
           for name in KEYSTORE_STORE_FILE_BASE64 KEYSTORE_STORE_FILE KEYSTORE_KEY_ALIAS KEYSTORE_PASSWORD KEYSTORE_KEY_PASSWORD; do
             if [ -z "${!name}" ]; then
               echo "::error::缺少正式签名配置：$name"
@@ -43,7 +48,6 @@ jobs:
           cd android
           KEYSTORE_PATH="$PWD/app/$KEYSTORE_STORE_FILE"
           trap 'rm -f -- "$KEYSTORE_PATH"' EXIT
-          # 密码与 alias 中的空格可能是有效字符，只归一化 base64 编码的换行。
           printf '%s' "$KEYSTORE_STORE_FILE_BASE64" | tr -d '[:space:]' | base64 --decode > "$KEYSTORE_PATH"
           if ! ./gradlew assembleRelease --console=plain -PMYAPP_UPLOAD_STORE_FILE="$KEYSTORE_STORE_FILE" -PMYAPP_UPLOAD_KEY_ALIAS="$KEYSTORE_KEY_ALIAS" -PMYAPP_UPLOAD_STORE_PASSWORD="$KEYSTORE_PASSWORD" -PMYAPP_UPLOAD_KEY_PASSWORD="$KEYSTORE_KEY_PASSWORD" 2>&1 | tee "$RUNNER_TEMP/release-build.log"; then
             # 日志接口受限时，仍可通过 annotation 定位实际构建错误。
