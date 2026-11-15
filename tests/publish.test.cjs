@@ -73,3 +73,29 @@ test('release verifies the existing production certificate for every APK before 
   assert.match(build.run, /set -euo pipefail/)
   assert.match(build.run, /if \[ -z "\$\{!name\}" \]; then[\s\S]+exit 1/)
 })
+
+test('release failure annotation reports the Gradle cause without exposing signing configuration', () => {
+  const { parse } = require('yaml')
+  const { runInNewContext } = require('node:vm')
+  const workflow = parse(fs.readFileSync(path.resolve(__dirname, '../.github/workflows/release.yml'), 'utf8'))
+  const build = workflow.jobs.Android.steps.find(step => step.name == 'Build Packages')
+  assert.match(build.run, /if ! \.\/gradlew[^\n]+\| tee [^\n]+; then[\s\S]+exit 1/)
+  assert.match(build.run, /trap 'rm -f -- "\$KEYSTORE_PATH"' EXIT/)
+  const script = build.run.match(/node <<'NODE'\n([\s\S]*?)\nNODE/)[1]
+  const env = { RUNNER_TEMP: '/tmp', KEYSTORE_PASSWORD: ' secret-password\n', KEYSTORE_KEY_ALIAS: 'release-alias' }
+  const log = 'Progress\nFAILURE: Build failed with an exception.\n\n* What went wrong:\nSigning failed for release-alias with secret-password (100%)\n\n* Try:\nRun with --stacktrace'
+  const messages = []
+  runInNewContext(script, {
+    require: name => {
+      assert.equal(name, 'node:fs')
+      return { readFileSync: () => log }
+    },
+    process: { env },
+    console: { log: message => messages.push(message) },
+  })
+  assert.equal(messages.length, 1)
+  assert.match(messages[0], /^::error title=Release build failed::FAILURE:/)
+  assert.match(messages[0], /Signing failed for \*\*\* with \*\*\* \(100%25\)/)
+  assert.match(messages[0], /%0A/)
+  assert.doesNotMatch(messages[0], /secret-password|release-alias|stacktrace|Progress|\n/)
+})

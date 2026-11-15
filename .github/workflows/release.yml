@@ -41,10 +41,25 @@ jobs:
             fi
           done
           cd android
+          KEYSTORE_PATH="$PWD/app/$KEYSTORE_STORE_FILE"
+          trap 'rm -f -- "$KEYSTORE_PATH"' EXIT
           # 密码与 alias 中的空格可能是有效字符，只归一化 base64 编码的换行。
-          printf '%s' "$KEYSTORE_STORE_FILE_BASE64" | tr -d '[:space:]' | base64 --decode > "app/$KEYSTORE_STORE_FILE"
-          ./gradlew assembleRelease -PMYAPP_UPLOAD_STORE_FILE="$KEYSTORE_STORE_FILE" -PMYAPP_UPLOAD_KEY_ALIAS="$KEYSTORE_KEY_ALIAS" -PMYAPP_UPLOAD_STORE_PASSWORD="$KEYSTORE_PASSWORD" -PMYAPP_UPLOAD_KEY_PASSWORD="$KEYSTORE_KEY_PASSWORD"
-          rm -f "app/$KEYSTORE_STORE_FILE"
+          printf '%s' "$KEYSTORE_STORE_FILE_BASE64" | tr -d '[:space:]' | base64 --decode > "$KEYSTORE_PATH"
+          if ! ./gradlew assembleRelease --console=plain -PMYAPP_UPLOAD_STORE_FILE="$KEYSTORE_STORE_FILE" -PMYAPP_UPLOAD_KEY_ALIAS="$KEYSTORE_KEY_ALIAS" -PMYAPP_UPLOAD_STORE_PASSWORD="$KEYSTORE_PASSWORD" -PMYAPP_UPLOAD_KEY_PASSWORD="$KEYSTORE_KEY_PASSWORD" 2>&1 | tee "$RUNNER_TEMP/release-build.log"; then
+            # 日志接口受限时，仍可通过 annotation 定位实际构建错误。
+            node <<'NODE'
+          const fs = require('node:fs')
+          const log = fs.readFileSync(`${process.env.RUNNER_TEMP}/release-build.log`, 'utf8')
+          const start = log.lastIndexOf('FAILURE:')
+          let message = start >= 0 ? log.slice(start).split('\n* Try:')[0] : log.split(/\r?\n/).slice(-20).join('\n')
+          // 诊断摘要只保留错误，签名配置及其空白变体始终打码。
+          const values = Object.entries(process.env).filter(([name]) => name.startsWith('KEYSTORE_')).flatMap(([, value]) => [value, value.trim()]).filter(Boolean).sort((a, b) => b.length - a.length)
+          for (const value of values) message = message.replaceAll(value, '***')
+          message = message.trim().slice(0, 6000).replaceAll('%', '%25').replaceAll('\r', '%0D').replaceAll('\n', '%0A')
+          console.log(`::error title=Release build failed::${message}`)
+          NODE
+            exit 1
+          fi
 
       # 沿用 v2.1.9 正式证书，签名不兼容的产物不能进入打标签和发布步骤。
       - name: Verify release signing
